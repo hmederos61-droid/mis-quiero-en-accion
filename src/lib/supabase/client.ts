@@ -7,3 +7,4 @@ export function createSupabaseBrowserClient() {
   );
 }
 
+export const supabase = createSupabaseBrowserClient();
