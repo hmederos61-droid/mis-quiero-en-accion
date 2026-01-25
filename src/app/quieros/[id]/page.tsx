@@ -44,7 +44,7 @@ function formatFecha(ts: string | null | undefined) {
 
 function labelDomain(d: string | null | undefined) {
   const v = (d ?? "").trim();
-  if (!v) return "—";
+  if (!v) return "ÔÇö";
   const map: Record<string, string> = {
     salud: "Salud",
     familia: "Familia",
@@ -64,7 +64,7 @@ function getTitulo(q: QuieroRow) {
   if (t) return t;
   const en = (q.title ?? "").trim();
   if (en) return en;
-  return "Quiero sin título";
+  return "Quiero sin t├¡tulo";
 }
 
 function getPurpose(q: QuieroRow) {
@@ -109,7 +109,7 @@ export default function QuieroDetallePage() {
 
     try {
       if (!quieroId) {
-        setErrorMsg("ID inválido.");
+        setErrorMsg("ID inv├ílido.");
         setQ(null);
         return;
       }
@@ -142,7 +142,7 @@ export default function QuieroDetallePage() {
 
       if (error) throw error;
 
-      setQ(data as QuieroRow);
+      setQ(data as unknown as QuieroRow);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "No se pudo cargar el Quiero.");
       setQ(null);
@@ -156,7 +156,7 @@ export default function QuieroDetallePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quieroId]);
 
-  // Mostrar “Guardado” si venimos de editar (sessionStorage o ?saved=1)
+  // Mostrar ÔÇ£GuardadoÔÇØ si venimos de editar (sessionStorage o ?saved=1)
   useEffect(() => {
     let shouldShow = false;
 
@@ -177,7 +177,7 @@ export default function QuieroDetallePage() {
       // noop
     }
 
-    // 2) fallback: query param ?saved=1 (por si alguna versión lo usa)
+    // 2) fallback: query param ?saved=1 (por si alguna versi├│n lo usa)
     try {
       const u = new URL(window.location.href);
       if (u.searchParams.get("saved") === "1") {
@@ -206,7 +206,7 @@ export default function QuieroDetallePage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [router]);
 
-  // ===== Estética =====
+  // ===== Est├®tica =====
   const wrap = "min-h-screen w-full bg-[url('/welcome.png')] bg-cover bg-center bg-fixed";
   const card =
     "mx-auto w-full max-w-5xl rounded-[26px] border border-white/20 bg-white/[0.08] backdrop-blur-[18px] shadow-[0_26px_90px_rgba(0,0,0,0.45)]";
@@ -281,13 +281,13 @@ export default function QuieroDetallePage() {
 
                   <div className="mt-4 text-xs text-white/55">
                     Creado: {formatFecha(q.created_at)}{" "}
-                    {q.updated_at ? `· Actualizado: ${formatFecha(q.updated_at)}` : ""}
+                    {q.updated_at ? `┬À Actualizado: ${formatFecha(q.updated_at)}` : ""}
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-4">
                   <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-5">
-                    <div className="text-xs text-white/55">Ámbito</div>
+                    <div className="text-xs text-white/55">├ümbito</div>
                     <div className="mt-1 text-white/90 font-semibold">{labelDomain(q.domain)}</div>
                   </div>
 
@@ -299,14 +299,14 @@ export default function QuieroDetallePage() {
                   <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-5">
                     <div className="text-xs text-white/55">Prioridad</div>
                     <div className="mt-1 text-white/90 font-semibold">
-                      {getPrioridad(q) ?? "—"}
+                      {getPrioridad(q) ?? "ÔÇö"}
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-5">
                     <div className="text-xs text-white/55">Fecha objetivo</div>
                     <div className="mt-1 text-white/90 font-semibold">
-                      {getFechaObjetivo(q) ?? "—"}
+                      {getFechaObjetivo(q) ?? "ÔÇö"}
                     </div>
                   </div>
                 </div>
