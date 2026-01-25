@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* =========================
+   Variables base
+========================= */
+:root {
+  --background: transparent;
+  --foreground: #171717;
+
+  /* Glass tokens */
+  --glass-bg: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  --glass-blur: 14px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* =========================
+   Dark mode
+========================= */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: transparent;
+    --foreground: #ededed;
+
+    --glass-bg: rgba(0, 0, 0, 0.22);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* =========================
+   Reset base
+========================= */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================
+   Reglas de layout base
+========================= */
+body {
+  color: var(--foreground);
+  background: transparent;
+}
+
+/* =========================
+   Componentes reutilizables (sin inline)
+========================= */
+@layer components {
+  .glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: 18px;
+  }
+
+  .glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    user-select: none;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.20);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .glass-button:active {
+    transform: translateY(0px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+  }
+
+  .glass-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 14px 26px rgba(0, 0, 0, 0.18);
+  }
+
+  .glass-button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .glass-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--foreground);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10);
+    transition: background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  }
+
+  .glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .glass-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), 0 10px 22px rgba(0, 0, 0, 0.12);
+  }
+
+  .glass-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  .glass-help {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+}
