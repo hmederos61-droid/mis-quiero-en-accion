@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -92,7 +92,67 @@ const btnGray: React.CSSProperties = {
   background: "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
 };
 
+/* =========================
+   Wrapper Suspense
+========================= */
 export default function Nuevo1HabilitantesInhabilitantesPage() {
+  return (
+    <Suspense fallback={<Nuevo1Fallback />}>
+      <Nuevo1Inner />
+    </Suspense>
+  );
+}
+
+function Nuevo1Fallback() {
+  return (
+    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: `url("/welcome.png")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          padding: 28,
+        }}
+      >
+        <section style={{ width: "min(1584px, 100%)" }}>
+          <div style={glassCard}>
+            <h1 style={{ fontSize: 56, margin: 0, lineHeight: 1.05 }}>Cargando…</h1>
+            <p style={{ fontSize: 22, lineHeight: 1.35, marginTop: 14, marginBottom: 0, opacity: 0.96 }}>
+              Preparando la pantalla de inhabilitantes y habilitantes.
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+/* =========================
+   Implementación (usa useSearchParams)
+========================= */
+function Nuevo1Inner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const sp = useSearchParams();
