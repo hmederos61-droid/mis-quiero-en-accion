@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
 
   const supabase = createServerClient(
@@ -27,17 +27,15 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // Rutas públicas (SIN sesión)
   const isPublic =
     pathname === "/login" ||
-    pathname === "/reset" || // <-- importante para recuperación
+    pathname === "/reset" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname === "/welcome.png";
 
   if (isPublic) return res;
 
-  // Rutas protegidas
   const isProtected = pathname.startsWith("/quieros");
 
   if (isProtected && !user) {
