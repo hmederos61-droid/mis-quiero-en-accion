@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+/* =========================
+   Tipos
+========================= */
 type Plazo = "corto" | "mediano" | "largo";
 
 type Quiero = {
@@ -12,7 +15,6 @@ type Quiero = {
   title: string | null;
   created_at: string | null;
   due_date: string | null;
-  status: string | null;
 };
 
 type HistItem = {
@@ -27,15 +29,6 @@ function safeText(v?: string | null) {
   return (v ?? "").toString().trim();
 }
 
-function formatFechaCorta(value?: string | null) {
-  if (!value) return "—";
-  const s = String(value);
-  const iso = s.length >= 10 ? s.slice(0, 10) : s;
-  const d = new Date(iso + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString();
-}
-
 function formatFechaHora(value?: string | null) {
   if (!value) return "—";
   const d = new Date(value);
@@ -43,32 +36,15 @@ function formatFechaHora(value?: string | null) {
   return d.toLocaleString();
 }
 
-function diffDays(fromISO: string, toYYYYMMDD: string) {
-  const from = new Date(fromISO);
-  const to = new Date(toYYYYMMDD + "T00:00:00");
-  const ms = to.getTime() - from.getTime();
-  return Math.round(ms / (1000 * 60 * 60 * 24));
-}
-
-function plazoFromCreatedAtAndDueDate(
-  createdAtISO?: string | null,
-  dueDateYYYYMMDD?: string | null
-): Plazo {
-  if (!createdAtISO || !dueDateYYYYMMDD) return "mediano";
-  const days = diffDays(createdAtISO, dueDateYYYYMMDD);
-  if (days <= 30) return "corto";
-  if (days <= 180) return "mediano";
-  return "largo";
-}
-
-function labelPlazo(p: Plazo) {
-  if (p === "corto") return "Corto plazo";
-  if (p === "mediano") return "Mediano plazo";
-  return "Largo plazo";
+function formatFechaCorta(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString();
 }
 
 /* =========================
-   Estética (mismo lenguaje visual)
+   Estética – criterios generales unificados
 ========================= */
 const bgLayer: React.CSSProperties = {
   position: "fixed",
@@ -76,14 +52,13 @@ const bgLayer: React.CSSProperties = {
   backgroundImage: `url("/welcome.png")`,
   backgroundSize: "cover",
   backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
   zIndex: 0,
 };
 
 const overlayLayer: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.26))",
+  background: "linear-gradient(rgba(0,0,0,0.16), rgba(0,0,0,0.24))",
   zIndex: 1,
 };
 
@@ -98,254 +73,203 @@ const pageWrap: React.CSSProperties = {
 };
 
 const glassPanel: React.CSSProperties = {
-  width: "min(980px, 100%)",
+  width: "min(1040px, 100%)",
   borderRadius: 26,
-  padding: 30,
+  padding: 36,
   background: "rgba(255,255,255,0.075)",
   border: "1px solid rgba(255,255,255,0.18)",
   backdropFilter: "blur(18px)",
   WebkitBackdropFilter: "blur(18px)",
   boxShadow: "0 18px 65px rgba(0,0,0,0.38)",
   color: "rgba(255,255,255,0.95)",
-  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
-const headerBox: React.CSSProperties = {
-  padding: "16px 18px",
-  borderRadius: 18,
+/* =========================
+   Tipografía (alineada a historial0)
+========================= */
+const pageTitle: React.CSSProperties = {
+  fontSize: 42,
+  fontWeight: 400,
+  marginBottom: 22,
+};
+
+const bannerBox: React.CSSProperties = {
+  padding: "18px 22px",
+  borderRadius: 20,
   background: "rgba(0,0,0,0.22)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
 
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 36,
-  lineHeight: 1.06,
-  fontWeight: 950,
-};
-
-const subStyle: React.CSSProperties = {
-  marginTop: 10,
-  marginBottom: 0,
-  fontSize: 14,
-  opacity: 0.85,
-  fontWeight: 850,
+const quieroTitle: React.CSSProperties = {
+  fontSize: 32,
+  fontWeight: 400,
 };
 
 const sectionTitle: React.CSSProperties = {
-  marginTop: 18,
-  marginBottom: 10,
+  marginTop: 26,
+  marginBottom: 12,
   fontSize: 18,
-  fontWeight: 950,
-  opacity: 0.92,
+  fontWeight: 400,
+  opacity: 0.9,
 };
 
+/* =========================
+   Historial
+========================= */
 const listWrap: React.CSSProperties = {
   display: "grid",
-  gap: 10,
+  gap: 12,
 };
 
 const card: React.CSSProperties = {
-  padding: "14px 14px",
+  padding: "14px 16px",
   borderRadius: 16,
   border: "1px solid rgba(255,255,255,0.16)",
   background: "rgba(0,0,0,0.14)",
-  boxShadow: "0 10px 24px rgba(0,0,0,0.18)",
 };
 
 const itemTitle: React.CSSProperties = {
   margin: 0,
-  fontSize: 15,
-  fontWeight: 950,
+  fontSize: 16,
+  fontWeight: 400,
 };
 
 const itemTs: React.CSSProperties = {
   marginTop: 6,
-  marginBottom: 0,
-  fontSize: 12,
-  opacity: 0.78,
-  fontWeight: 800,
+  fontSize: 13,
+  opacity: 0.75,
 };
 
+/* =========================
+   Botones (alineados a referencia)
+========================= */
 const actionsRow: React.CSSProperties = {
-  marginTop: 18,
-  display: "flex",
-  gap: 12,
-  flexWrap: "wrap",
+  marginTop: 26,
+  display: "grid",
+  gridTemplateColumns: "repeat(2, 1fr)",
+  gap: 16,
 };
 
 const btnBase: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "14px 16px",
-  borderRadius: 16,
+  padding: "18px 16px",
+  borderRadius: 18,
   border: "1px solid rgba(255,255,255,0.20)",
   textDecoration: "none",
-  fontWeight: 950,
-  fontSize: 14,
+  fontSize: 16,
+  fontWeight: 500,
   color: "rgba(255,255,255,0.96)",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.20)",
+  textAlign: "center",
 };
 
-const btnPrimary: React.CSSProperties = {
+const btnBlue = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(240,170,70,0.65), rgba(200,130,40,0.40))",
+  background: "linear-gradient(135deg, rgba(80,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
-const btnSecondary: React.CSSProperties = {
+const btnGreen = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.10))",
+  background: "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+};
+
+const btnGold = {
+  ...btnBase,
+  background: "linear-gradient(135deg, rgba(240,170,70,0.65), rgba(200,130,40,0.45))",
 };
 
 /* =========================
    Page
 ========================= */
 export default function QuieroHistorialPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
-
+  const { id } = useParams<{ id: string }>();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [quiero, setQuiero] = useState<Quiero | null>(null);
 
-  // Historial MOCK por ahora (hasta que definamos tabla real). Mantiene el diseño.
+  const [quiero, setQuiero] = useState<Quiero | null>(null);
   const [historial, setHistorial] = useState<HistItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancel = false;
 
     async function load() {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
+      const { data } = await supabase
+        .from("quieros")
+        .select("id,title,created_at,due_date")
+        .eq("id", id)
+        .single();
 
-        if (!id) {
-          setErrorMsg("No encontramos el Quiero.");
-          setQuiero(null);
-          return;
-        }
+      if (cancel) return;
 
-        const { data, error } = await supabase
-          .from("quieros")
-          .select("id,title,created_at,due_date,status")
-          .eq("id", id)
-          .maybeSingle();
-
-        if (cancel) return;
-
-        if (error || !data) {
-          setErrorMsg(
-            "No pudimos cargar este Quiero. Volvé e intentá nuevamente."
-          );
-          setQuiero(null);
-          return;
-        }
-
-        const q: Quiero = {
-          id: data.id,
-          title: data.title ?? null,
-          created_at: data.created_at ?? null,
-          due_date: data.due_date ?? null,
-          status: data.status ?? null,
-        };
-
-        setQuiero(q);
-
-        const now = new Date().toISOString();
-        const baseTs = q.created_at ?? now;
-        setHistorial([
-          { title: "Se creó el Quiero", tsISO: baseTs },
-          { title: "Se revisó el horizonte (plazo/fecha)", tsISO: now },
-        ]);
-      } catch {
-        if (!cancel) {
-          setErrorMsg("Ocurrió un error inesperado al cargar.");
-          setQuiero(null);
-        }
-      } finally {
-        if (!cancel) setLoading(false);
-      }
+      setQuiero(data);
+      const now = new Date().toISOString();
+      setHistorial([
+        { title: "Se creó el Quiero", tsISO: data.created_at ?? now },
+        {
+          title: `Horizonte definido · ${formatFechaCorta(data.due_date)}`,
+          tsISO: now,
+        },
+      ]);
+      setLoading(false);
     }
 
     load();
     return () => {
       cancel = true;
     };
-  }, [supabase, id]);
+  }, [id, supabase]);
 
-  const titulo = safeText(quiero?.title) || "Quiero sin título";
-
-  const createdISO = quiero?.created_at ?? null;
-  const dueRaw = quiero?.due_date ? String(quiero?.due_date) : null;
-  const due = dueRaw ? dueRaw.slice(0, 10) : null;
-
-  const plazo = plazoFromCreatedAtAndDueDate(createdISO, due);
-  const horizonte = due
-    ? `${labelPlazo(plazo)} · ${formatFechaCorta(due)}`
-    : `${labelPlazo(plazo)} · sin fecha definida`;
+  if (loading) {
+    return (
+      <main>
+        <div style={bgLayer} />
+        <div style={overlayLayer} />
+        <div style={pageWrap}>Cargando…</div>
+      </main>
+    );
+  }
 
   return (
-    <main style={{ position: "relative", minHeight: "100vh" }}>
-      <div aria-hidden style={bgLayer} />
-      <div aria-hidden style={overlayLayer} />
+    <main>
+      <div style={bgLayer} />
+      <div style={overlayLayer} />
 
       <div style={pageWrap}>
         <section style={glassPanel}>
-          {loading ? (
-            <div style={{ fontSize: 16, opacity: 0.9 }}>Cargando…</div>
-          ) : errorMsg ? (
-            <div style={{ fontSize: 16, opacity: 0.95 }}>
-              {errorMsg}
-              <div style={actionsRow}>
-                <Link href="/quieros" style={btnSecondary}>
-                  Volver a Mis Quieros
-                </Link>
-              </div>
+          <div style={pageTitle}>Consulta de tu Quiero</div>
+
+          <div style={bannerBox}>
+            <div style={quieroTitle}>
+              {safeText(quiero?.title) || "Quiero sin título"}
             </div>
-          ) : (
-            <>
-              <div style={headerBox}>
-                <h1 style={titleStyle}>{titulo}</h1>
-                <p style={subStyle}>{horizonte}</p>
+          </div>
+
+          <div style={sectionTitle}>Historial</div>
+
+          <div style={listWrap}>
+            {historial.map((h, i) => (
+              <div key={i} style={card}>
+                <div style={itemTitle}>{h.title}</div>
+                <div style={itemTs}>{formatFechaHora(h.tsISO)}</div>
               </div>
+            ))}
+          </div>
 
-              <div style={sectionTitle}>Historial</div>
+          <div style={actionsRow}>
+            <Link href={`/quieros/${id}/historial0`} style={btnBlue}>
+              Historial del Quiero
+            </Link>
 
-              <div style={listWrap}>
-                {historial.length === 0 ? (
-                  <div style={card}>
-                    <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>
-                      Todavía no hay movimientos registrados para este Quiero.
-                    </p>
-                  </div>
-                ) : (
-                  historial
-                    .slice()
-                    .sort((a, b) => (a.tsISO < b.tsISO ? 1 : -1))
-                    .map((it, idx) => (
-                      <div key={`${it.tsISO}-${idx}`} style={card}>
-                        <p style={itemTitle}>{it.title}</p>
-                        <p style={itemTs}>{formatFechaHora(it.tsISO)}</p>
-                      </div>
-                    ))
-                )}
-              </div>
+            <Link href={`/quieros/${id}/historial1`} style={btnGreen}>
+              Historial de habilitantes e inhabilitantes
+            </Link>
 
-              <div style={actionsRow}>
-                <Link href={`/quieros/${id}/edit`} style={btnPrimary}>
-                  Modificar Quiero
-                </Link>
+            <Link href={`/quieros/${id}/edit`} style={btnGold}>
+              Modificar Quiero
+            </Link>
 
-                <Link href="/quieros" style={btnSecondary}>
-                  Volver a Mis Quieros
-                </Link>
-              </div>
-            </>
-          )}
+            <Link href="/quieros" style={btnBase}>
+              Volver a la lista
+            </Link>
+          </div>
         </section>
       </div>
     </main>

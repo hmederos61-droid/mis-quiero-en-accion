@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -382,6 +381,13 @@ export default function Edit1HabilitantesInhabilitantesPage() {
     outline: "none",
     fontSize: 20,
     width: 190,
+    appearance: "none",
+    paddingRight: 44,
+    backgroundImage:
+      "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 14px center",
+    backgroundSize: "18px",
   };
 
   const optionStyle: React.CSSProperties = {
@@ -417,7 +423,12 @@ export default function Edit1HabilitantesInhabilitantesPage() {
     color: "rgba(255,255,255,0.86)",
   };
 
-  const total = inhabilitantes.length + habilitantes.length;
+  const bottomRow: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 14,
+    marginTop: 18,
+  };
 
   return (
     <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
@@ -454,49 +465,13 @@ export default function Edit1HabilitantesInhabilitantesPage() {
       >
         <section style={{ width: "min(1584px, 100%)" }}>
           <div style={glassCard}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ minWidth: 280 }}>
-                <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>
-                  ¿Querés modificar tus inhabilitantes y habilitantes?
-                </h1>
-                <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 10, opacity: 0.96 }}>
-                  Dale, animate. Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar.
-                </p>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <Link
-                    href={`/quieros/${quieroId}/edit`}
-                    style={{
-                      ...btnGray,
-                      padding: "14px 18px",
-                      fontSize: 18,
-                      textDecoration: "none",
-                      display: "inline-block",
-                    }}
-                  >
-                    Volver a Paso 1
-                  </Link>
-
-                  <Link
-                    href={`/quieros/${quieroId}`}
-                    style={{
-                      ...btnGray,
-                      padding: "14px 18px",
-                      fontSize: 18,
-                      textDecoration: "none",
-                      display: "inline-block",
-                    }}
-                  >
-                    Ver Quiero
-                  </Link>
-                </div>
-
-                <div style={{ fontSize: 18, opacity: 0.95 }}>
-                  Ítems que diste de alta: {total} (inh: {inhabilitantes.length} / hab: {habilitantes.length})
-                </div>
-              </div>
+            <div>
+              <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>
+                ¿Querés modificar tus inhabilitantes y habilitantes?
+              </h1>
+              <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 10, opacity: 0.96 }}>
+                Dale, animate. Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar.
+              </p>
             </div>
 
             {bloqueado && (
@@ -827,24 +802,34 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               Agregar habilitante
             </button>
 
-            <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {/* ===== NUEVA FILA DE BOTONES (layout como ALTA) ===== */}
+            <div style={bottomRow}>
               <button
-                style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
-                onClick={() => {
-                  setErrorMsg(null);
-                  loadAll();
+                style={{
+                  ...btnBlue,
+                  width: "100%",
+                  padding: "18px 18px",
+                  fontSize: 20,
+                  opacity: saving ? 0.75 : 1,
                 }}
+                onClick={() => router.push(`/quieros/${quieroId}/edit`)}
                 disabled={saving}
               >
-                Recargar
+                Volver a modificar mi Quiero
               </button>
 
               <button
-                style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                style={{
+                  ...btnGray,
+                  width: "100%",
+                  padding: "18px 18px",
+                  fontSize: 20,
+                  opacity: saving ? 0.75 : 1,
+                }}
                 onClick={() => router.push("/quieros")}
                 disabled={saving}
               >
-                Volver a Mis Quieros
+                Ya terminé
               </button>
             </div>
           </div>

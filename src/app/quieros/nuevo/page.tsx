@@ -36,6 +36,25 @@ const inputStyle: React.CSSProperties = {
   fontSize: 22,
 };
 
+/* =========================
+   SELECT: patrón con ✓ (V corta) + opciones en negro
+========================= */
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  appearance: "none",
+  paddingRight: 56,
+  backgroundImage:
+    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 18px center",
+  backgroundSize: "18px",
+};
+
+const optionStyle: React.CSSProperties = {
+  background: "rgba(0,0,0,0.92)",
+  color: "rgba(255,255,255,0.96)",
+};
+
 const btnBase: React.CSSProperties = {
   width: "100%",
   padding: "20px 18px",
@@ -79,8 +98,6 @@ const divider: React.CSSProperties = {
 
 /* =========================
    DB (mínimo y seguro)
-   Nota: mandamos title y también titulo (si existe),
-   sin inventar columnas nuevas.
 ========================= */
 const TABLE_QUIEROS = "quieros";
 
@@ -168,13 +185,8 @@ export default function NuevoQuieroPage() {
       await supabase.auth.getUser().catch(() => null);
 
       const payload: Record<string, any> = {
-        // Columna “nueva” (inglés)
         title: title.trim(),
-
-        // Columna “vieja” (español) si existe; si no existe, Postgres lo reportaría.
-        // En tu caso existe, y antes era NOT NULL: esto evita futuros choques.
         titulo: title.trim(),
-
         purpose: purpose.trim() || null,
         domain: domain || null,
         status,
@@ -273,7 +285,7 @@ export default function NuevoQuieroPage() {
                 opacity: 0.96,
               }}
             >
-              Paso 1 de 2: definí tu Quiero. Al guardar, pasás a habilitantes e inhabilitantes.
+              Definí tu Quiero. Al guardar, pasás a habilitantes e inhabilitantes.
             </p>
 
             {msg && <div style={msgBox}>{msg}</div>}
@@ -340,35 +352,35 @@ export default function NuevoQuieroPage() {
                   <div>
                     <div style={labelStyle}>Dominio</div>
                     <select
-                      style={inputStyle}
+                      style={selectStyle}
                       value={domain}
                       onChange={(e) => setDomain(e.target.value)}
                       disabled={loading}
                     >
-                      <option value="otros">otros</option>
-                      <option value="salud">salud</option>
-                      <option value="trabajo">trabajo</option>
-                      <option value="finanzas">finanzas</option>
-                      <option value="familia">familia</option>
-                      <option value="pareja">pareja</option>
-                      <option value="amistades">amistades</option>
-                      <option value="desarrollo_personal">desarrollo personal</option>
+                      <option value="otros" style={optionStyle}>otros</option>
+                      <option value="salud" style={optionStyle}>salud</option>
+                      <option value="trabajo" style={optionStyle}>trabajo</option>
+                      <option value="finanzas" style={optionStyle}>finanzas</option>
+                      <option value="familia" style={optionStyle}>familia</option>
+                      <option value="pareja" style={optionStyle}>pareja</option>
+                      <option value="amistades" style={optionStyle}>amistades</option>
+                      <option value="desarrollo_personal" style={optionStyle}>desarrollo personal</option>
                     </select>
                   </div>
 
                   <div>
                     <div style={labelStyle}>Estado</div>
                     <select
-                      style={inputStyle}
+                      style={selectStyle}
                       value={status}
                       onChange={(e) => setStatus(e.target.value as EstadoQuiero)}
                       disabled={loading}
                     >
-                      <option value="activo">activo</option>
-                      <option value="pausado">pausado</option>
-                      <option value="cumplido">cumplido</option>
-                      <option value="no_relevante">no relevante</option>
-                      <option value="reformulado">reformulado</option>
+                      <option value="activo" style={optionStyle}>activo</option>
+                      <option value="pausado" style={optionStyle}>pausado</option>
+                      <option value="cumplido" style={optionStyle}>cumplido</option>
+                      <option value="no_relevante" style={optionStyle}>no relevante</option>
+                      <option value="reformulado" style={optionStyle}>reformulado</option>
                     </select>
                     <div style={hintStyle}>
                       “Reformulado” significa: este Quiero cambió de forma respecto a una idea previa.
@@ -378,16 +390,16 @@ export default function NuevoQuieroPage() {
                   <div>
                     <div style={labelStyle}>Prioridad</div>
                     <select
-                      style={inputStyle}
+                      style={selectStyle}
                       value={priority}
                       disabled={loading || isReformulado}
                       onChange={(e) => setPriority(Number(e.target.value))}
                     >
-                      <option value={1}>1</option>
-                      <option value={2}>2</option>
-                      <option value={3}>3</option>
-                      <option value={4}>4</option>
-                      <option value={5}>5</option>
+                      <option value={1} style={optionStyle}>1</option>
+                      <option value={2} style={optionStyle}>2</option>
+                      <option value={3} style={optionStyle}>3</option>
+                      <option value={4} style={optionStyle}>4</option>
+                      <option value={5} style={optionStyle}>5</option>
                     </select>
                     {isReformulado && (
                       <div style={hintStyle}>
@@ -399,14 +411,14 @@ export default function NuevoQuieroPage() {
                   <div>
                     <div style={labelStyle}>Plazo</div>
                     <select
-                      style={inputStyle}
+                      style={selectStyle}
                       value={term}
                       onChange={(e) => setTerm(e.target.value as Plazo)}
                       disabled={loading}
                     >
-                      <option value="corto">corto</option>
-                      <option value="mediano">mediano</option>
-                      <option value="largo">largo</option>
+                      <option value="corto" style={optionStyle}>corto</option>
+                      <option value="mediano" style={optionStyle}>mediano</option>
+                      <option value="largo" style={optionStyle}>largo</option>
                     </select>
                     <div style={hintStyle}>Corto / Mediano / Largo plazo.</div>
                   </div>

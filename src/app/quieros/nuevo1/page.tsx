@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -296,7 +295,6 @@ function Nuevo1Inner() {
       return;
     }
 
-    // insert cumpliendo el CHECK de otros_detalle
     const payload: any = {
       quiero_id: id,
       user_id: user.id,
@@ -319,7 +317,6 @@ function Nuevo1Inner() {
       return;
     }
 
-    // reset inputs del bloque
     if (tipo === "inhabilitante") {
       setInhInput("");
       setInhAmbito("Salud");
@@ -390,7 +387,6 @@ function Nuevo1Inner() {
     setSaving(false);
   }
 
-  // Enter agrega; Alt+Enter deja salto de línea
   function handleEnterToAdd(
     e: React.KeyboardEvent<HTMLTextAreaElement>,
     tipo: "inhabilitante" | "habilitante"
@@ -408,7 +404,6 @@ function Nuevo1Inner() {
     lineHeight: 1.25,
   };
 
-  // FIX: antes se referenciaba "textarea" sin existir.
   const textareaBase: React.CSSProperties = {
     width: "100%",
     padding: "16px 16px",
@@ -477,11 +472,15 @@ function Nuevo1Inner() {
     color: "rgba(255,255,255,0.86)",
   };
 
-  const total = inhabilitantes.length + habilitantes.length;
+  const cierreBtn: React.CSSProperties = {
+    padding: "22px 18px",
+    fontSize: 20,
+  };
+
+  const canGoVerQuiero = !!quieroId && isUUID(quieroId);
 
   return (
     <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      {/* Fondo igual a LOGIN */}
       <div
         aria-hidden
         style={{
@@ -514,55 +513,16 @@ function Nuevo1Inner() {
       >
         <section style={{ width: "min(1584px, 100%)" }}>
           <div style={glassCard}>
-            {/* Header */}
+            {/* Header (mismo estilo, solo cambia texto) */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <div style={{ minWidth: 280 }}>
-                <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>
-                  Paso 2 de 2: inhabilitantes y habilitantes
-                </h1>
-                <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 10, opacity: 0.96 }}>
+                <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>Definí tus inhabilitantes y habilitantes.</h1>
+                <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 0, opacity: 0.96 }}>
                   Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar. Podés cargar tantos como necesites.
                 </p>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <Link
-                    href="/quieros"
-                    style={{
-                      ...btnGray,
-                      padding: "14px 18px",
-                      fontSize: 18,
-                      textDecoration: "none",
-                      display: "inline-block",
-                    }}
-                  >
-                    Volver a Mis Quieros
-                  </Link>
-
-                  {quieroId && (
-                    <Link
-                      href={`/quieros/${encodeURIComponent(quieroId)}`}
-                      style={{
-                        ...btnGray,
-                        padding: "14px 18px",
-                        fontSize: 18,
-                        textDecoration: "none",
-                        display: "inline-block",
-                      }}
-                    >
-                      Ver Quiero
-                    </Link>
-                  )}
-                </div>
-
-                <div style={{ fontSize: 18, opacity: 0.95 }}>
-                  Ítems que diste de alta: {total} (inh: {inhabilitantes.length} / hab: {habilitantes.length})
-                </div>
-              </div>
             </div>
 
-            {/* Estados */}
             {bloqueado && (
               <div
                 style={{
@@ -603,9 +563,6 @@ function Nuevo1Inner() {
             <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "22px 0 10px 0" }}>
               ¿Qué considerás que te impide cumplir con tu Quiero?
             </h2>
-            <p style={{ fontSize: 20, lineHeight: 1.35, margin: "0 0 16px 0", opacity: 0.95 }}>
-              Inhabilitantes existentes (podés elegir cuál modificar).
-            </p>
 
             <div
               style={{
@@ -754,9 +711,6 @@ function Nuevo1Inner() {
             <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "28px 0 10px 0" }}>
               ¿Qué necesitás para concretar ese Quiero?
             </h2>
-            <p style={{ fontSize: 20, lineHeight: 1.35, margin: "0 0 16px 0", opacity: 0.95 }}>
-              Habilitantes existentes (podés elegir cuál modificar).
-            </p>
 
             <div
               style={{
@@ -901,30 +855,39 @@ function Nuevo1Inner() {
               Agregar habilitante
             </button>
 
-            <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {/* CIERRE: 2 botones (más altos) */}
+            <div
+              style={{
+                marginTop: 18,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
               <button
                 type="button"
-                style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                style={{ ...btnBlue, ...cierreBtn, opacity: saving ? 0.75 : 1 }}
                 onClick={() => {
-                  setErrorMsg(null);
-                  loadAll();
+                  if (!canGoVerQuiero) return;
+                  // Ver el Quiero actual (detalle)
+                  router.push(`/quieros/${encodeURIComponent(quieroId)}`);
                 }}
-                disabled={saving}
+                disabled={saving || !canGoVerQuiero}
+                title={!canGoVerQuiero ? "No se detecta un Quiero válido en la URL" : ""}
               >
-                Recargar
+                Ver el Quiero actual
               </button>
 
               <button
                 type="button"
-                style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                style={{ ...btnGray, ...cierreBtn, opacity: saving ? 0.75 : 1 }}
                 onClick={() => router.push("/quieros")}
                 disabled={saving}
               >
-                Volver a Mis Quieros
+                Ya terminé
               </button>
             </div>
 
-            {/* Footnote útil y mínima */}
             {quieroId && (
               <div style={{ marginTop: 14, fontSize: 16, opacity: 0.86 }}>
                 Quiero actual: <span style={{ opacity: 0.96 }}>{quieroId}</span>

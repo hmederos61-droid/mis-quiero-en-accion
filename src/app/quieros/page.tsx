@@ -24,21 +24,6 @@ function safeText(v?: string | null) {
   return (v ?? "").toString().trim();
 }
 
-function formatFechaCorta(value?: string | null) {
-  if (!value) return "—";
-  const s = String(value);
-  const iso = s.length >= 10 ? s.slice(0, 10) : s;
-  const d = new Date(iso + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString();
-}
-
-function labelEstado(status?: string | null) {
-  const s = safeText(status).toLowerCase();
-  if (!s) return "—";
-  return status ?? "—";
-}
-
 function diffDays(fromISO: string, toYYYYMMDD: string) {
   const from = new Date(fromISO);
   const to = new Date(toYYYYMMDD + "T00:00:00");
@@ -47,7 +32,6 @@ function diffDays(fromISO: string, toYYYYMMDD: string) {
 }
 
 function plazoFromCreatedAtAndDueDate(createdAtISO?: string | null, dueDateYYYYMMDD?: string | null): Plazo {
-  // Si no hay fecha objetivo todavía, dejamos “mediano” como neutro
   if (!createdAtISO || !dueDateYYYYMMDD) return "mediano";
   const days = diffDays(createdAtISO, dueDateYYYYMMDD);
   if (days <= 30) return "corto";
@@ -67,12 +51,13 @@ function buildHorizonte(q: Quiero) {
   const due = dueRaw ? dueRaw.slice(0, 10) : null;
 
   const p = plazoFromCreatedAtAndDueDate(created, due);
-  if (due) return `${labelPlazo(p)} · ${formatFechaCorta(due)}`;
+  if (due) return `${labelPlazo(p)} · ${due}`;
   return `${labelPlazo(p)} · sin fecha definida`;
 }
 
 /* =========================
    Estética base (glass + fondo)
+   Criterios generales (tipografía + fondo)
 ========================= */
 const bgLayer: React.CSSProperties = {
   position: "fixed",
@@ -87,7 +72,7 @@ const bgLayer: React.CSSProperties = {
 const overlayLayer: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.26))",
+  background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
   zIndex: 1,
 };
 
@@ -105,12 +90,12 @@ const glassCard: React.CSSProperties = {
   width: "min(1320px, 100%)",
   borderRadius: 26,
   padding: 30,
-  background: "rgba(255,255,255,0.075)",
-  border: "1px solid rgba(255,255,255,0.18)",
-  backdropFilter: "blur(18px)",
-  WebkitBackdropFilter: "blur(18px)",
-  boxShadow: "0 18px 65px rgba(0,0,0,0.38)",
-  color: "rgba(255,255,255,0.95)",
+  background: "rgba(255,255,255,0.055)",
+  border: "1px solid rgba(255,255,255,0.16)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  boxShadow: "0 18px 60px rgba(0,0,0,0.23)",
+  color: "rgba(255,255,255,0.94)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
@@ -119,21 +104,24 @@ const headerRow: React.CSSProperties = {
   alignItems: "flex-start",
   justifyContent: "space-between",
   gap: 16,
+  flexWrap: "wrap",
 };
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 46,
-  lineHeight: 1.03,
+  fontSize: 52,
+  lineHeight: 1.05,
+  fontWeight: 500, // criterio general: no negrita exagerada
 };
 
 const subtitleStyle: React.CSSProperties = {
-  marginTop: 10,
+  marginTop: 14,
   marginBottom: 0,
-  fontSize: 18,
-  opacity: 0.82,
+  fontSize: 22,
+  opacity: 0.96,
   lineHeight: 1.35,
-  maxWidth: 820,
+  maxWidth: 860,
+  fontWeight: 400,
 };
 
 const actionsWrap: React.CSSProperties = {
@@ -143,19 +131,20 @@ const actionsWrap: React.CSSProperties = {
   justifyContent: "flex-end",
 };
 
+/* Botones grandes (Inicio / Nuevo Quiero) */
 const btnBase: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 10,
-  padding: "14px 16px",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.20)",
-  background: "rgba(0,0,0,0.18)",
+  justifyContent: "center",
+  padding: "18px 20px",
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.22)",
   color: "rgba(255,255,255,0.96)",
   textDecoration: "none",
-  fontWeight: 900,
-  fontSize: 16,
-  boxShadow: "0 10px 26px rgba(0,0,0,0.20)",
+  fontWeight: 850,
+  fontSize: 20,
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
 };
 
 const btnSecondary: React.CSSProperties = {
@@ -165,7 +154,7 @@ const btnSecondary: React.CSSProperties = {
 
 const btnPrimary: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(60,140,255,0.35), rgba(30,85,210,0.22))",
+  background: "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
 const topToolsRow: React.CSSProperties = {
@@ -221,7 +210,7 @@ const itemRow: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 14,
-  padding: "16px 16px",
+  padding: "18px 18px",
   borderRadius: 18,
   border: "1px solid rgba(255,255,255,0.16)",
   background: "rgba(0,0,0,0.14)",
@@ -230,52 +219,13 @@ const itemRow: React.CSSProperties = {
   boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
 };
 
-const leftCol: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-  minWidth: 0,
-};
-
 const itemTitle: React.CSSProperties = {
-  fontSize: 22,
-  fontWeight: 950,
-  lineHeight: 1.1,
+  fontSize: 26,
+  fontWeight: 500, // criterio general: título NO en negrita
+  lineHeight: 1.15,
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
-};
-
-const itemMeta: React.CSSProperties = {
-  fontSize: 13,
-  opacity: 0.82,
-  lineHeight: 1.25,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const rightCol: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-end",
-  gap: 6,
-  flex: "0 0 auto",
-};
-
-const badge: React.CSSProperties = {
-  padding: "6px 10px",
-  borderRadius: 999,
-  border: "1px solid rgba(255,255,255,0.18)",
-  background: "rgba(255,255,255,0.10)",
-  fontSize: 12,
-  fontWeight: 900,
-  opacity: 0.92,
-};
-
-const small: React.CSSProperties = {
-  fontSize: 12,
-  opacity: 0.78,
 };
 
 const emptyBox: React.CSSProperties = {
@@ -320,7 +270,6 @@ export default function QuierosListadoPage() {
         setLoading(true);
         setErrorMsg(null);
 
-        // Intento 1: con created_at + due_date (ideal para plazo/fecha)
         let data: any[] | null = null;
         let err: any = null;
 
@@ -332,7 +281,6 @@ export default function QuierosListadoPage() {
         data = r1.data as any[] | null;
         err = r1.error;
 
-        // Si fallara por columnas (por ejemplo due_date no existe), reintenta sin romper.
         if (err) {
           const r2 = await supabase
             .from("quieros")
@@ -473,8 +421,8 @@ export default function QuierosListadoPage() {
               {filtered.map((q) => {
                 const titulo = safeText(q.title) || "Quiero sin título";
 
-                // HISTORIAL GENERAL: título + horizonte (plazo/fecha)
-                const horizonte = buildHorizonte(q);
+                // Se calcula pero NO se muestra (experiencia libre / solo títulos)
+                void buildHorizonte(q);
 
                 return (
                   <Link
@@ -483,16 +431,8 @@ export default function QuierosListadoPage() {
                     style={itemRow}
                     title="Abrir historial del Quiero"
                   >
-                    <div style={leftCol}>
+                    <div style={{ minWidth: 0 }}>
                       <div style={itemTitle}>{titulo}</div>
-                      <div style={itemMeta}>{horizonte}</div>
-                    </div>
-
-                    <div style={rightCol}>
-                      <div style={badge}>{labelEstado(q.status)}</div>
-                      <div style={small}>
-                        {q.created_at ? `Creado: ${formatFechaCorta(q.created_at.slice(0, 10))}` : "—"}
-                      </div>
                     </div>
                   </Link>
                 );
@@ -503,7 +443,7 @@ export default function QuierosListadoPage() {
           <style jsx>{`
             @media (max-width: 980px) {
               h1 {
-                font-size: 36px !important;
+                font-size: 40px !important;
               }
             }
           `}</style>

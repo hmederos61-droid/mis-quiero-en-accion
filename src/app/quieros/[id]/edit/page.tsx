@@ -6,7 +6,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    Estética glass ORIGINAL
-   (idéntica a /quieros/nuevo)
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
@@ -35,6 +34,23 @@ const inputStyle: React.CSSProperties = {
   color: "rgba(255,255,255,0.96)",
   outline: "none",
   fontSize: 22,
+};
+
+/* ===== SELECT con indicador ✓ ===== */
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  appearance: "none",
+  paddingRight: 56,
+  backgroundImage:
+    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 18px center",
+  backgroundSize: "18px",
+};
+
+const optionStyle: React.CSSProperties = {
+  background: "rgba(0,0,0,0.92)",
+  color: "rgba(255,255,255,0.96)",
 };
 
 const hintStyle: React.CSSProperties = {
@@ -67,7 +83,7 @@ const btnCancelar = {
 };
 
 /* =========================
-   Tipos (DB existente)
+   Tipos
 ========================= */
 type EstadoQuiero =
   | "activo"
@@ -80,7 +96,6 @@ type QuieroDB = {
   id: string;
   title: string | null;
   purpose: string | null;
-  domain: string | null;
   status: EstadoQuiero | null;
   priority: number | null;
   due_date: string | null;
@@ -103,7 +118,6 @@ export default function EditQuieroPaso1Page() {
   const [title, setTitle] = useState("");
   const [purpose, setPurpose] = useState("");
 
-  const [domain, setDomain] = useState("otros");
   const [status, setStatus] = useState<EstadoQuiero>("activo");
   const [priority, setPriority] = useState<number>(3);
   const [dueDate, setDueDate] = useState<string>("");
@@ -116,7 +130,7 @@ export default function EditQuieroPaso1Page() {
 
       const { data } = await supabase
         .from("quieros")
-        .select("title,purpose,domain,status,priority,due_date")
+        .select("title,purpose,status,priority,due_date")
         .eq("id", id)
         .single();
 
@@ -124,7 +138,6 @@ export default function EditQuieroPaso1Page() {
 
       setTitle(q?.title ?? "");
       setPurpose(q?.purpose ?? "");
-      setDomain(q?.domain ?? "otros");
       setStatus(q?.status ?? "activo");
       setPriority(q?.priority ?? 3);
       setDueDate(q?.due_date ? q.due_date.slice(0, 10) : "");
@@ -183,7 +196,7 @@ export default function EditQuieroPaso1Page() {
         <section style={{ width: "min(1584px, 100%)" }}>
           <div style={glassCard}>
             <h1 style={{ fontSize: 60, marginBottom: 20 }}>
-              Modificar Quiero
+              Modificar tu Quiero
             </h1>
 
             <form onSubmit={onGuardar} style={{ display: "grid", gap: 22 }}>
@@ -210,30 +223,30 @@ export default function EditQuieroPaso1Page() {
               <div>
                 <div style={labelStyle}>Estado</div>
                 <select
-                  style={inputStyle}
+                  style={selectStyle}
                   value={status}
                   onChange={(e) =>
                     setStatus(e.target.value as EstadoQuiero)
                   }
                 >
-                  <option value="activo">activo</option>
-                  <option value="pausado">pausado</option>
-                  <option value="cumplido">cumplido</option>
-                  <option value="no_relevante">no relevante</option>
-                  <option value="reformulado">reformulado</option>
+                  <option value="activo" style={optionStyle}>activo</option>
+                  <option value="pausado" style={optionStyle}>pausado</option>
+                  <option value="cumplido" style={optionStyle}>cumplido</option>
+                  <option value="no_relevante" style={optionStyle}>no relevante</option>
+                  <option value="reformulado" style={optionStyle}>reformulado</option>
                 </select>
               </div>
 
               <div>
                 <div style={labelStyle}>Prioridad</div>
                 <select
-                  style={inputStyle}
+                  style={selectStyle}
                   value={priority}
                   disabled={isReformulado}
                   onChange={(e) => setPriority(Number(e.target.value))}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
+                    <option key={n} value={n} style={optionStyle}>
                       {n}
                     </option>
                   ))}
@@ -274,4 +287,3 @@ export default function EditQuieroPaso1Page() {
     </main>
   );
 }
-
