@@ -45,6 +45,18 @@ body {
 }
 
 /* =========================
+   Escala global (mínimo indispensable)
+   - Baja el "impacto" visual en toda la app sin tocar pantallas
+========================= */
+html {
+  /* 100% suele sentirse grande en monitores; 93.75% ~= 15px si base era 16px */
+  font-size: 93.75%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================
    Reglas de layout base
 ========================= */
 body {
