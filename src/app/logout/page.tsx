@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    Estética glass (coherente)
@@ -34,7 +34,6 @@ export default function LogoutPage() {
         if (!mounted) return;
 
         setMsg("Listo. Volvemos al inicio…");
-        // Usamos replace para no “volver” con el botón atrás
         router.replace("/login");
       } catch {
         if (!mounted) return;
@@ -92,11 +91,10 @@ export default function LogoutPage() {
           </p>
 
           <p style={{ fontSize: 18, opacity: 0.85, marginTop: 14 }}>
-            Si la pantalla no avanza, volvé manualmente a <b>/login</b>.
+            Si la pantalla no avanza, volv&eacute; manualmente a <b>/login</b>.
           </p>
         </section>
       </div>
     </main>
   );
 }
-
