@@ -5,11 +5,11 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    Estética glass ORIGINAL
-   (ajustada +5% escala)
+   (ajustada +10% columnas / gap +50%)
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
-  padding: 42,
+  padding: 46,
   background: "rgba(255,255,255,0.055)",
   border: "1px solid rgba(255,255,255,0.16)",
   backdropFilter: "blur(16px)",
@@ -20,30 +20,30 @@ const glassCard: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 25,
+  fontSize: 28,
   opacity: 0.95,
   marginBottom: 10,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "17px 17px",
+  padding: "19px 19px",
   borderRadius: 16,
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(0,0,0,0.10)",
   color: "rgba(255,255,255,0.96)",
   outline: "none",
-  fontSize: 21,
+  fontSize: 23,
 };
 
 const btnBase: React.CSSProperties = {
   width: "100%",
-  padding: "19px 17px",
+  padding: "21px 19px",
   borderRadius: 18,
   border: "1px solid rgba(255,255,255,0.22)",
   cursor: "pointer",
   fontWeight: 850,
-  fontSize: 23,
+  fontSize: 25,
   color: "rgba(255,255,255,0.96)",
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
@@ -75,20 +75,13 @@ function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-// Solo permitimos rutas internas dentro de "/quieros..." para evitar redirecciones raras
 function normalizeNextPath(raw: string | null) {
   const fallback = "/quieros/inicio";
   if (!raw) return fallback;
-
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
-
-  // Debe empezar con "/" y NO con "//"
   if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return fallback;
-
-  // Solo permitimos navegación post-login dentro de /quieros
   if (!trimmed.startsWith("/quieros")) return fallback;
-
   return trimmed;
 }
 
@@ -103,7 +96,7 @@ export default function LoginPage() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  const CARD_MIN_HEIGHT = 588;
+  const CARD_MIN_HEIGHT = 647;
 
   function getNextPath() {
     const params = new URLSearchParams(window.location.search);
@@ -119,9 +112,6 @@ export default function LoginPage() {
     return isEmailValid(email) && clave.trim().length >= 6;
   }
 
-  /* =========================
-     Detectar sesión actual
-  ========================= */
   useEffect(() => {
     let isMounted = true;
 
@@ -140,7 +130,6 @@ export default function LoginPage() {
         setHasSession(active);
         setSessionChecked(true);
 
-        // Si vengo de /quieros/inicio (botón Volver), quiero mostrar el mensaje.
         if (active && cameFromPostLogin()) {
           setMsg("Login exitoso. Cuando estés listo, hacé click en “Comenzar”.");
         }
@@ -158,7 +147,6 @@ export default function LoginPage() {
       setHasSession(active);
       setSessionChecked(true);
 
-      // Si el login acaba de ocurrir, mostramos el mensaje.
       if (active) {
         setMsg("Login exitoso. Cuando estés listo, hacé click en “Comenzar”.");
       }
@@ -170,9 +158,6 @@ export default function LoginPage() {
     };
   }, [supabase]);
 
-  /* =========================
-     INGRESAR (LOGIN REAL)
-  ========================= */
   async function onIngresar(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -195,8 +180,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Documento canónico: NO navegamos automático.
-      // El panel derecho aparecerá al detectarse sesión.
       setMsg("Login exitoso. Cuando estés listo, hacé click en “Comenzar”.");
     } catch {
       setMsg("Ocurrió un error inesperado. Intentá nuevamente.");
@@ -205,9 +188,6 @@ export default function LoginPage() {
     }
   }
 
-  /* =========================
-     CREAR CUENTA
-  ========================= */
   async function onCrearCuenta() {
     setMsg(null);
 
@@ -229,7 +209,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Si no hay sesión, Supabase suele requerir confirmación por email
       if (!data.session) {
         setMsg("Cuenta creada. Revisá tu email para confirmar.");
         return;
@@ -243,9 +222,6 @@ export default function LoginPage() {
     }
   }
 
-  /* =========================
-     OLVIDÉ MI CLAVE (RESET EMAIL)
-  ========================= */
   async function onOlvideClave() {
     setMsg(null);
 
@@ -293,7 +269,7 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Overlay (más claro) */}
+      {/* Overlay */}
       <div
         aria-hidden
         style={{
@@ -315,29 +291,24 @@ export default function LoginPage() {
       >
         <section
           style={{
-            width: "min(1386px, 100%)",
+            width: "min(1500px, 100%)", // ← expansión simétrica hacia bordes externos
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 152, // antes 101 -> +50%
+            gap: 228, // ← centro intacto
             alignItems: "stretch",
           }}
         >
           {/* IZQUIERDA */}
           <div style={{ ...glassCard, minHeight: CARD_MIN_HEIGHT }}>
-            <h1 style={{ fontSize: 55, margin: 0, lineHeight: 1.05 }}>Mis Quiero en Acción</h1>
+            <h1 style={{ fontSize: 61, margin: 0, lineHeight: 1.05 }}>
+              Mis Quiero en Acción
+            </h1>
 
-            <p
-              style={{
-                fontSize: 27,
-                lineHeight: 1.35,
-                marginTop: 14,
-                marginBottom: 22,
-              }}
-            >
+            <p style={{ fontSize: 30, lineHeight: 1.35, marginTop: 14, marginBottom: 22 }}>
               Ingreso con mail y clave.
             </p>
 
-            {msg && <div style={{ fontSize: 19, marginBottom: 16, opacity: 0.95 }}>{msg}</div>}
+            {msg && <div style={{ fontSize: 21, marginBottom: 16, opacity: 0.95 }}>{msg}</div>}
 
             <form style={{ display: "grid", gap: 19 }} onSubmit={onIngresar}>
               <div>
@@ -402,7 +373,7 @@ export default function LoginPage() {
             {showRightPanelContent ? (
               <>
                 <div>
-                  <h2 style={{ fontSize: 40, lineHeight: 1.15, margin: 0 }}>
+                  <h2 style={{ fontSize: 44, lineHeight: 1.15, margin: 0 }}>
                     Si ya llegaste hasta acá,
                     <br />
                     estás en el inicio de un
@@ -410,7 +381,7 @@ export default function LoginPage() {
                     nuevo camino.
                   </h2>
 
-                  <p style={{ fontSize: 23, lineHeight: 1.4, marginTop: 16, opacity: 0.96 }}>
+                  <p style={{ fontSize: 25, lineHeight: 1.4, marginTop: 16, opacity: 0.96 }}>
                     Vamos: te invito a dar el primer paso.
                   </p>
                 </div>
@@ -419,9 +390,10 @@ export default function LoginPage() {
                   <button
                     style={{
                       ...btnBase,
-                      padding: "19px 17px",
-                      fontSize: 23,
-                      background: "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
+                      padding: "21px 19px",
+                      fontSize: 25,
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
                     }}
                     type="button"
                     onClick={() => {
@@ -443,8 +415,8 @@ export default function LoginPage() {
         <style jsx>{`
           @media (max-width: 1400px) {
             section {
-              width: min(1240px, 100%) !important;
-              gap: 89px !important; /* antes 59 -> +50% */
+              width: min(1340px, 100%) !important;
+              gap: 134px !important;
             }
           }
           @media (max-width: 980px) {
@@ -458,5 +430,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-
