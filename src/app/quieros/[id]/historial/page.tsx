@@ -309,7 +309,7 @@ export default function QuieroHistorialPage() {
       <div aria-hidden style={overlayLayer} />
 
       <div style={pageWrap}>
-        <section style={glassPanel}>
+        <section style={glassPanel} className="panelMQA">
           {/* TÍTULO FUERA del banner (pedido) */}
           <h2 style={pageTitle}>Consulta de tu quiero</h2>
 
@@ -354,7 +354,7 @@ export default function QuieroHistorialPage() {
               </div>
 
               {/* 4 botones mismo ancho, un poquito más grandes, mismo orden */}
-              <div style={actionsGrid}>
+              <div style={actionsGrid} className="actionsGrid">
                 <Link href={`/quieros/${id}/historial0`} style={btnHistQuiero}>
                   Historial del Quiero
                 </Link>
@@ -374,16 +374,16 @@ export default function QuieroHistorialPage() {
 
               <style jsx>{`
                 @media (max-width: 980px) {
-                  section {
+                  .panelMQA {
                     padding: 26px !important;
                   }
-                  h1 {
+                  .panelMQA h1 {
                     font-size: 34px !important;
                   }
-                  h2 {
+                  .panelMQA h2 {
                     font-size: 26px !important;
                   }
-                  div[style*="grid-template-columns: repeat(4"] {
+                  .actionsGrid {
                     grid-template-columns: 1fr !important;
                   }
                 }

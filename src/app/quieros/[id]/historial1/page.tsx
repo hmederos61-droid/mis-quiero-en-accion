@@ -5,41 +5,123 @@ import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
-   Estética glass ORIGINAL
+   Estética CANÓNICA (historial)
 ========================= */
-const glassCard: React.CSSProperties = {
-  borderRadius: 22,
-  padding: 46,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.16)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  boxShadow: "0 18px 60px rgba(0,0,0,0.23)",
-  color: "rgba(255,255,255,0.94)",
+const bgLayer: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  backgroundImage: `url("/welcome.png")`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  zIndex: 0,
+};
+
+const overlayLayer: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.26))",
+  zIndex: 1,
+};
+
+const pageWrap: React.CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 28,
+};
+
+const glassPanel: React.CSSProperties = {
+  width: "min(1040px, 100%)",
+  borderRadius: 26,
+  padding: 34,
+  background: "rgba(255,255,255,0.075)",
+  border: "1px solid rgba(255,255,255,0.18)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  boxShadow: "0 18px 65px rgba(0,0,0,0.38)",
+  color: "rgba(255,255,255,0.95)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 26,
+const pageTitle: React.CSSProperties = {
+  margin: 0,
+  marginBottom: 14,
+  fontSize: 30,
+  lineHeight: 1.08,
+  fontWeight: 500,
   opacity: 0.95,
-  marginBottom: 10,
 };
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
+const headerBox: React.CSSProperties = {
   padding: "18px 18px",
-  borderRadius: 16,
+  borderRadius: 18,
+  background: "rgba(0,0,0,0.22)",
+  border: "1px solid rgba(255,255,255,0.14)",
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 34,
+  lineHeight: 1.06,
+  fontWeight: 500,
+  letterSpacing: 0.2,
+  opacity: 0.96,
+};
+
+const subtitleStyle: React.CSSProperties = {
+  marginTop: 10,
+  marginBottom: 0,
+  fontSize: 14,
+  opacity: 0.82,
+  fontWeight: 500,
+};
+
+const divider: React.CSSProperties = {
+  height: 1,
+  background: "rgba(255,255,255,0.12)",
+  marginTop: 14,
+  marginBottom: 12,
+};
+
+const sectionTitle: React.CSSProperties = {
+  marginTop: 18,
+  marginBottom: 10,
+  fontSize: 18,
+  fontWeight: 500,
+  opacity: 0.92,
+};
+
+const itemCard: React.CSSProperties = {
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.16)",
+  background: "rgba(0,0,0,0.12)",
+  padding: 18,
+  display: "grid",
+  gap: 12,
+  overflow: "hidden",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.18)",
+};
+
+const fieldLabel: React.CSSProperties = {
+  fontSize: 14,
+  opacity: 0.92,
+  marginBottom: 6,
+  fontWeight: 500,
+};
+
+const boxBase: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: 14,
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(0,0,0,0.10)",
   color: "rgba(255,255,255,0.96)",
   outline: "none",
-  fontSize: 22,
-  display: "flex",
-  alignItems: "center",
-};
-
-const textWrapBox: React.CSSProperties = {
-  ...inputStyle,
+  fontSize: 15,
   display: "block",
   whiteSpace: "pre-wrap",
   overflowWrap: "anywhere",
@@ -47,104 +129,90 @@ const textWrapBox: React.CSSProperties = {
   lineHeight: 1.25,
 };
 
-/* =========================
-   Segunda línea (25% más chica)
-========================= */
 const metaLabelStyle: React.CSSProperties = {
-  fontSize: 20,
-  opacity: 0.95,
-  marginBottom: 8,
+  fontSize: 12,
+  opacity: 0.78,
+  marginBottom: 6,
+  fontWeight: 500,
 };
 
 const metaBoxStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "14px 14px",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.18)",
-  background: "rgba(0,0,0,0.10)",
-  color: "rgba(255,255,255,0.96)",
-  outline: "none",
-  fontSize: 16.5,
-  display: "block",
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-  lineHeight: 1.25,
+  ...boxBase,
+  fontSize: 13,
+  padding: "10px 12px",
+  opacity: 0.96,
 };
 
 const metaBoxFechaResaltada: React.CSSProperties = {
   ...metaBoxStyle,
-  border: "3px solid rgba(255,255,255,0.42)", // ✅ borde más gruesito
-  background: "rgba(255,255,255,0.085)", // ✅ un poco más claro
-  boxShadow:
-    "0 10px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.12)", // ✅ relieve
+  border: "1px solid rgba(255,255,255,0.28)",
+  background: "rgba(255,255,255,0.085)",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.10)",
 };
 
-/* =========================
-   Títulos de secciones con color (sin “dashboard”)
-========================= */
-const sectionTitleBase: React.CSSProperties = {
-  fontSize: 28,
-  fontWeight: 650,
-  opacity: 0.98,
-  padding: "10px 14px",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.16)",
-  background: "rgba(0,0,0,0.10)",
+const badgeBase: React.CSSProperties = {
+  fontSize: 12,
+  padding: "4px 10px",
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.90)",
+  whiteSpace: "nowrap",
+  opacity: 0.95,
+  fontWeight: 500,
+};
+
+const badgeHab: React.CSSProperties = {
+  ...badgeBase,
+  background: "linear-gradient(135deg, rgba(30,180,120,0.20), rgba(0,0,0,0.08))",
+};
+
+const badgeInh: React.CSSProperties = {
+  ...badgeBase,
+  background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(0,0,0,0.08))",
+};
+
+const actionsGrid: React.CSSProperties = {
+  marginTop: 18,
+  display: "grid",
+  gridTemplateColumns: "repeat(4, 1fr)",
+  gap: 12,
+};
+
+const btnBase: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 10,
-};
-
-const sectionHabilitantes: React.CSSProperties = {
-  ...sectionTitleBase,
-  color: "rgba(230,255,245,0.98)",
-  background:
-    "linear-gradient(135deg, rgba(30,180,120,0.20), rgba(0,0,0,0.10))",
-};
-
-const sectionInhabilitantes: React.CSSProperties = {
-  ...sectionTitleBase,
-  color: "rgba(255,245,235,0.98)",
-  background:
-    "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(0,0,0,0.10))",
-};
-
-/* =========================
-   Botones (mismos que Historial0)
-========================= */
-const btnBase: React.CSSProperties = {
-  width: "100%",
-  padding: "20px 18px",
-  borderRadius: 18,
-  border: "1px solid rgba(255,255,255,0.22)",
-  cursor: "pointer",
-  fontWeight: 850,
-  fontSize: 24,
+  justifyContent: "center",
+  padding: "16px 16px",
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.20)",
+  textDecoration: "none",
+  fontWeight: 650,
+  fontSize: 15,
   color: "rgba(255,255,255,0.96)",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.20)",
+  textAlign: "center",
+  cursor: "pointer",
 };
 
-const btnPrimario = {
+const btnGreen: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+  background: "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
 };
 
-const btnVioleta = {
+const btnViolet: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(168,85,247,0.55), rgba(99,102,241,0.45))",
+  background: "linear-gradient(135deg, rgba(168,85,247,0.55), rgba(99,102,241,0.45))",
 };
 
-const btnAzul = {
+const btnBlue: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
+  background: "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
-const btnNeutro = {
+const btnGray: React.CSSProperties = {
   ...btnBase,
-  background: "rgba(0,0,0,0.16)",
+  background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.10))",
 };
 
 /* =========================
@@ -167,11 +235,15 @@ type ActionDB = {
   otros_detalle: string | null;
 };
 
+function safeText(v?: string | null) {
+  return (v ?? "").toString().trim();
+}
+
 function formatFechaHora(iso: string) {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString() + " " + d.toLocaleTimeString();
+  return d.toLocaleString();
 }
 
 function formatFechaSoloDia(iso: string) {
@@ -202,37 +274,54 @@ export default function Historial1Page() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancel = false;
+
     async function load() {
-      setLoading(true);
-      setErrorMsg(null);
+      try {
+        setLoading(true);
+        setErrorMsg(null);
 
-      if (!id) {
-        setItems([]);
+        if (!id) {
+          if (!cancel) {
+            setItems([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Orden por actualizado: MÁS ANTIGUA PRIMERO
+        const { data, error } = await supabase
+          .from("actions")
+          .select(
+            "id,created_at,updated_at,user_id,quiero_id,title,tipo,ambito,estado_item,due_date,is_done,otros_detalle"
+          )
+          .eq("quiero_id", id)
+          .order("updated_at", { ascending: true });
+
+        if (cancel) return;
+
+        if (error) {
+          setItems([]);
+          setErrorMsg(error.message ?? "Error al cargar habilitantes/inhabilitantes.");
+          setLoading(false);
+          return;
+        }
+
+        setItems((data as ActionDB[]) ?? []);
         setLoading(false);
-        return;
+      } catch {
+        if (!cancel) {
+          setItems([]);
+          setErrorMsg("Ocurrió un error inesperado al cargar.");
+          setLoading(false);
+        }
       }
-
-      // ✅ Orden por actualizado: MÁS ANTIGUA PRIMERO
-      const { data, error } = await supabase
-        .from("actions")
-        .select(
-          "id,created_at,updated_at,user_id,quiero_id,title,tipo,ambito,estado_item,due_date,is_done,otros_detalle"
-        )
-        .eq("quiero_id", id)
-        .order("updated_at", { ascending: true });
-
-      if (error) {
-        setItems([]);
-        setErrorMsg(error.message ?? "Error al cargar habilitantes/inhabilitantes.");
-        setLoading(false);
-        return;
-      }
-
-      setItems((data as ActionDB[]) ?? []);
-      setLoading(false);
     }
 
     load();
+    return () => {
+      cancel = true;
+    };
   }, [id, supabase]);
 
   const habilitantes = items.filter((a) => norm(a.tipo) === "habilitante");
@@ -247,57 +336,61 @@ export default function Historial1Page() {
     lista: ActionDB[];
     kind: "habilitantes" | "inhabilitantes";
   }) {
-    if (lista.length === 0) return null;
-
-    const titleStyle =
-      kind === "habilitantes" ? sectionHabilitantes : sectionInhabilitantes;
+    if (lista.length === 0) {
+      return (
+        <div style={{ ...itemCard, gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={kind === "habilitantes" ? badgeHab : badgeInh}>
+              {kind === "habilitantes" ? "habilitantes" : "inhabilitantes"}
+            </span>
+            <div style={{ fontSize: 15, fontWeight: 500, opacity: 0.92 }}>{titulo}</div>
+          </div>
+          <div style={{ fontSize: 14, opacity: 0.86 }}>
+            Todavía no hay elementos registrados en esta sección.
+          </div>
+        </div>
+      );
+    }
 
     return (
-      <div style={{ display: "grid", gap: 18 }}>
-        <div style={titleStyle}>{titulo}</div>
+      <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={kind === "habilitantes" ? badgeHab : badgeInh}>
+            {kind === "habilitantes" ? "habilitantes" : "inhabilitantes"}
+          </span>
+          <div style={{ fontSize: 15, fontWeight: 500, opacity: 0.92 }}>{titulo}</div>
+        </div>
 
         {lista.map((a) => (
-          <div
-            key={a.id}
-            style={{
-              borderRadius: 18,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(0,0,0,0.12)",
-              padding: 18,
-              display: "grid",
-              gap: 14,
-              overflow: "hidden",
-            }}
-          >
+          <div key={a.id} style={itemCard}>
             <div>
-              <div style={labelStyle}>Título</div>
-              <div style={textWrapBox}>{a.title || "—"}</div>
+              <div style={fieldLabel}>Título</div>
+              <div style={boxBase}>{safeText(a.title) || "—"}</div>
             </div>
 
-            {a.otros_detalle ? (
+            {safeText(a.otros_detalle) ? (
               <div>
-                <div style={labelStyle}>Detalle</div>
-                <div style={{ ...textWrapBox, minHeight: 110 }}>
-                  {a.otros_detalle}
-                </div>
+                <div style={fieldLabel}>Detalle</div>
+                <div style={{ ...boxBase, minHeight: 80 }}>{safeText(a.otros_detalle)}</div>
               </div>
             ) : null}
 
             <div
+              className="metaGrid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-                gap: 18,
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 12,
               }}
             >
               <div>
                 <div style={metaLabelStyle}>Ámbito</div>
-                <div style={metaBoxStyle}>{a.ambito || "—"}</div>
+                <div style={metaBoxStyle}>{safeText(a.ambito) || "—"}</div>
               </div>
 
               <div>
                 <div style={metaLabelStyle}>Estado</div>
-                <div style={metaBoxStyle}>{a.estado_item || "—"}</div>
+                <div style={metaBoxStyle}>{safeText(a.estado_item) || "—"}</div>
               </div>
 
               <div>
@@ -322,127 +415,73 @@ export default function Historial1Page() {
                 <div style={metaBoxStyle}>{formatFechaHora(a.updated_at)}</div>
               </div>
             </div>
+
+            <style jsx>{`
+              @media (max-width: 980px) {
+                .metaGrid {
+                  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                }
+              }
+              @media (max-width: 640px) {
+                .metaGrid {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+            `}</style>
           </div>
         ))}
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <main style={{ minHeight: "100vh", position: "relative" }}>
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundImage: `url("/welcome.png")`,
-            backgroundSize: "cover",
-          }}
-        />
-        <div
-          style={{
-            position: "relative",
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 28,
-          }}
-        >
-          <section style={{ width: "min(1584px, 100%)" }}>
-            <div style={glassCard}>
-              <h1 style={{ fontSize: 60, marginBottom: 20 }}>
-                Habilitantes e inhabilitantes
-              </h1>
-              <div style={{ fontSize: 24, opacity: 0.9 }}>Cargando…</div>
-            </div>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main style={{ minHeight: "100vh", position: "relative" }}>
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-        }}
-      />
+    <main style={{ position: "relative", minHeight: "100vh" }}>
+      <div aria-hidden style={bgLayer} />
+      <div aria-hidden style={overlayLayer} />
 
-      <div
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 28,
-        }}
-      >
-        <section style={{ width: "min(1584px, 100%)" }}>
-          <div style={glassCard}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                marginBottom: 20,
-                flexWrap: "wrap",
-                gap: 16,
-              }}
-            >
-              <h1 style={{ fontSize: 60, margin: 0 }}>
-                Habilitantes e inhabilitantes
-              </h1>
-              <div style={{ fontSize: 22, opacity: 0.92 }}>
-                Tomate tu tiempo para revisar estos puntos
+      <div style={pageWrap}>
+        <section style={glassPanel} className="panelMQA">
+          <h2 style={pageTitle}>Historial de habilitantes e inhabilitantes</h2>
+
+          {loading ? (
+            <div style={{ fontSize: 16, opacity: 0.9 }}>Cargando…</div>
+          ) : errorMsg ? (
+            <div style={{ fontSize: 16, opacity: 0.95 }}>
+              {errorMsg}
+              <div style={{ marginTop: 14 }}>
+                <button type="button" style={btnGray} onClick={() => router.push("/quieros")}>
+                  Volver a Mis Quieros
+                </button>
               </div>
             </div>
-
-            {errorMsg ? (
-              <div style={{ ...textWrapBox, background: "rgba(120,0,0,0.18)" }}>
-                {errorMsg}
+          ) : (
+            <>
+              <div style={headerBox}>
+                <h1 style={titleStyle}>Habilitantes e inhabilitantes</h1>
+                <p style={subtitleStyle}>Tomate tu tiempo para revisar estos puntos.</p>
               </div>
-            ) : null}
 
-            <div style={{ display: "grid", gap: 28 }}>
+              <div style={divider} />
+
               {items.length === 0 ? (
-                <div>
-                  <div style={labelStyle}>Listado</div>
-                  <div style={textWrapBox}>
+                <div style={itemCard}>
+                  <div style={{ fontSize: 14, opacity: 0.9 }}>
                     Todavía no hay habilitantes o inhabilitantes cargados para este Quiero.
                   </div>
                 </div>
               ) : (
-                <>
-                  <Seccion
-                    titulo="Habilitantes"
-                    lista={habilitantes}
-                    kind="habilitantes"
-                  />
-                  <Seccion
-                    titulo="Inhabilitantes"
-                    lista={inhabilitantes}
-                    kind="inhabilitantes"
-                  />
-                </>
+                <div style={{ display: "grid", gap: 18 }}>
+                  <Seccion titulo="Habilitantes" lista={habilitantes} kind="habilitantes" />
+                  <Seccion titulo="Inhabilitantes" lista={inhabilitantes} kind="inhabilitantes" />
+                </div>
               )}
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 18,
-                  marginTop: 10,
-                }}
-              >
+              <div style={divider} />
+
+              <div style={actionsGrid} className="actionsGrid">
                 <button
                   type="button"
-                  style={btnPrimario}
+                  style={btnGreen}
                   onClick={() => router.push(`/quieros/${id}/actions`)}
                 >
                   Ir a modificar habilitantes e inhabilitantes
@@ -450,7 +489,7 @@ export default function Historial1Page() {
 
                 <button
                   type="button"
-                  style={btnVioleta}
+                  style={btnViolet}
                   onClick={() => router.push(`/quieros/${id}/historial0`)}
                 >
                   Volver al Quiero
@@ -458,22 +497,29 @@ export default function Historial1Page() {
 
                 <button
                   type="button"
-                  style={btnAzul}
+                  style={btnBlue}
                   onClick={() => router.push(`/quieros/${id}/historial`)}
                 >
                   Volver al historial general
                 </button>
 
-                <button
-                  type="button"
-                  style={btnNeutro}
-                  onClick={() => router.push("/quieros")}
-                >
+                <button type="button" style={btnGray} onClick={() => router.push("/quieros")}>
                   Volver a la lista
                 </button>
               </div>
-            </div>
-          </div>
+
+              <style jsx>{`
+                @media (max-width: 980px) {
+                  .panelMQA {
+                    padding: 26px !important;
+                  }
+                  .actionsGrid {
+                    grid-template-columns: 1fr !important;
+                  }
+                }
+              `}</style>
+            </>
+          )}
         </section>
       </div>
     </main>

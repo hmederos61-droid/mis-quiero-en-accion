@@ -49,52 +49,29 @@ export default function LogoutPage() {
   }, [router]);
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      {/* Fondo */}
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
-        }}
-      />
+    <main
+      style={{
+        minHeight: "100vh",
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 28,
+      }}
+    >
+      <section style={glassCard}>
+        <h1 style={{ fontSize: 52, margin: 0, lineHeight: 1.05 }}>
+          Salir
+        </h1>
 
-      <div
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 28,
-        }}
-      >
-        <section style={glassCard}>
-          <h1 style={{ fontSize: 52, margin: 0, lineHeight: 1.05 }}>
-            Salir
-          </h1>
+        <p style={{ fontSize: 26, lineHeight: 1.35, marginTop: 18 }}>
+          {msg}
+        </p>
 
-          <p style={{ fontSize: 26, lineHeight: 1.35, marginTop: 18 }}>
-            {msg}
-          </p>
-
-          <p style={{ fontSize: 18, opacity: 0.85, marginTop: 14 }}>
-            Si la pantalla no avanza, volv&eacute; manualmente a <b>/login</b>.
-          </p>
-        </section>
-      </div>
+        <p style={{ fontSize: 18, opacity: 0.85, marginTop: 14 }}>
+          Si la pantalla no avanza, volv&eacute; manualmente a <b>/login</b>.
+        </p>
+      </section>
     </main>
   );
 }

@@ -52,7 +52,8 @@ type ActionDB = {
 const AMBITOS = ["Salud", "Pareja", "Familia", "Trabajo", "Finanzas", "Amigos", "Otros"] as const;
 
 /* =========================
-   Estética alineada a LOGIN/NUEVO
+   Estética CANÓNICA (login/nuevo)
+   - SIN fondo local
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
@@ -66,11 +67,34 @@ const glassCard: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
+const titleStyle: React.CSSProperties = {
+  fontSize: 30,
+  margin: 0,
+  lineHeight: 1.15,
+  fontWeight: 550,
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: 16,
+  lineHeight: 1.4,
+  marginTop: 10,
+  marginBottom: 0,
+  opacity: 0.92,
+};
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 20,
+  lineHeight: 1.25,
+  margin: "18px 0 10px 0",
+  fontWeight: 550,
+};
+
 const btnBase: React.CSSProperties = {
-  borderRadius: 18,
+  borderRadius: 16,
   border: "1px solid rgba(255,255,255,0.22)",
   cursor: "pointer",
   fontWeight: 850,
+  fontSize: 16,
   color: "rgba(255,255,255,0.96)",
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
   boxShadow: "0 10px 26px rgba(0,0,0,0.26)",
@@ -104,43 +128,20 @@ export default function Nuevo1HabilitantesInhabilitantesPage() {
 
 function Nuevo1Fallback() {
   return (
-    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
-        }}
-      />
-
+    <main>
       <div
         style={{
-          position: "relative",
           minHeight: "100vh",
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "center",
           padding: 28,
         }}
       >
-        <section style={{ width: "min(1584px, 100%)" }}>
+        <section style={{ width: "min(980px, 100%)" }}>
           <div style={glassCard}>
-            <h1 style={{ fontSize: 56, margin: 0, lineHeight: 1.05 }}>Cargando…</h1>
-            <p style={{ fontSize: 22, lineHeight: 1.35, marginTop: 14, marginBottom: 0, opacity: 0.96 }}>
-              Preparando la pantalla de inhabilitantes y habilitantes.
-            </p>
+            <h1 style={titleStyle}>Cargando…</h1>
+            <p style={subtitleStyle}>Preparando la pantalla de inhabilitantes y habilitantes.</p>
           </div>
         </section>
       </div>
@@ -165,7 +166,7 @@ function Nuevo1Inner() {
   const [quieroStatus, setQuieroStatus] = useState<string | null>(null);
   const bloqueado = (quieroStatus ?? "").toLowerCase() === "reformulado";
 
-  // Inputs (multilínea)
+  // Inputs
   const [inhInput, setInhInput] = useState("");
   const [habInput, setHabInput] = useState("");
 
@@ -201,7 +202,6 @@ function Nuevo1Inner() {
 
     // 1) status del quiero
     const qRes = await supabase.from("quieros").select("id,status").eq("id", id).maybeSingle();
-
     if (qRes.error) {
       setLoading(false);
       setErrorMsg(`No se pudo leer el Quiero (quieros). Error: ${qRes.error.message}`);
@@ -286,7 +286,6 @@ function Nuevo1Inner() {
 
     setSaving(true);
 
-    // user logueado (evita NOT NULL user_id)
     const uRes = await supabase.auth.getUser();
     const user = uRes.data.user;
     if (!user) {
@@ -303,14 +302,9 @@ function Nuevo1Inner() {
       ambito,
     };
 
-    if (ambito === "Otros") {
-      payload.otros_detalle = cleanText(otrosDetalle);
-    } else {
-      payload.otros_detalle = null;
-    }
+    payload.otros_detalle = ambito === "Otros" ? cleanText(otrosDetalle) : null;
 
     const ins = await supabase.from("actions").insert(payload);
-
     if (ins.error) {
       setSaving(false);
       setErrorMsg(`No se pudo agregar (${tipo}). Error: ${ins.error.message}`);
@@ -387,16 +381,16 @@ function Nuevo1Inner() {
     setSaving(false);
   }
 
-  function handleEnterToAdd(
-    e: React.KeyboardEvent<HTMLTextAreaElement>,
-    tipo: "inhabilitante" | "habilitante"
-  ) {
+  function handleEnterToAdd(e: React.KeyboardEvent<HTMLTextAreaElement>, tipo: "inhabilitante" | "habilitante") {
     if (e.key !== "Enter") return;
     if (e.altKey) return;
     e.preventDefault();
     addItem(tipo);
   }
 
+  /* =========================
+     Styles compactos
+  ========================= */
   const wrapText: React.CSSProperties = {
     whiteSpace: "pre-wrap",
     overflowWrap: "anywhere",
@@ -404,39 +398,42 @@ function Nuevo1Inner() {
     lineHeight: 1.25,
   };
 
-  const textareaBase: React.CSSProperties = {
-    width: "100%",
-    padding: "16px 16px",
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.10)",
-    color: "rgba(255,255,255,0.96)",
-    outline: "none",
-    fontSize: 22,
-    resize: "vertical",
-    minHeight: 52,
+  const labelStyle: React.CSSProperties = {
+    fontSize: 14,
+    opacity: 0.95,
+    marginBottom: 6,
   };
 
   const textareaStyle: React.CSSProperties = {
-    ...textareaBase,
-    ...wrapText,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: 20,
-    opacity: 0.95,
-    marginBottom: 10,
-  };
-
-  const select: React.CSSProperties = {
-    padding: "14px 14px",
-    borderRadius: 16,
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 14,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(0,0,0,0.10)",
     color: "rgba(255,255,255,0.96)",
     outline: "none",
-    fontSize: 20,
+    fontSize: 15,
+    resize: "vertical",
+    minHeight: 46,
+    ...wrapText,
+  };
+
+  const selectStyle: React.CSSProperties = {
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(0,0,0,0.10)",
+    color: "rgba(255,255,255,0.96)",
+    outline: "none",
+    fontSize: 15,
     width: 190,
+    appearance: "none",
+    paddingRight: 44,
+    backgroundImage:
+      "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 14px center",
+    backgroundSize: "18px",
   };
 
   const optionStyle: React.CSSProperties = {
@@ -456,8 +453,8 @@ function Nuevo1Inner() {
   };
 
   const badge: React.CSSProperties = {
-    fontSize: 14,
-    padding: "4px 10px",
+    fontSize: 12,
+    padding: "3px 9px",
     borderRadius: 999,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(255,255,255,0.08)",
@@ -470,40 +467,27 @@ function Nuevo1Inner() {
     ...itemBox,
     justifyContent: "flex-start",
     color: "rgba(255,255,255,0.86)",
+    fontSize: 14,
+  };
+
+  const divider: React.CSSProperties = {
+    height: 1,
+    background: "rgba(255,255,255,0.12)",
+    marginTop: 14,
+    marginBottom: 12,
   };
 
   const cierreBtn: React.CSSProperties = {
-    padding: "22px 18px",
-    fontSize: 20,
+    padding: "14px 16px",
+    fontSize: 16,
   };
 
   const canGoVerQuiero = !!quieroId && isUUID(quieroId);
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
-        }}
-      />
-
+    <main>
       <div
         style={{
-          position: "relative",
           minHeight: "100vh",
           display: "flex",
           alignItems: "flex-start",
@@ -511,28 +495,23 @@ function Nuevo1Inner() {
           padding: 28,
         }}
       >
-        <section style={{ width: "min(1584px, 100%)" }}>
+        <section style={{ width: "min(980px, 100%)" }}>
           <div style={glassCard}>
-            {/* Header (mismo estilo, solo cambia texto) */}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ minWidth: 280 }}>
-                <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>Definí tus inhabilitantes y habilitantes.</h1>
-                <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 0, opacity: 0.96 }}>
-                  Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar. Podés cargar tantos como necesites.
-                </p>
-              </div>
-            </div>
+            <h1 style={titleStyle}>Definí tus inhabilitantes y habilitantes</h1>
+            <p style={subtitleStyle}>
+              Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar. Podés cargar tantos como necesites.
+            </p>
 
             {bloqueado && (
               <div
                 style={{
-                  marginTop: 16,
-                  padding: "12px 14px",
-                  borderRadius: 16,
+                  marginTop: 14,
+                  padding: "10px 12px",
+                  borderRadius: 14,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,120,120,0.14)",
                   color: "rgba(255,255,255,0.92)",
-                  fontSize: 18,
+                  fontSize: 14,
                   opacity: 0.98,
                 }}
               >
@@ -544,13 +523,13 @@ function Nuevo1Inner() {
             {errorMsg && (
               <div
                 style={{
-                  marginTop: 16,
-                  padding: "12px 14px",
-                  borderRadius: 16,
+                  marginTop: 14,
+                  padding: "10px 12px",
+                  borderRadius: 14,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,80,80,0.16)",
                   color: "rgba(255,255,255,0.92)",
-                  fontSize: 18,
+                  fontSize: 14,
                   whiteSpace: "pre-wrap",
                   opacity: 0.98,
                 }}
@@ -560,17 +539,16 @@ function Nuevo1Inner() {
             )}
 
             {/* ========================= INHABILITANTES ========================= */}
-            <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "22px 0 10px 0" }}>
-              ¿Qué considerás que te impide cumplir con tu Quiero?
-            </h2>
+            <div style={divider} />
+            <h2 style={sectionTitle}>¿Qué considerás que te impide cumplir con tu Quiero?</h2>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 16,
+                gridTemplateColumns: "1fr 190px",
+                gap: 14,
                 alignItems: "end",
-                marginBottom: 14,
+                marginBottom: 12,
               }}
             >
               <div>
@@ -588,7 +566,7 @@ function Nuevo1Inner() {
               <div>
                 <div style={labelStyle}>Ámbito</div>
                 <select
-                  style={select}
+                  style={selectStyle}
                   value={inhAmbito}
                   onChange={(e) => setInhAmbito(e.target.value as any)}
                   disabled={saving || bloqueado}
@@ -603,7 +581,7 @@ function Nuevo1Inner() {
             </div>
 
             {inhAmbito === "Otros" && (
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 12 }}>
                 <div style={labelStyle}>Detalle (obligatorio en “Otros”)</div>
                 <textarea
                   style={textareaStyle}
@@ -615,9 +593,9 @@ function Nuevo1Inner() {
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               {loading ? (
-                <div style={{ fontSize: 18, opacity: 0.9 }}>Cargando…</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>Cargando…</div>
               ) : inhabilitantes.length === 0 ? (
                 <div style={listEmpty}>Todavía no registraste inhabilitantes.</div>
               ) : (
@@ -635,10 +613,10 @@ function Nuevo1Inner() {
                             disabled={saving || bloqueado}
                           />
                         ) : (
-                          <div style={{ fontSize: 20, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
+                          <div style={{ fontSize: 15, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
                         )}
 
-                        <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <span style={badge}>inhabilitante</span>
                           <span style={badge}>ámbito: {amb}</span>
                           {amb === "Otros" && <span style={badge}>detalle: {cleanText(it.otros_detalle ?? "—")}</span>}
@@ -650,7 +628,7 @@ function Nuevo1Inner() {
                           <>
                             <button
                               type="button"
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnBlue, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={saveEdit}
                               disabled={saving || bloqueado}
                             >
@@ -658,7 +636,7 @@ function Nuevo1Inner() {
                             </button>
                             <button
                               type="button"
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnGray, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={cancelEdit}
                               disabled={saving}
                             >
@@ -669,7 +647,7 @@ function Nuevo1Inner() {
                           <>
                             <button
                               type="button"
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnBlue, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => startEdit(it)}
                               disabled={saving || bloqueado}
                             >
@@ -677,7 +655,7 @@ function Nuevo1Inner() {
                             </button>
                             <button
                               type="button"
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnGray, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => removeItem(it.id)}
                               disabled={saving || bloqueado}
                             >
@@ -697,8 +675,8 @@ function Nuevo1Inner() {
               style={{
                 ...btnGreen,
                 width: "100%",
-                padding: "18px 18px",
-                fontSize: 22,
+                padding: "14px 16px",
+                fontSize: 16,
                 opacity: saving ? 0.75 : 1,
               }}
               onClick={() => addItem("inhabilitante")}
@@ -708,17 +686,16 @@ function Nuevo1Inner() {
             </button>
 
             {/* ========================= HABILITANTES ========================= */}
-            <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "28px 0 10px 0" }}>
-              ¿Qué necesitás para concretar ese Quiero?
-            </h2>
+            <div style={divider} />
+            <h2 style={sectionTitle}>¿Qué necesitás para concretar ese Quiero?</h2>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 16,
+                gridTemplateColumns: "1fr 190px",
+                gap: 14,
                 alignItems: "end",
-                marginBottom: 14,
+                marginBottom: 12,
               }}
             >
               <div>
@@ -736,7 +713,7 @@ function Nuevo1Inner() {
               <div>
                 <div style={labelStyle}>Ámbito</div>
                 <select
-                  style={select}
+                  style={selectStyle}
                   value={habAmbito}
                   onChange={(e) => setHabAmbito(e.target.value as any)}
                   disabled={saving || bloqueado}
@@ -751,7 +728,7 @@ function Nuevo1Inner() {
             </div>
 
             {habAmbito === "Otros" && (
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 12 }}>
                 <div style={labelStyle}>Detalle (obligatorio en “Otros”)</div>
                 <textarea
                   style={textareaStyle}
@@ -763,9 +740,9 @@ function Nuevo1Inner() {
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               {loading ? (
-                <div style={{ fontSize: 18, opacity: 0.9 }}>Cargando…</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>Cargando…</div>
               ) : habilitantes.length === 0 ? (
                 <div style={listEmpty}>Todavía no registraste habilitantes.</div>
               ) : (
@@ -783,10 +760,10 @@ function Nuevo1Inner() {
                             disabled={saving || bloqueado}
                           />
                         ) : (
-                          <div style={{ fontSize: 20, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
+                          <div style={{ fontSize: 15, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
                         )}
 
-                        <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <span style={badge}>habilitante</span>
                           <span style={badge}>ámbito: {amb}</span>
                           {amb === "Otros" && <span style={badge}>detalle: {cleanText(it.otros_detalle ?? "—")}</span>}
@@ -798,7 +775,7 @@ function Nuevo1Inner() {
                           <>
                             <button
                               type="button"
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnBlue, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={saveEdit}
                               disabled={saving || bloqueado}
                             >
@@ -806,7 +783,7 @@ function Nuevo1Inner() {
                             </button>
                             <button
                               type="button"
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnGray, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={cancelEdit}
                               disabled={saving}
                             >
@@ -817,7 +794,7 @@ function Nuevo1Inner() {
                           <>
                             <button
                               type="button"
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnBlue, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => startEdit(it)}
                               disabled={saving || bloqueado}
                             >
@@ -825,7 +802,7 @@ function Nuevo1Inner() {
                             </button>
                             <button
                               type="button"
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              style={{ ...btnGray, padding: "10px 12px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => removeItem(it.id)}
                               disabled={saving || bloqueado}
                             >
@@ -845,8 +822,8 @@ function Nuevo1Inner() {
               style={{
                 ...btnGreen,
                 width: "100%",
-                padding: "18px 18px",
-                fontSize: 22,
+                padding: "14px 16px",
+                fontSize: 16,
                 opacity: saving ? 0.75 : 1,
               }}
               onClick={() => addItem("habilitante")}
@@ -855,7 +832,7 @@ function Nuevo1Inner() {
               Agregar habilitante
             </button>
 
-            {/* CIERRE: 2 botones (más altos) */}
+            {/* CIERRE */}
             <div
               style={{
                 marginTop: 18,
@@ -863,13 +840,13 @@ function Nuevo1Inner() {
                 gridTemplateColumns: "1fr 1fr",
                 gap: 12,
               }}
+              className="cierreGrid"
             >
               <button
                 type="button"
-                style={{ ...btnBlue, ...cierreBtn, opacity: saving ? 0.75 : 1 }}
+                style={{ ...btnBlue, ...cierreBtn, width: "100%", opacity: saving ? 0.75 : 1 }}
                 onClick={() => {
                   if (!canGoVerQuiero) return;
-                  // Ver el Quiero actual (detalle)
                   router.push(`/quieros/${encodeURIComponent(quieroId)}`);
                 }}
                 disabled={saving || !canGoVerQuiero}
@@ -880,7 +857,7 @@ function Nuevo1Inner() {
 
               <button
                 type="button"
-                style={{ ...btnGray, ...cierreBtn, opacity: saving ? 0.75 : 1 }}
+                style={{ ...btnGray, ...cierreBtn, width: "100%", opacity: saving ? 0.75 : 1 }}
                 onClick={() => router.push("/quieros")}
                 disabled={saving}
               >
@@ -888,11 +865,19 @@ function Nuevo1Inner() {
               </button>
             </div>
 
-            {quieroId && (
-              <div style={{ marginTop: 14, fontSize: 16, opacity: 0.86 }}>
-                Quiero actual: <span style={{ opacity: 0.96 }}>{quieroId}</span>
+            {quieroId ? (
+              <div style={{ marginTop: 12, fontSize: 12, opacity: 0.82 }}>
+                Quiero actual: <span style={{ opacity: 0.95 }}>{quieroId}</span>
               </div>
-            )}
+            ) : null}
+
+            <style jsx>{`
+              @media (max-width: 980px) {
+                .cierreGrid {
+                  grid-template-columns: 1fr;
+                }
+              }
+            `}</style>
           </div>
         </section>
       </div>

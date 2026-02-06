@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
-   Estética glass ORIGINAL
+   Estética glass CANÓNICA
+   - SIN fondo local (lo da layout.tsx + globals.css)
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
-  padding: 46,
+  padding: 34,
   background: "rgba(255,255,255,0.055)",
   border: "1px solid rgba(255,255,255,0.16)",
   backdropFilter: "blur(16px)",
@@ -19,32 +20,47 @@ const glassCard: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
+const titleStyle: React.CSSProperties = {
+  fontSize: 30,
+  margin: 0,
+  lineHeight: 1.15,
+  fontWeight: 550, // criterio unificado: sin negrita exagerada
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: 16,
+  lineHeight: 1.4,
+  marginTop: 10,
+  marginBottom: 0,
+  opacity: 0.92,
+};
+
 const labelStyle: React.CSSProperties = {
-  fontSize: 26,
+  fontSize: 14,
   opacity: 0.95,
-  marginBottom: 10,
+  marginBottom: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "18px 18px",
-  borderRadius: 16,
+  padding: "12px 14px",
+  borderRadius: 14,
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(0,0,0,0.10)",
   color: "rgba(255,255,255,0.96)",
   outline: "none",
-  fontSize: 22,
+  fontSize: 15,
 };
 
 /* ===== SELECT con indicador ✓ ===== */
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
   appearance: "none",
-  paddingRight: 56,
+  paddingRight: 46,
   backgroundImage:
     "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
   backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 18px center",
+  backgroundPosition: "right 14px center",
   backgroundSize: "18px",
 };
 
@@ -54,43 +70,39 @@ const optionStyle: React.CSSProperties = {
 };
 
 const hintStyle: React.CSSProperties = {
-  fontSize: 18,
-  opacity: 0.92,
-  marginTop: 10,
+  fontSize: 13,
+  opacity: 0.9,
+  marginTop: 8,
+  lineHeight: 1.35,
 };
 
 const btnBase: React.CSSProperties = {
   width: "100%",
-  padding: "20px 18px",
-  borderRadius: 18,
+  padding: "14px 16px",
+  borderRadius: 16,
   border: "1px solid rgba(255,255,255,0.22)",
   cursor: "pointer",
   fontWeight: 850,
-  fontSize: 24,
+  fontSize: 16,
   color: "rgba(255,255,255,0.96)",
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
 };
 
-const btnGuardar = {
+const btnGuardar: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+  background: "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
 };
 
-const btnCancelar = {
+const btnCancelar: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
+  background: "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
 /* =========================
    Tipos
 ========================= */
-type EstadoQuiero =
-  | "activo"
-  | "cumplido"
-  | "pausado"
-  | "no_relevante"
-  | "reformulado";
+type EstadoQuiero = "activo" | "cumplido" | "pausado" | "no_relevante" | "reformulado";
 
 type QuieroDB = {
   id: string;
@@ -173,19 +185,9 @@ export default function EditQuieroPaso1Page() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative" }}>
+    <main>
       <div
         style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-        }}
-      />
-
-      <div
-        style={{
-          position: "relative",
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
@@ -193,47 +195,53 @@ export default function EditQuieroPaso1Page() {
           padding: 28,
         }}
       >
-        <section style={{ width: "min(1584px, 100%)" }}>
-          <div style={glassCard}>
-            <h1 style={{ fontSize: 60, marginBottom: 20 }}>
-              Modificar tu Quiero
-            </h1>
+        <section style={{ width: "min(980px, 100%)" }}>
+          <div style={{ ...glassCard, opacity: saving ? 0.96 : 1, transition: "opacity 120ms ease" }}>
+            <h1 style={titleStyle}>Modificar tu Quiero</h1>
+            <p style={subtitleStyle}>
+              Paso 1 de 2. Acá ajustás estado, prioridad y fecha.
+            </p>
 
-            <form onSubmit={onGuardar} style={{ display: "grid", gap: 22 }}>
+            <div style={{ height: 14 }} />
+
+            <form onSubmit={onGuardar} style={{ display: "grid", gap: 16 }}>
               <div>
                 <div style={labelStyle}>Título</div>
                 <input style={inputStyle} value={title} disabled />
-                <div style={hintStyle}>
-                  El texto original del Quiero no se modifica.
-                </div>
+                <div style={hintStyle}>El texto original del Quiero no se modifica.</div>
               </div>
 
               <div>
                 <div style={labelStyle}>Propósito</div>
-                <textarea
-                  style={{ ...inputStyle, minHeight: 110 }}
-                  value={purpose}
-                  disabled
-                />
-                <div style={hintStyle}>
-                  El propósito original no se modifica.
-                </div>
+                <textarea style={{ ...inputStyle, minHeight: 88, resize: "vertical" }} value={purpose} disabled />
+                <div style={hintStyle}>El propósito original no se modifica.</div>
               </div>
+
+              <div style={{ height: 1, background: "rgba(255,255,255,0.12)", marginTop: 6, marginBottom: 4 }} />
 
               <div>
                 <div style={labelStyle}>Estado</div>
                 <select
                   style={selectStyle}
                   value={status}
-                  onChange={(e) =>
-                    setStatus(e.target.value as EstadoQuiero)
-                  }
+                  onChange={(e) => setStatus(e.target.value as EstadoQuiero)}
+                  disabled={saving || loading}
                 >
-                  <option value="activo" style={optionStyle}>activo</option>
-                  <option value="pausado" style={optionStyle}>pausado</option>
-                  <option value="cumplido" style={optionStyle}>cumplido</option>
-                  <option value="no_relevante" style={optionStyle}>no relevante</option>
-                  <option value="reformulado" style={optionStyle}>reformulado</option>
+                  <option value="activo" style={optionStyle}>
+                    activo
+                  </option>
+                  <option value="pausado" style={optionStyle}>
+                    pausado
+                  </option>
+                  <option value="cumplido" style={optionStyle}>
+                    cumplido
+                  </option>
+                  <option value="no_relevante" style={optionStyle}>
+                    no relevante
+                  </option>
+                  <option value="reformulado" style={optionStyle}>
+                    reformulado
+                  </option>
                 </select>
               </div>
 
@@ -242,7 +250,7 @@ export default function EditQuieroPaso1Page() {
                 <select
                   style={selectStyle}
                   value={priority}
-                  disabled={isReformulado}
+                  disabled={saving || loading || isReformulado}
                   onChange={(e) => setPriority(Number(e.target.value))}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -251,11 +259,7 @@ export default function EditQuieroPaso1Page() {
                     </option>
                   ))}
                 </select>
-                {isReformulado && (
-                  <div style={hintStyle}>
-                    En un Quiero reformulado la prioridad se fija en 5.
-                  </div>
-                )}
+                {isReformulado && <div style={hintStyle}>En un Quiero reformulado la prioridad se fija en 5.</div>}
               </div>
 
               <div>
@@ -264,22 +268,29 @@ export default function EditQuieroPaso1Page() {
                   type="date"
                   style={inputStyle}
                   value={dueDate}
-                  disabled={isReformulado}
+                  disabled={saving || loading || isReformulado}
                   onChange={(e) => setDueDate(e.target.value)}
                 />
               </div>
 
-              <button type="submit" style={btnGuardar} disabled={saving}>
-                Guardar (ir al paso 2)
+              <button type="submit" style={{ ...btnGuardar, opacity: saving ? 0.75 : 1 }} disabled={saving || loading}>
+                {saving ? "Guardando…" : "Guardar (ir al paso 2)"}
               </button>
 
               <button
                 type="button"
-                style={btnCancelar}
+                style={{ ...btnCancelar, opacity: saving ? 0.7 : 1 }}
                 onClick={() => router.push("/quieros")}
+                disabled={saving}
               >
                 Cancelar
               </button>
+
+              {loading && (
+                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
+                  Cargando datos del Quiero…
+                </div>
+              )}
             </form>
           </div>
         </section>

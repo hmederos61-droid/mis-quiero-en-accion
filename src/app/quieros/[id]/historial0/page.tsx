@@ -1,261 +1,360 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+type Plazo = "corto" | "mediano" | "largo";
+
+type Quiero = {
+  id: string;
+  title: string | null;
+  created_at: string | null;
+  due_date: string | null;
+  status: string | null;
+};
+
+type HistItem = {
+  title: string;
+  tsISO: string;
+};
+
 /* =========================
-   Estética glass ORIGINAL
+   Helpers
 ========================= */
-const glassCard: React.CSSProperties = {
-  borderRadius: 22,
-  padding: 46,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.16)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  boxShadow: "0 18px 60px rgba(0,0,0,0.23)",
-  color: "rgba(255,255,255,0.94)",
+function safeText(v?: string | null) {
+  return (v ?? "").toString().trim();
+}
+
+function formatFechaCorta(value?: string | null) {
+  if (!value) return "—";
+  const s = String(value);
+  const iso = s.length >= 10 ? s.slice(0, 10) : s;
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString();
+}
+
+function formatFechaHora(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
+function diffDays(fromISO: string, toYYYYMMDD: string) {
+  const from = new Date(fromISO);
+  const to = new Date(toYYYYMMDD + "T00:00:00");
+  const ms = to.getTime() - from.getTime();
+  return Math.round(ms / (1000 * 60 * 60 * 24));
+}
+
+function plazoFromCreatedAtAndDueDate(
+  createdAtISO?: string | null,
+  dueDateYYYYMMDD?: string | null
+): Plazo {
+  if (!createdAtISO || !dueDateYYYYMMDD) return "mediano";
+  const days = diffDays(createdAtISO, dueDateYYYYMMDD);
+  if (days <= 30) return "corto";
+  if (days <= 180) return "mediano";
+  return "largo";
+}
+
+function labelPlazo(p: Plazo) {
+  if (p === "corto") return "Corto plazo";
+  if (p === "mediano") return "Mediano plazo";
+  return "Largo plazo";
+}
+
+/* =========================
+   Estética (mismo lenguaje visual)
+========================= */
+const bgLayer: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  backgroundImage: `url("/welcome.png")`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  zIndex: 0,
+};
+
+const overlayLayer: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.26))",
+  zIndex: 1,
+};
+
+const pageWrap: React.CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 28,
+};
+
+const glassPanel: React.CSSProperties = {
+  width: "min(1040px, 100%)",
+  borderRadius: 26,
+  padding: 34,
+  background: "rgba(255,255,255,0.075)",
+  border: "1px solid rgba(255,255,255,0.18)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  boxShadow: "0 18px 65px rgba(0,0,0,0.38)",
+  color: "rgba(255,255,255,0.95)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 26,
-  opacity: 0.95,
-  marginBottom: 10,
+const headerBox: React.CSSProperties = {
+  padding: "16px 18px",
+  borderRadius: 18,
+  background: "rgba(0,0,0,0.22)",
+  border: "1px solid rgba(255,255,255,0.14)",
 };
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "18px 18px",
+const titleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 36,
+  lineHeight: 1.06,
+  fontWeight: 500,
+  opacity: 0.96,
+};
+
+const subStyle: React.CSSProperties = {
+  marginTop: 10,
+  marginBottom: 0,
+  fontSize: 14,
+  opacity: 0.82,
+  fontWeight: 500,
+};
+
+const sectionTitle: React.CSSProperties = {
+  marginTop: 18,
+  marginBottom: 10,
+  fontSize: 18,
+  fontWeight: 500,
+  opacity: 0.92,
+};
+
+const listWrap: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+};
+
+const card: React.CSSProperties = {
+  padding: "14px 14px",
   borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.18)",
-  background: "rgba(0,0,0,0.10)",
-  color: "rgba(255,255,255,0.96)",
-  outline: "none",
-  fontSize: 22,
+  border: "1px solid rgba(255,255,255,0.16)",
+  background: "rgba(0,0,0,0.14)",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.18)",
+};
+
+const itemTitle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 15,
+  fontWeight: 500,
+  opacity: 0.96,
+};
+
+const itemTs: React.CSSProperties = {
+  marginTop: 6,
+  marginBottom: 0,
+  fontSize: 12,
+  opacity: 0.78,
+  fontWeight: 500,
+};
+
+const actionsRow: React.CSSProperties = {
+  marginTop: 18,
   display: "flex",
-  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
 };
 
 const btnBase: React.CSSProperties = {
-  width: "100%",
-  padding: "20px 18px",
-  borderRadius: 18,
-  border: "1px solid rgba(255,255,255,0.22)",
-  cursor: "pointer",
-  fontWeight: 850,
-  fontSize: 24,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "14px 16px",
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.20)",
+  textDecoration: "none",
+  fontWeight: 650,
+  fontSize: 14,
   color: "rgba(255,255,255,0.96)",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.20)",
 };
 
-const btnPrimario = {
+const btnPrimary: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+  background: "linear-gradient(135deg, rgba(240,170,70,0.65), rgba(200,130,40,0.40))",
 };
 
-const btnVioleta = {
+const btnSecondary: React.CSSProperties = {
   ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(168,85,247,0.55), rgba(99,102,241,0.45))",
+  background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.10))",
 };
 
-const btnAzul = {
-  ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
-};
+/* =========================
+   Page
+========================= */
+export default function QuieroHistorialPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
 
-const btnNeutro = {
-  ...btnBase,
-  background: "rgba(0,0,0,0.16)",
-};
-
-type EstadoQuiero =
-  | "activo"
-  | "cumplido"
-  | "pausado"
-  | "no_relevante"
-  | "reformulado";
-
-type QuieroDB = {
-  title: string | null;
-  purpose: string | null;
-  status: EstadoQuiero | null;
-  priority: number | null;
-  due_date: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
-function formatFechaHora(iso: string) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString() + " " + d.toLocaleTimeString();
-}
-
-export default function Historial0QuieroPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const router = useRouter();
-  const params = useParams() as { id?: string | string[] };
-  const id = Array.isArray(params?.id) ? params.id[0] : params.id;
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [quiero, setQuiero] = useState<Quiero | null>(null);
 
-  const [q, setQ] = useState<QuieroDB | null>(null);
+  // Historial MOCK por ahora (hasta que definamos tabla real). Mantiene el diseño.
+  const [historial, setHistorial] = useState<HistItem[]>([]);
 
   useEffect(() => {
+    let cancel = false;
+
     async function load() {
-      if (!id) return;
+      try {
+        setLoading(true);
+        setErrorMsg(null);
 
-      const { data } = await supabase
-        .from("quieros")
-        .select("title,purpose,status,priority,due_date,created_at,updated_at")
-        .eq("id", id)
-        .single();
+        if (!id) {
+          setErrorMsg("No encontramos el Quiero.");
+          setQuiero(null);
+          return;
+        }
 
-      setQ(data as QuieroDB);
+        const { data, error } = await supabase
+          .from("quieros")
+          .select("id,title,created_at,due_date,status")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (cancel) return;
+
+        if (error || !data) {
+          setErrorMsg("No pudimos cargar este Quiero. Volvé e intentá nuevamente.");
+          setQuiero(null);
+          return;
+        }
+
+        const q: Quiero = {
+          id: data.id,
+          title: data.title ?? null,
+          created_at: data.created_at ?? null,
+          due_date: data.due_date ?? null,
+          status: data.status ?? null,
+        };
+
+        setQuiero(q);
+
+        const now = new Date().toISOString();
+        const baseTs = q.created_at ?? now;
+        setHistorial([
+          { title: "Se creó el Quiero", tsISO: baseTs },
+          { title: "Se revisó el horizonte (plazo/fecha)", tsISO: now },
+        ]);
+      } catch {
+        if (!cancel) {
+          setErrorMsg("Ocurrió un error inesperado al cargar.");
+          setQuiero(null);
+        }
+      } finally {
+        if (!cancel) setLoading(false);
+      }
     }
 
     load();
-  }, [id, supabase]);
+    return () => {
+      cancel = true;
+    };
+  }, [supabase, id]);
 
-  if (!q) return null;
+  const titulo = safeText(quiero?.title) || "Quiero sin título";
+
+  const createdISO = quiero?.created_at ?? null;
+  const dueRaw = quiero?.due_date ? String(quiero?.due_date) : null;
+  const due = dueRaw ? dueRaw.slice(0, 10) : null;
+
+  const plazo = plazoFromCreatedAtAndDueDate(createdISO, due);
+  const horizonte = due
+    ? `${labelPlazo(plazo)} · ${formatFechaCorta(due)}`
+    : `${labelPlazo(plazo)} · sin fecha definida`;
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative" }}>
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-        }}
-      />
+    <main style={{ position: "relative", minHeight: "100vh" }}>
+      <div aria-hidden style={bgLayer} />
+      <div aria-hidden style={overlayLayer} />
 
-      <div
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 28,
-        }}
-      >
-        <section style={{ width: "min(1584px, 100%)" }}>
-          <div style={glassCard}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                marginBottom: 20,
-                flexWrap: "wrap",
-                gap: 16,
-              }}
-            >
-              <h1 style={{ fontSize: 60, margin: 0 }}>
-                Historial del Quiero
-              </h1>
-              <div style={{ fontSize: 22, opacity: 0.92 }}>
-                Tomate tu tiempo para reflexionar sobre este Quiero
+      <div style={pageWrap}>
+        <section style={glassPanel} className="panelMQA">
+          {loading ? (
+            <div style={{ fontSize: 16, opacity: 0.9 }}>Cargando…</div>
+          ) : errorMsg ? (
+            <div style={{ fontSize: 16, opacity: 0.95 }}>
+              {errorMsg}
+              <div style={actionsRow} className="actionsRow">
+                <Link href="/quieros" style={btnSecondary}>
+                  Volver a Mis Quieros
+                </Link>
               </div>
             </div>
-
-            <div style={{ display: "grid", gap: 22 }}>
-              <div>
-                <div style={labelStyle}>Título</div>
-                <div style={inputStyle}>{q.title}</div>
+          ) : (
+            <>
+              <div style={headerBox}>
+                <h1 style={titleStyle}>{titulo}</h1>
+                <p style={subStyle}>{horizonte}</p>
               </div>
 
-              <div>
-                <div style={labelStyle}>Propósito</div>
-                <div style={{ ...inputStyle, minHeight: 110 }}>
-                  {q.purpose}
-                </div>
+              <div style={sectionTitle}>Historial</div>
+
+              <div style={listWrap}>
+                {historial.length === 0 ? (
+                  <div style={card}>
+                    <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>
+                      Todavía no hay movimientos registrados para este Quiero.
+                    </p>
+                  </div>
+                ) : (
+                  historial
+                    .slice()
+                    .sort((a, b) => (a.tsISO < b.tsISO ? 1 : -1))
+                    .map((it, idx) => (
+                      <div key={`${it.tsISO}-${idx}`} style={card}>
+                        <p style={itemTitle}>{it.title}</p>
+                        <p style={itemTs}>{formatFechaHora(it.tsISO)}</p>
+                      </div>
+                    ))
+                )}
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(5, 1fr)",
-                  gap: 18,
-                }}
-              >
-                <div>
-                  <div style={labelStyle}>Estado</div>
-                  <div style={inputStyle}>{q.status}</div>
-                </div>
+              <div style={actionsRow} className="actionsRow">
+                <Link href={`/quieros/${id}/edit`} style={btnPrimary}>
+                  Modificar Quiero
+                </Link>
 
-                <div>
-                  <div style={labelStyle}>Prioridad</div>
-                  <div style={inputStyle}>{q.priority}</div>
-                </div>
-
-                <div>
-                  <div style={labelStyle}>Fecha objetivo</div>
-                  <div style={inputStyle}>
-                    {q.due_date?.slice(0, 10)}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={labelStyle}>Creado</div>
-                  <div style={inputStyle}>
-                    {formatFechaHora(q.created_at ?? "")}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={labelStyle}>Actualizado</div>
-                  <div style={inputStyle}>
-                    {formatFechaHora(q.updated_at ?? "")}
-                  </div>
-                </div>
+                <Link href="/quieros" style={btnSecondary}>
+                  Volver a Mis Quieros
+                </Link>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 18,
-                  marginTop: 10,
-                }}
-              >
-                <button
-                  style={btnPrimario}
-                  onClick={() => router.push(`/quieros/${id}/edit`)}
-                >
-                  Ir a modificar Quiero
-                </button>
-
-                <button
-                  style={btnVioleta}
-                  onClick={() =>
-                    router.push(`/quieros/${id}/historial1`)
+              <style jsx>{`
+                @media (max-width: 980px) {
+                  .panelMQA {
+                    padding: 26px !important;
                   }
-                >
-                  Ir a ver habilitantes e inhabilitantes
-                </button>
-
-                <button
-                  style={btnAzul}
-                  onClick={() =>
-                    router.push(`/quieros/${id}/historial`)
+                  .actionsRow a {
+                    width: 100% !important;
                   }
-                >
-                  Volver al historial general
-                </button>
-
-                <button
-                  style={btnNeutro}
-                  onClick={() => router.push("/quieros")}
-                >
-                  Volver a la lista
-                </button>
-              </div>
-            </div>
-          </div>
+                }
+              `}</style>
+            </>
+          )}
         </section>
       </div>
     </main>

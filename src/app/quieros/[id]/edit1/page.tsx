@@ -57,7 +57,8 @@ type ActionDB = {
 const AMBITOS = ["Salud", "Pareja", "Familia", "Trabajo", "Finanzas", "Amigos", "Otros"] as const;
 
 /* =========================
-   Estética alineada a LOGIN
+   Estética CANÓNICA
+   - SIN fondo local (lo da layout.tsx + globals.css)
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
@@ -71,14 +72,43 @@ const glassCard: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
 };
 
+const titleStyle: React.CSSProperties = {
+  fontSize: 30,
+  margin: 0,
+  lineHeight: 1.15,
+  fontWeight: 550,
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: 16,
+  lineHeight: 1.4,
+  marginTop: 10,
+  marginBottom: 0,
+  opacity: 0.92,
+};
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 22,
+  lineHeight: 1.2,
+  margin: "18px 0 8px 0",
+  fontWeight: 550,
+};
+
+const sectionHint: React.CSSProperties = {
+  fontSize: 14,
+  lineHeight: 1.35,
+  margin: "0 0 12px 0",
+  opacity: 0.92,
+};
+
 const btnBase: React.CSSProperties = {
-  borderRadius: 18,
+  borderRadius: 16,
   border: "1px solid rgba(255,255,255,0.22)",
   cursor: "pointer",
-  fontWeight: 850, // solo botones
+  fontWeight: 850,
   color: "rgba(255,255,255,0.96)",
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.26)",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
 };
 
 const btnGreen: React.CSSProperties = {
@@ -110,7 +140,7 @@ export default function Edit1HabilitantesInhabilitantesPage() {
   const [quieroStatus, setQuieroStatus] = useState<string | null>(null);
   const bloqueado = (quieroStatus ?? "").toLowerCase() === "reformulado";
 
-  // Inputs (multilínea)
+  // Inputs
   const [inhInput, setInhInput] = useState("");
   const [habInput, setHabInput] = useState("");
 
@@ -231,7 +261,6 @@ export default function Edit1HabilitantesInhabilitantesPage() {
 
     setSaving(true);
 
-    // user logueado
     const uRes = await supabase.auth.getUser();
     const user = uRes.data.user;
     if (!user) {
@@ -240,7 +269,6 @@ export default function Edit1HabilitantesInhabilitantesPage() {
       return;
     }
 
-    // insert cumpliendo el CHECK de otros_detalle
     const payload: any = {
       quiero_id: id,
       user_id: user.id,
@@ -263,7 +291,6 @@ export default function Edit1HabilitantesInhabilitantesPage() {
       return;
     }
 
-    // reset inputs del bloque
     if (tipo === "inhabilitante") {
       setInhInput("");
       setInhAmbito("Salud");
@@ -335,16 +362,16 @@ export default function Edit1HabilitantesInhabilitantesPage() {
   }
 
   // Enter agrega; Alt+Enter deja salto de línea
-  function handleEnterToAdd(
-    e: React.KeyboardEvent<HTMLTextAreaElement>,
-    tipo: "inhabilitante" | "habilitante"
-  ) {
+  function handleEnterToAdd(e: React.KeyboardEvent<HTMLTextAreaElement>, tipo: "inhabilitante" | "habilitante") {
     if (e.key !== "Enter") return;
     if (e.altKey) return;
     e.preventDefault();
     addItem(tipo);
   }
 
+  /* =========================
+     Styles canónicos (compacto)
+  ========================= */
   const wrapText: React.CSSProperties = {
     whiteSpace: "pre-wrap",
     overflowWrap: "anywhere",
@@ -352,34 +379,34 @@ export default function Edit1HabilitantesInhabilitantesPage() {
     lineHeight: 1.25,
   };
 
+  const label: React.CSSProperties = {
+    fontSize: 14,
+    opacity: 0.95,
+    marginBottom: 6,
+  };
+
   const textarea: React.CSSProperties = {
     width: "100%",
-    padding: "16px 16px",
-    borderRadius: 16,
+    padding: "12px 14px",
+    borderRadius: 14,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(0,0,0,0.10)",
     color: "rgba(255,255,255,0.96)",
     outline: "none",
-    fontSize: 22,
+    fontSize: 15,
     resize: "vertical",
     minHeight: 52,
     ...wrapText,
   };
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: 20,
-    opacity: 0.95,
-    marginBottom: 10,
-  };
-
   const select: React.CSSProperties = {
-    padding: "14px 14px",
-    borderRadius: 16,
+    padding: "12px 14px",
+    borderRadius: 14,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(0,0,0,0.10)",
     color: "rgba(255,255,255,0.96)",
     outline: "none",
-    fontSize: 20,
+    fontSize: 15,
     width: 190,
     appearance: "none",
     paddingRight: 44,
@@ -407,8 +434,8 @@ export default function Edit1HabilitantesInhabilitantesPage() {
   };
 
   const badge: React.CSSProperties = {
-    fontSize: 14,
-    padding: "4px 10px",
+    fontSize: 12,
+    padding: "3px 9px",
     borderRadius: 999,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(255,255,255,0.08)",
@@ -421,41 +448,27 @@ export default function Edit1HabilitantesInhabilitantesPage() {
     ...itemBox,
     justifyContent: "flex-start",
     color: "rgba(255,255,255,0.86)",
+    fontSize: 14,
+  };
+
+  const divider: React.CSSProperties = {
+    height: 1,
+    background: "rgba(255,255,255,0.12)",
+    marginTop: 14,
+    marginBottom: 12,
   };
 
   const bottomRow: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: 14,
-    marginTop: 18,
+    gap: 12,
+    marginTop: 16,
   };
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      {/* Fondo igual a LOGIN */}
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: `url("/welcome.png")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.12))",
-        }}
-      />
-
+    <main>
       <div
         style={{
-          position: "relative",
           minHeight: "100vh",
           display: "flex",
           alignItems: "flex-start",
@@ -463,27 +476,24 @@ export default function Edit1HabilitantesInhabilitantesPage() {
           padding: 28,
         }}
       >
-        <section style={{ width: "min(1584px, 100%)" }}>
-          <div style={glassCard}>
-            <div>
-              <h1 style={{ fontSize: 60, margin: 0, lineHeight: 1.05 }}>
-                ¿Querés modificar tus inhabilitantes y habilitantes?
-              </h1>
-              <p style={{ fontSize: 24, lineHeight: 1.35, marginTop: 14, marginBottom: 10, opacity: 0.96 }}>
-                Dale, animate. Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar.
-              </p>
-            </div>
+        <section style={{ width: "min(980px, 100%)" }}>
+          <div style={{ ...glassCard, opacity: saving ? 0.96 : 1, transition: "opacity 120ms ease" }}>
+            <h1 style={titleStyle}>Modificar habilitantes e inhabilitantes</h1>
+            <p style={subtitleStyle}>
+              Paso 2 de 2. Podés agregar, modificar o quitar ítems.
+              {bloqueado ? " (Bloqueado por estado reformulado.)" : ""}
+            </p>
 
             {bloqueado && (
               <div
                 style={{
-                  marginTop: 16,
+                  marginTop: 14,
                   padding: "12px 14px",
                   borderRadius: 16,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,120,120,0.14)",
                   color: "rgba(255,255,255,0.92)",
-                  fontSize: 18,
+                  fontSize: 14,
                   opacity: 0.98,
                 }}
               >
@@ -495,13 +505,13 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             {errorMsg && (
               <div
                 style={{
-                  marginTop: 16,
+                  marginTop: 14,
                   padding: "12px 14px",
                   borderRadius: 16,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,80,80,0.16)",
                   color: "rgba(255,255,255,0.92)",
-                  fontSize: 18,
+                  fontSize: 14,
                   whiteSpace: "pre-wrap",
                   opacity: 0.98,
                 }}
@@ -511,24 +521,21 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             )}
 
             {/* ========================= INHABILITANTES ========================= */}
-            <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "22px 0 10px 0" }}>
-              ¿Qué considerás que te impide cumplir con tu Quiero?
-            </h2>
-            <p style={{ fontSize: 20, lineHeight: 1.35, margin: "0 0 16px 0", opacity: 0.95 }}>
-              Inhabilitantes existentes (podés elegir cuál modificar).
-            </p>
+            <div style={divider} />
+            <h2 style={sectionTitle}>Inhabilitantes</h2>
+            <p style={sectionHint}>Lo que hoy te frena. (Enter agrega / Alt+Enter deja salto de línea)</p>
 
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr auto",
-                gap: 16,
+                gap: 12,
                 alignItems: "end",
-                marginBottom: 14,
+                marginBottom: 12,
               }}
             >
               <div>
-                <div style={labelStyle}>Nuevo inhabilitante</div>
+                <div style={label}>Nuevo inhabilitante</div>
                 <textarea
                   style={textarea}
                   placeholder="Escribí y agregá... (Enter agrega / Alt+Enter nueva línea)"
@@ -540,7 +547,7 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               </div>
 
               <div>
-                <div style={labelStyle}>Ámbito</div>
+                <div style={label}>Ámbito</div>
                 <select
                   style={select}
                   value={inhAmbito}
@@ -557,8 +564,8 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             </div>
 
             {inhAmbito === "Otros" && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={labelStyle}>Detalle (obligatorio en “Otros”)</div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={label}>Detalle (obligatorio en “Otros”)</div>
                 <textarea
                   style={textarea}
                   placeholder="Ej.: Otros: tema específico... (Alt+Enter para saltos)"
@@ -569,9 +576,9 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               {loading ? (
-                <div style={{ fontSize: 18, opacity: 0.9 }}>Cargando…</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>Cargando…</div>
               ) : inhabilitantes.length === 0 ? (
                 <div style={listEmpty}>Todavía no registraste inhabilitantes.</div>
               ) : (
@@ -589,10 +596,10 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                             disabled={saving || bloqueado}
                           />
                         ) : (
-                          <div style={{ fontSize: 20, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
+                          <div style={{ fontSize: 15, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
                         )}
 
-                        <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <span style={badge}>inhabilitante</span>
                           <span style={badge}>ámbito: {amb}</span>
                           {amb === "Otros" && <span style={badge}>detalle: {cleanText(it.otros_detalle ?? "—")}</span>}
@@ -603,14 +610,16 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                         {isEditing ? (
                           <>
                             <button
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnBlue, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={saveEdit}
                               disabled={saving || bloqueado}
                             >
                               Guardar
                             </button>
                             <button
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnGray, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={cancelEdit}
                               disabled={saving}
                             >
@@ -620,14 +629,16 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                         ) : (
                           <>
                             <button
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnBlue, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => startEdit(it)}
                               disabled={saving || bloqueado}
                             >
                               Modificar
                             </button>
                             <button
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnGray, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => removeItem(it.id)}
                               disabled={saving || bloqueado}
                             >
@@ -643,11 +654,12 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             </div>
 
             <button
+              type="button"
               style={{
                 ...btnGreen,
                 width: "100%",
-                padding: "18px 18px",
-                fontSize: 22,
+                padding: "14px 16px",
+                fontSize: 16,
                 opacity: saving ? 0.75 : 1,
               }}
               onClick={() => addItem("inhabilitante")}
@@ -657,24 +669,21 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             </button>
 
             {/* ========================= HABILITANTES ========================= */}
-            <h2 style={{ fontSize: 44, lineHeight: 1.12, margin: "28px 0 10px 0" }}>
-              ¿Qué necesitás para concretar ese Quiero?
-            </h2>
-            <p style={{ fontSize: 20, lineHeight: 1.35, margin: "0 0 16px 0", opacity: 0.95 }}>
-              Habilitantes existentes (podés elegir cuál modificar).
-            </p>
+            <div style={divider} />
+            <h2 style={sectionTitle}>Habilitantes</h2>
+            <p style={sectionHint}>Lo que te ayuda a avanzar. (Enter agrega / Alt+Enter deja salto de línea)</p>
 
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr auto",
-                gap: 16,
+                gap: 12,
                 alignItems: "end",
-                marginBottom: 14,
+                marginBottom: 12,
               }}
             >
               <div>
-                <div style={labelStyle}>Nuevo habilitante</div>
+                <div style={label}>Nuevo habilitante</div>
                 <textarea
                   style={textarea}
                   placeholder="Escribí y agregá... (Enter agrega / Alt+Enter nueva línea)"
@@ -686,7 +695,7 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               </div>
 
               <div>
-                <div style={labelStyle}>Ámbito</div>
+                <div style={label}>Ámbito</div>
                 <select
                   style={select}
                   value={habAmbito}
@@ -703,8 +712,8 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             </div>
 
             {habAmbito === "Otros" && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={labelStyle}>Detalle (obligatorio en “Otros”)</div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={label}>Detalle (obligatorio en “Otros”)</div>
                 <textarea
                   style={textarea}
                   placeholder="Ej.: Otros: tema específico... (Alt+Enter para saltos)"
@@ -715,9 +724,9 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               {loading ? (
-                <div style={{ fontSize: 18, opacity: 0.9 }}>Cargando…</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>Cargando…</div>
               ) : habilitantes.length === 0 ? (
                 <div style={listEmpty}>Todavía no registraste habilitantes.</div>
               ) : (
@@ -735,10 +744,10 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                             disabled={saving || bloqueado}
                           />
                         ) : (
-                          <div style={{ fontSize: 20, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
+                          <div style={{ fontSize: 15, opacity: 0.98, ...wrapText }}>{it.title ?? "—"}</div>
                         )}
 
-                        <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <span style={badge}>habilitante</span>
                           <span style={badge}>ámbito: {amb}</span>
                           {amb === "Otros" && <span style={badge}>detalle: {cleanText(it.otros_detalle ?? "—")}</span>}
@@ -749,14 +758,16 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                         {isEditing ? (
                           <>
                             <button
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnBlue, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={saveEdit}
                               disabled={saving || bloqueado}
                             >
                               Guardar
                             </button>
                             <button
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnGray, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={cancelEdit}
                               disabled={saving}
                             >
@@ -766,14 +777,16 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                         ) : (
                           <>
                             <button
-                              style={{ ...btnBlue, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnBlue, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => startEdit(it)}
                               disabled={saving || bloqueado}
                             >
                               Modificar
                             </button>
                             <button
-                              style={{ ...btnGray, padding: "12px 16px", fontSize: 18, opacity: saving ? 0.75 : 1 }}
+                              type="button"
+                              style={{ ...btnGray, padding: "10px 14px", fontSize: 14, opacity: saving ? 0.75 : 1 }}
                               onClick={() => removeItem(it.id)}
                               disabled={saving || bloqueado}
                             >
@@ -789,11 +802,12 @@ export default function Edit1HabilitantesInhabilitantesPage() {
             </div>
 
             <button
+              type="button"
               style={{
                 ...btnGreen,
                 width: "100%",
-                padding: "18px 18px",
-                fontSize: 22,
+                padding: "14px 16px",
+                fontSize: 16,
                 opacity: saving ? 0.75 : 1,
               }}
               onClick={() => addItem("habilitante")}
@@ -802,14 +816,15 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               Agregar habilitante
             </button>
 
-            {/* ===== NUEVA FILA DE BOTONES (layout como ALTA) ===== */}
+            {/* ===== FILA DE CIERRE ===== */}
             <div style={bottomRow}>
               <button
+                type="button"
                 style={{
                   ...btnBlue,
                   width: "100%",
-                  padding: "18px 18px",
-                  fontSize: 20,
+                  padding: "14px 16px",
+                  fontSize: 16,
                   opacity: saving ? 0.75 : 1,
                 }}
                 onClick={() => router.push(`/quieros/${quieroId}/edit`)}
@@ -819,11 +834,12 @@ export default function Edit1HabilitantesInhabilitantesPage() {
               </button>
 
               <button
+                type="button"
                 style={{
                   ...btnGray,
                   width: "100%",
-                  padding: "18px 18px",
-                  fontSize: 20,
+                  padding: "14px 16px",
+                  fontSize: 16,
                   opacity: saving ? 0.75 : 1,
                 }}
                 onClick={() => router.push("/quieros")}
@@ -832,6 +848,13 @@ export default function Edit1HabilitantesInhabilitantesPage() {
                 Ya terminé
               </button>
             </div>
+
+            {/* ID (micro) */}
+            {quieroId ? (
+              <div style={{ marginTop: 12, fontSize: 12, opacity: 0.82 }}>
+                Quiero actual: <span style={{ opacity: 0.95 }}>{quieroId}</span>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>

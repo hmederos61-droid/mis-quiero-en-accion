@@ -57,7 +57,7 @@ function buildHorizonte(q: Quiero) {
 
 /* =========================
    Estética base (glass + fondo)
-   Criterios generales (tipografía + fondo)
+   Escala canónica (no “gigante”)
 ========================= */
 const bgLayer: React.CSSProperties = {
   position: "fixed",
@@ -83,13 +83,13 @@ const pageWrap: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 28,
+  padding: 24, // ✅ antes 28 (menos “gigante”)
 };
 
 const glassCard: React.CSSProperties = {
-  width: "min(1320px, 100%)",
+  width: "min(980px, 100%)", // ✅ antes 1320px (alineado a menú)
   borderRadius: 26,
-  padding: 30,
+  padding: 26, // ✅ antes 30
   background: "rgba(255,255,255,0.055)",
   border: "1px solid rgba(255,255,255,0.16)",
   backdropFilter: "blur(16px)",
@@ -103,22 +103,22 @@ const headerRow: React.CSSProperties = {
   display: "flex",
   alignItems: "flex-start",
   justifyContent: "space-between",
-  gap: 16,
+  gap: 14, // ✅ antes 16
   flexWrap: "wrap",
 };
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 52,
+  fontSize: 40, // ✅ antes 52 (clave para “no gigante”)
   lineHeight: 1.05,
   fontWeight: 500, // criterio general: no negrita exagerada
 };
 
 const subtitleStyle: React.CSSProperties = {
-  marginTop: 14,
+  marginTop: 10, // ✅ antes 14
   marginBottom: 0,
-  fontSize: 22,
-  opacity: 0.96,
+  fontSize: 18, // ✅ antes 22
+  opacity: 0.94,
   lineHeight: 1.35,
   maxWidth: 860,
   fontWeight: 400,
@@ -126,23 +126,23 @@ const subtitleStyle: React.CSSProperties = {
 
 const actionsWrap: React.CSSProperties = {
   display: "flex",
-  gap: 12,
+  gap: 10, // ✅ antes 12
   flexWrap: "wrap",
   justifyContent: "flex-end",
 };
 
-/* Botones grandes (Inicio / Nuevo Quiero) */
+/* Botones (Inicio / Nuevo Quiero) — escala canónica */
 const btnBase: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "18px 20px",
-  borderRadius: 18,
+  padding: "14px 16px", // ✅ antes 18x20
+  borderRadius: 16, // ✅ antes 18
   border: "1px solid rgba(255,255,255,0.22)",
   color: "rgba(255,255,255,0.96)",
   textDecoration: "none",
-  fontWeight: 850,
-  fontSize: 20,
+  fontWeight: 700,
+  fontSize: 17, // ✅ antes 20
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
   boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
 };
@@ -158,9 +158,9 @@ const btnPrimary: React.CSSProperties = {
 };
 
 const topToolsRow: React.CSSProperties = {
-  marginTop: 18,
+  marginTop: 14, // ✅ antes 18
   display: "flex",
-  gap: 12,
+  gap: 10, // ✅ antes 12
   alignItems: "center",
   justifyContent: "space-between",
   flexWrap: "wrap",
@@ -168,50 +168,50 @@ const topToolsRow: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: "min(520px, 100%)",
-  padding: "14px 14px",
-  borderRadius: 16,
+  padding: "12px 12px", // ✅ antes 14x14
+  borderRadius: 14, // ✅ antes 16
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(0,0,0,0.16)",
   color: "rgba(255,255,255,0.96)",
   outline: "none",
-  fontSize: 16,
+  fontSize: 15, // ✅ antes 16
 };
 
 const chipsWrap: React.CSSProperties = {
   display: "flex",
-  gap: 10,
+  gap: 8, // ✅ antes 10
   flexWrap: "wrap",
 };
 
 const chip: React.CSSProperties = {
-  padding: "10px 12px",
+  padding: "8px 10px", // ✅ antes 10x12
   borderRadius: 999,
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(255,255,255,0.10)",
-  fontSize: 13,
-  fontWeight: 850,
+  fontSize: 12, // ✅ antes 13
+  fontWeight: 700,
   opacity: 0.92,
 };
 
 const divider: React.CSSProperties = {
-  marginTop: 18,
+  marginTop: 14, // ✅ antes 18
   height: 1,
   background: "rgba(255,255,255,0.14)",
 };
 
 const listWrap: React.CSSProperties = {
   display: "grid",
-  gap: 12,
-  marginTop: 18,
+  gap: 10, // ✅ antes 12
+  marginTop: 14, // ✅ antes 18
 };
 
 const itemRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 14,
-  padding: "18px 18px",
-  borderRadius: 18,
+  gap: 12, // ✅ antes 14
+  padding: "14px 14px", // ✅ antes 18x18
+  borderRadius: 16, // ✅ antes 18
   border: "1px solid rgba(255,255,255,0.16)",
   background: "rgba(0,0,0,0.14)",
   color: "rgba(255,255,255,0.94)",
@@ -220,7 +220,7 @@ const itemRow: React.CSSProperties = {
 };
 
 const itemTitle: React.CSSProperties = {
-  fontSize: 26,
+  fontSize: 20, // ✅ antes 26 (clave para “no gigante”)
   fontWeight: 500, // criterio general: título NO en negrita
   lineHeight: 1.15,
   whiteSpace: "nowrap",
@@ -229,24 +229,24 @@ const itemTitle: React.CSSProperties = {
 };
 
 const emptyBox: React.CSSProperties = {
-  marginTop: 18,
-  padding: 18,
-  borderRadius: 18,
+  marginTop: 14, // ✅ antes 18
+  padding: 16, // ✅ antes 18
+  borderRadius: 16, // ✅ antes 18
   border: "1px solid rgba(255,255,255,0.16)",
   background: "rgba(0,0,0,0.14)",
   boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
 };
 
 const emptyTitle: React.CSSProperties = {
-  fontSize: 20,
-  fontWeight: 950,
+  fontSize: 18, // ✅ antes 20
+  fontWeight: 600,
   margin: 0,
 };
 
 const emptyText: React.CSSProperties = {
   marginTop: 10,
   marginBottom: 0,
-  fontSize: 16,
+  fontSize: 15, // ✅ antes 16
   opacity: 0.85,
   lineHeight: 1.4,
 };
@@ -387,16 +387,16 @@ export default function QuierosListadoPage() {
           <div style={divider} />
 
           {loading ? (
-            <div style={{ marginTop: 18, fontSize: 16, opacity: 0.85 }}>Cargando…</div>
+            <div style={{ marginTop: 14, fontSize: 15, opacity: 0.85 }}>Cargando…</div>
           ) : errorMsg ? (
-            <div style={{ marginTop: 18, fontSize: 16, opacity: 0.92 }}>{errorMsg}</div>
+            <div style={{ marginTop: 14, fontSize: 15, opacity: 0.92 }}>{errorMsg}</div>
           ) : total === 0 ? (
             <div style={emptyBox}>
               <h2 style={emptyTitle}>Todavía no tenés Quieros</h2>
               <p style={emptyText}>
                 Creá tu primer Quiero para comenzar. No hace falta que esté perfecto: alcanza con que sea honesto.
               </p>
-              <div style={{ marginTop: 16 }}>
+              <div style={{ marginTop: 14 }}>
                 <Link href="/quieros/nuevo" style={btnPrimary}>
                   + Crear mi primer Quiero
                 </Link>
@@ -406,12 +406,8 @@ export default function QuierosListadoPage() {
             <div style={emptyBox}>
               <h2 style={emptyTitle}>No encontramos coincidencias</h2>
               <p style={emptyText}>Probá con otra palabra o borrá el texto de búsqueda.</p>
-              <div style={{ marginTop: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  style={{ ...btnSecondary, cursor: "pointer", fontWeight: 950 }}
-                >
+              <div style={{ marginTop: 12 }}>
+                <button type="button" onClick={() => setQuery("")} style={{ ...btnSecondary, cursor: "pointer" }}>
                   Limpiar búsqueda
                 </button>
               </div>
@@ -443,7 +439,7 @@ export default function QuierosListadoPage() {
           <style jsx>{`
             @media (max-width: 980px) {
               h1 {
-                font-size: 40px !important;
+                font-size: 32px !important;
               }
             }
           `}</style>

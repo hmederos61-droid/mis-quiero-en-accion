@@ -42,6 +42,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 /* =========================
@@ -50,6 +51,40 @@ body {
 body {
   color: var(--foreground);
   background: transparent;
+  position: relative;
+}
+
+/* =========================
+   FONDO GLOBAL ÚNICO — MQA (BASELINE 1920×1080)
+========================= */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background-image: url("/welcome.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+
+  /* Baseline fijo: NO crece por arriba de 1920×1080 */
+  background-size: 1920px 1080px;
+
+  background-color: #000;
+}
+
+/* En pantallas menores, recién ahí escala hacia abajo */
+@media (max-width: 1920px) {
+  .app-bg {
+    background-size: 100vw auto;
+  }
+}
+
+/* Contenido */
+.app-content {
+  position: relative;
+  min-height: 100vh;
+  z-index: 0;
 }
 
 /* =========================
