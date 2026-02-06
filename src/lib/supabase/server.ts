@@ -1,35 +1,40 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-export async function createServerSupabaseClient() {
-  const cookieStore = await cookies();
+/**
+ * Cliente Supabase para Server Components / Route Handlers (Next App Router).
+ * Exportamos:
+ * - createServerSupabaseClient (nombre “viejo” que ya tenías)
+ * - createSupabaseServerClient (alias requerido por tus routes actuales)
+ */
+export function createServerSupabaseClient() {
+  const cookieStore = cookies();
 
-  const supabase = createServerClient(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: any) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
           } catch {
-            // en server components puede fallar el set durante render
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // idem
+            // En ciertos contextos (p.ej. Server Components) no se pueden setear cookies.
+            // En Route Handlers generalmente sí.
           }
         },
       },
     }
   );
-
-  return supabase;
 }
 
+/**
+ * ✅ Alias para compatibilidad con los imports actuales:
+ * import { createSupabaseServerClient } from "@/lib/supabase/server"
+ */
+export const createSupabaseServerClient = createServerSupabaseClient;
