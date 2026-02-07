@@ -1,7 +1,6 @@
-// src/app/login/page.tsx
-export const dynamic = "force-dynamic";
-
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -117,8 +116,6 @@ function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Link real del mail:
-  // /login?token=...&email=...
   const token = searchParams.get("token")?.trim() || "";
   const emailFromLink = searchParams.get("email")?.trim() || "";
 
@@ -128,11 +125,6 @@ function LoginInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  /* =========================================================
-     AJUSTE CANÓNICO:
-     Si el mail entra a /login con token -> primero PREVIA:
-     /acceso/coachee?token=...
-  ========================================================= */
   useEffect(() => {
     if (!token) return;
 
@@ -147,7 +139,6 @@ function LoginInner() {
     });
   }, [supabase]);
 
-  // Precargar email al volver desde la previa (ya sin querystring)
   useEffect(() => {
     if (emailFromLink && !email) {
       setEmail(emailFromLink);
