@@ -1,6 +1,9 @@
+// src/app/login/page.tsx
+export const dynamic = "force-dynamic";
+
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -76,6 +79,9 @@ function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+/* =========================================================
+   Cache mínimo de email para el regreso a /login sin query
+========================================================= */
 const INV_EMAIL_KEY = "mqa_invite_email_v1";
 
 function readInviteEmail(): string {
@@ -103,7 +109,10 @@ function clearInviteEmail() {
   }
 }
 
-export default function LoginPage() {
+/* =========================================================
+   Inner: usa useSearchParams -> DEBE estar dentro de Suspense
+========================================================= */
+function LoginInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,18 +129,15 @@ export default function LoginPage() {
   const [hasSession, setHasSession] = useState(false);
 
   /* =========================================================
-     AJUSTE CANÓNICO (ÚNICO):
+     AJUSTE CANÓNICO:
      Si el mail entra a /login con token -> primero PREVIA:
      /acceso/coachee?token=...
-     (No se toca el mail ni el link)
   ========================================================= */
   useEffect(() => {
     if (!token) return;
 
-    // Guardamos email para precargar cuando vuelva a /login sin query
     if (emailFromLink) writeInviteEmail(emailFromLink);
 
-    // Enviar primero a la pantalla previa (activación)
     router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
   }, [token, emailFromLink, router]);
 
@@ -143,13 +149,14 @@ export default function LoginPage() {
 
   // Precargar email al volver desde la previa (ya sin querystring)
   useEffect(() => {
-    // Si vino directo por invitación, también lo precargamos
     if (emailFromLink && !email) {
       setEmail(emailFromLink);
+      setMsg(
+        "Ingresá el mismo email al que te llegó la invitación. Si ya tenés cuenta, podés ingresar. Si no, creala con “Crear cuenta”."
+      );
       return;
     }
 
-    // Si no hay email en query, intentamos recuperar de sessionStorage
     if (!emailFromLink && !email) {
       const cached = readInviteEmail();
       if (cached) {
@@ -161,16 +168,6 @@ export default function LoginPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailFromLink]);
-
-  // Estilo "grisado" para botones deshabilitados
-  function disabledStyle(base: React.CSSProperties): React.CSSProperties {
-    return {
-      ...base,
-      opacity: 0.35,
-      cursor: "not-allowed",
-      filter: "grayscale(70%)",
-    };
-  }
 
   async function onIngresar(e: React.FormEvent) {
     e.preventDefault();
@@ -237,9 +234,6 @@ export default function LoginPage() {
     router.push("/menu");
   }
 
-  // Nota: ya NO usamos "modo invitación" para bloquear botones.
-  // El orden correcto lo impone la redirección previa cuando hay token.
-
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
       <div
@@ -296,11 +290,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                style={btnIngresar}
-                disabled={loading}
-              >
+              <button type="submit" style={btnIngresar} disabled={loading}>
                 Ingresar
               </button>
 
@@ -365,5 +355,16 @@ export default function LoginPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+/* =========================================================
+   Wrapper: Suspense obligatorio para useSearchParams()
+========================================================= */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <LoginInner />
+    </Suspense>
   );
 }
