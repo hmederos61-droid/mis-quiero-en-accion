@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
@@ -48,24 +48,28 @@ const btnBase: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
-const btnIngresar = {
+const btnIngresar: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+  background:
+    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
 };
 
-const btnOlvide = {
+const btnOlvide: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
+  background:
+    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
-const btnCambiarMail = {
+const btnCambiarMail: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(255,170,60,0.55), rgba(230,140,20,0.45))",
+  background:
+    "linear-gradient(135deg, rgba(255,170,60,0.55), rgba(230,140,20,0.45))",
 };
 
-const btnCrearCuenta = {
+const btnCrearCuenta: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
+  background:
+    "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
 };
 
 function isEmailValid(email: string) {
@@ -75,6 +79,13 @@ function isEmailValid(email: string) {
 export default function LoginPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Si venimos por invitación:
+  // /login?token=...&email=...
+  const token = searchParams.get("token")?.trim() || "";
+  const emailFromLink = searchParams.get("email")?.trim() || "";
+  const isInviteMode = Boolean(token) || Boolean(emailFromLink);
 
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");
@@ -88,6 +99,30 @@ export default function LoginPage() {
     });
   }, [supabase]);
 
+  // Precargar email si vino por link
+  useEffect(() => {
+    if (emailFromLink && !email) {
+      setEmail(emailFromLink);
+    }
+    // Mensaje canónico si viene por invitación
+    if (isInviteMode) {
+      setMsg(
+        "Ingresá el mismo email al que te llegó la invitación y definí tu clave. Luego hacé click en “Crear cuenta”."
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailFromLink, isInviteMode]);
+
+  // Estilo "grisado" para botones deshabilitados
+  function disabledStyle(base: React.CSSProperties): React.CSSProperties {
+    return {
+      ...base,
+      opacity: 0.35,
+      cursor: "not-allowed",
+      filter: "grayscale(70%)",
+    };
+  }
+
   async function onIngresar(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -98,6 +133,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password: clave,
@@ -108,13 +144,67 @@ export default function LoginPage() {
     } else {
       setMsg("Login exitoso. Cuando estés listo, hacé click en “Comenzar”.");
       setHasSession(true);
+
+      // Si venimos por invitación, después de loguear llevamos al link con token
+      if (token) {
+        setTimeout(() => {
+          router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
+        }, 450);
+      }
     }
+
+    setLoading(false);
+  }
+
+  async function onCrearCuenta() {
+    setMsg(null);
+
+    const e = email.trim();
+    const p = clave;
+
+    if (!isEmailValid(e) || p.trim().length < 6) {
+      setMsg("Completá email válido y una clave de al menos 6 caracteres.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signUp({
+      email: e,
+      password: p,
+    });
+
+    if (error) {
+      setMsg("No se pudo crear la cuenta. Revisá el email o probá otra clave.");
+      setLoading(false);
+      return;
+    }
+
+    setMsg("Cuenta creada. Continuamos con la activación del acceso...");
+
+    // Canon: si hay token, volvemos al flujo de activación
+    if (token) {
+      setTimeout(() => {
+        router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
+      }, 600);
+    } else {
+      // Si no hay token, queda como alta estándar
+      setTimeout(() => {
+        router.replace("/menu");
+      }, 800);
+    }
+
     setLoading(false);
   }
 
   function onComenzar() {
     router.push("/menu");
   }
+
+  // Modo invitación: SOLO Crear cuenta habilitado
+  const disableIngresar = isInviteMode;
+  const disableOlvide = isInviteMode;
+  const disableCambiarMail = isInviteMode;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -146,7 +236,10 @@ export default function LoginPage() {
 
             {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
 
-            <form style={{ display: "grid", gap: 14, marginTop: 18 }} onSubmit={onIngresar}>
+            <form
+              style={{ display: "grid", gap: 14, marginTop: 18 }}
+              onSubmit={onIngresar}
+            >
               <div>
                 <div style={labelStyle}>Email</div>
                 <input
@@ -154,6 +247,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
+                  autoComplete="email"
+                  readOnly={Boolean(emailFromLink)} // si vino desde invitación, se bloquea
                 />
               </div>
 
@@ -164,17 +259,52 @@ export default function LoginPage() {
                   type="password"
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
+                  autoComplete={isInviteMode ? "new-password" : "current-password"}
                 />
               </div>
 
-              <button type="submit" style={btnIngresar} disabled={loading}>
+              <button
+                type="submit"
+                style={disableIngresar ? disabledStyle(btnIngresar) : btnIngresar}
+                disabled={loading || disableIngresar}
+                title={
+                  disableIngresar
+                    ? "Para invitación, primero creá la cuenta con el botón “Crear cuenta”."
+                    : undefined
+                }
+              >
                 Ingresar
               </button>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <button type="button" style={btnOlvide}>Olvidé mi clave</button>
-                <button type="button" style={btnCambiarMail}>Cambiar mi email</button>
-                <button type="button" style={btnCrearCuenta}>Crear cuenta</button>
+                <button
+                  type="button"
+                  style={disableOlvide ? disabledStyle(btnOlvide) : btnOlvide}
+                  disabled={disableOlvide}
+                >
+                  Olvidé mi clave
+                </button>
+
+                <button
+                  type="button"
+                  style={
+                    disableCambiarMail
+                      ? disabledStyle(btnCambiarMail)
+                      : btnCambiarMail
+                  }
+                  disabled={disableCambiarMail}
+                >
+                  Cambiar mi email
+                </button>
+
+                <button
+                  type="button"
+                  style={btnCrearCuenta}
+                  disabled={loading}
+                  onClick={onCrearCuenta}
+                >
+                  Crear cuenta
+                </button>
               </div>
             </form>
           </div>
@@ -205,7 +335,8 @@ export default function LoginPage() {
                   onClick={onComenzar}
                   style={{
                     ...btnBase,
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
                   }}
                 >
                   Comenzar
