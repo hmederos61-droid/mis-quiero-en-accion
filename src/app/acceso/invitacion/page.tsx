@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* =========================
@@ -81,7 +81,7 @@ function InvitacionInner() {
 
   function goNext() {
     // Pasamos token/email al login NUEVO (minimal)
-    const dest = new URL("/login/invitado", window.location.origin);
+    const dest = new URL("/loginprimeracceso", window.location.origin);
     dest.searchParams.set("token", token);
     if (email) dest.searchParams.set("email", email);
 
