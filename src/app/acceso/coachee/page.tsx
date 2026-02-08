@@ -67,44 +67,34 @@ function AccesoCoacheeInner() {
   const router = useRouter();
 
   const token = searchParams.get("token");
+  const email = searchParams.get("email"); // si viene, lo preservamos para /carga
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<boolean>(false);
 
+  // =========================================================
+  // CANÓNICO (según tu pedido):
+  // - Esta pantalla NO debe ser una "pantalla previa" visible.
+  // - Si llega con token => redirige directo a /acceso/coachee/carga
+  // - NO toca /login
+  // - NO toca el mail
+  // - NO activa automáticamente nada (no RPC acá)
+  // =========================================================
   useEffect(() => {
     if (!token) {
       setError(
         "No se pudo activar el acceso. Pedile a tu coach un nuevo enlace."
       );
-    }
-  }, [token]);
-
-  async function handleActivate() {
-    if (!token) return;
-
-    setLoading(true);
-    setError(null);
-
-    const { data, error } = await supabase.rpc("activate_coachee_by_token", {
-      p_token: token,
-    });
-
-    if (error || !data?.ok) {
-      setError(
-        "No se pudo activar el acceso. Pedile a tu coach un nuevo enlace."
-      );
-      setLoading(false);
       return;
     }
 
-    setOk(true);
-    setLoading(false);
+    const dest = new URL("/acceso/coachee/carga", window.location.origin);
+    dest.searchParams.set("token", token);
+    if (email) dest.searchParams.set("email", email);
 
-    setTimeout(() => {
-      router.replace("/login");
-    }, 1500);
-  }
+    // replace para que no vuelva atrás a esta pantalla
+    router.replace(dest.pathname + dest.search);
+  }, [token, email, router]);
 
   return (
     <>
@@ -130,49 +120,31 @@ function AccesoCoacheeInner() {
         }}
       >
         <div style={glassCard}>
-          <div style={labelStyle}>
-            {ok ? "Acceso habilitado" : "Bienvenido a tu proceso"}
-          </div>
+          <div style={labelStyle}>Bienvenido a tu proceso</div>
 
           <div style={textStyle}>
-            {ok && (
-              <>
-                Tu acceso fue activado correctamente.
-                <br />
-                En instantes serás redirigido para iniciar sesión.
-              </>
+            {token && !error && (
+              <>Cargando…</>
             )}
-
-            {!ok && !error && (
-              <>
-                Un coach te invitó a iniciar un proceso de acompañamiento.
-                <br />
-                Este espacio es personal, confidencial y está diseñado para
-                acompañarte paso a paso.
-              </>
-            )}
-
             {error && <span style={{ color: "#ffb4b4" }}>{error}</span>}
           </div>
 
-          {!ok && (
+          {error && (
             <>
               <button
                 style={buttonStyle}
-                onClick={handleActivate}
+                onClick={() => router.replace("/login")}
                 disabled={loading}
               >
-                {loading ? "Activando..." : "Comenzar"}
+                {loading ? "Cargando..." : "Ir al login"}
               </button>
 
-              {error && (
-                <button
-                  style={secondaryButtonStyle}
-                  onClick={() => router.replace("/login")}
-                >
-                  Salir
-                </button>
-              )}
+              <button
+                style={secondaryButtonStyle}
+                onClick={() => router.replace("/login")}
+              >
+                Salir
+              </button>
             </>
           )}
         </div>
