@@ -48,19 +48,6 @@ const buttonStyle: React.CSSProperties = {
   boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
 };
 
-const secondaryButtonStyle: React.CSSProperties = {
-  marginTop: 14,
-  width: "100%",
-  padding: "12px 18px",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.35)",
-  fontSize: 16,
-  fontWeight: 500,
-  cursor: "pointer",
-  color: "#fff",
-  background: "rgba(255,255,255,0.08)",
-};
-
 function AccesoCoacheeInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const searchParams = useSearchParams();
@@ -68,43 +55,81 @@ function AccesoCoacheeInner() {
 
   const token = searchParams.get("token");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [ok, setOk] = useState(false);
+  const [coachName, setCoachName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<boolean>(false);
+
+  async function fetchCoachNameFromAppSettings(): Promise<string | null> {
+    // CANÓNICO (según tu instrucción): tomar el nombre desde app_settings.coach_name
+    // Asumimos una sola fila de settings. Si hay más, tomamos la primera.
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("coach_name")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) return null;
+    const name = (data as any)?.coach_name;
+    return name ? String(name) : null;
+  }
 
   useEffect(() => {
     if (!token) {
-      setError(
-        "No se pudo activar el acceso. Pedile a tu coach un nuevo enlace."
-      );
-    }
-  }, [token]);
-
-  async function handleActivate() {
-    if (!token) return;
-
-    setLoading(true);
-    setError(null);
-
-    const { data, error } = await supabase.rpc("activate_coachee_by_token", {
-      p_token: token,
-    });
-
-    if (error || !data?.ok) {
-      setError(
-        "No se pudo activar el acceso. Pedile a tu coach un nuevo enlace."
-      );
-      setLoading(false);
+      // Sin token: no mostramos mensajes (evitamos textos fuera de regla) y volvemos a login.
+      router.replace("/login");
       return;
     }
 
-    setOk(true);
-    setLoading(false);
+    let cancelled = false;
 
-    setTimeout(() => {
-      router.replace("/login");
-    }, 1500);
-  }
+    async function run() {
+      setLoading(true);
+      setError(null);
+      setOk(false);
+
+      // 1) Intento de activación (sin tocar /login)
+      const { data, error: rpcError } = await supabase.rpc(
+        "activate_coachee_by_token",
+        { p_token: token }
+      );
+
+      if (cancelled) return;
+
+      // 2) Si falla: mostrar mensaje SOLO con nombre del coach (desde app_settings)
+      if (rpcError || !(data as any)?.ok) {
+        const name = await fetchCoachNameFromAppSettings();
+        if (cancelled) return;
+
+        if (!name) {
+          // Si por algún motivo no podemos obtener el nombre, volvemos a login (sin romper reglas).
+          router.replace("/login");
+          return;
+        }
+
+        setCoachName(name);
+        setError(
+          `No se pudo activar el acceso. Por favor, solicitale a ${name} un nuevo enlace.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      // 3) Si OK: redirección a /login (sin modificar /login)
+      setOk(true);
+      setLoading(false);
+
+      setTimeout(() => {
+        router.replace("/login");
+      }, 1200);
+    }
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router, supabase]);
 
   return (
     <>
@@ -135,6 +160,8 @@ function AccesoCoacheeInner() {
           </div>
 
           <div style={textStyle}>
+            {loading && !error && !ok && <>Verificando y activando tu invitación…</>}
+
             {ok && (
               <>
                 Tu acceso fue activado correctamente.
@@ -143,9 +170,10 @@ function AccesoCoacheeInner() {
               </>
             )}
 
-            {!ok && !error && (
+            {/* Mensajes SOLO con nombre del coach (cuando esté disponible) */}
+            {!loading && !ok && !error && coachName && (
               <>
-                Un coach te invitó a iniciar un proceso de acompañamiento.
+                {coachName} te invitó a iniciar un proceso de acompañamiento.
                 <br />
                 Este espacio es personal, confidencial y está diseñado para
                 acompañarte paso a paso.
@@ -155,25 +183,10 @@ function AccesoCoacheeInner() {
             {error && <span style={{ color: "#ffb4b4" }}>{error}</span>}
           </div>
 
-          {!ok && (
-            <>
-              <button
-                style={buttonStyle}
-                onClick={handleActivate}
-                disabled={loading}
-              >
-                {loading ? "Activando..." : "Comenzar"}
-              </button>
-
-              {error && (
-                <button
-                  style={secondaryButtonStyle}
-                  onClick={() => router.replace("/login")}
-                >
-                  Salir
-                </button>
-              )}
-            </>
+          {error && (
+            <button style={buttonStyle} onClick={() => router.replace("/login")}>
+              Salir
+            </button>
           )}
         </div>
       </div>
