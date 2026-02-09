@@ -209,7 +209,7 @@ function ddmmyyyyToIsoDate(v: string) {
 
   const mm2 = String(mm).padStart(2, "0");
   const dd2 = String(dd).padStart(2, "0");
-  return `${yy}-${mm2}-${dd2}`; // date ISO (YYYY-MM-DD)
+  return `${yy}-${mm2}-${dd2}`;
 }
 
 /* =========================
@@ -230,13 +230,10 @@ function formatCuitMask(raw: string) {
 
 function isValidCuitMask(v: string) {
   const t = clean(v);
-  if (!t) return true; // opcional
+  if (!t) return true;
   return /^\d{2}\/\d{8}-\d{1}$/.test(t);
 }
 
-/* =========================
-   Selector Tipo Doc compacto
-========================= */
 const selectWrap: React.CSSProperties = { position: "relative" };
 
 const selectCompact: React.CSSProperties = {
@@ -259,9 +256,6 @@ const selectArrow: React.CSSProperties = {
   opacity: 0.9,
 };
 
-/* =========================
-   Emite factura SI/NO compacto
-========================= */
 const ynWrap: React.CSSProperties = {
   display: "inline-flex",
   gap: 10,
@@ -294,9 +288,6 @@ const ynBtnActive: React.CSSProperties = {
   boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
 };
 
-/* =========================================================
-   extractFunctionErrorDetail()
-========================================================= */
 async function extractFunctionErrorDetail(fnErr: any): Promise<string> {
   try {
     if (!fnErr) return "Error desconocido (sin detalle).";
@@ -337,29 +328,12 @@ async function extractFunctionErrorDetail(fnErr: any): Promise<string> {
     if (status !== null && status !== undefined) parts.push(`status: ${status}`);
     if (bodyText) parts.push(`body: ${bodyText}`);
 
-    if (parts.length === 1) {
-      try {
-        parts.push(`raw: ${JSON.stringify(fnErr)}`);
-      } catch {
-        // silencio
-      }
-    }
-
     return parts.join("\n");
   } catch {
     return "No fue posible extraer detalle del error de la Edge Function.";
   }
 }
 
-/* =========================================================
-   upsertInvitation() según uq_coachee_inv (coach_id + coachee_id)
-
-   AJUSTE EXACTO (según constraint de BD):
-   - NO existe "pending" en la BD
-   - status debe ser uno de: sent | used | expired | revoked
-   - Por lo tanto: usamos "sent" al crear/actualizar la invitación
-
-========================================================= */
 async function upsertInvitation(params: {
   supabase: any;
   coach_id: string;
@@ -369,7 +343,6 @@ async function upsertInvitation(params: {
 }): Promise<{ invitation_id: string; token: string; operation: "update" | "insert" }> {
   const { supabase, coach_id, coachee_id, email, expires_at } = params;
 
-  // 1) Buscar por la UNIQUE REAL: (coach_id + coachee_id)
   const { data: existing, error: exErr } = await supabase
     .from("coachee_invitations")
     .select("id")
@@ -380,14 +353,12 @@ async function upsertInvitation(params: {
 
   if (exErr) {
     throw new Error(
-      `No fue posible validar invitación existente: ${exErr.message || "sin detalle"}`,
+      `No fue posible validar invitación existente: ${exErr.message || "sin detalle"}`
     );
   }
 
-  // Token NUEVO en cada envío
   const token = crypto.randomUUID();
 
-  // 2) Si existe => UPDATE
   if (existing?.id) {
     const { error: updErr } = await supabase
       .from("coachee_invitations")
@@ -401,7 +372,7 @@ async function upsertInvitation(params: {
 
     if (updErr) {
       throw new Error(
-        `No fue posible actualizar invitación existente: ${updErr.message || "sin detalle"}`,
+        `No fue posible actualizar invitación existente: ${updErr.message || "sin detalle"}`
       );
     }
 
@@ -412,7 +383,6 @@ async function upsertInvitation(params: {
     };
   }
 
-  // 3) Si no existe => INSERT
   const { data: insData, error: insErr } = await supabase
     .from("coachee_invitations")
     .insert({
@@ -428,7 +398,7 @@ async function upsertInvitation(params: {
 
   if (insErr || !insData?.id) {
     throw new Error(
-      `No fue posible crear la invitación en BD: ${insErr?.message || "sin detalle"}`,
+      `No fue posible crear la invitación en BD: ${insErr?.message || "sin detalle"}`
     );
   }
 
@@ -478,15 +448,7 @@ type IssueKey =
 type Issue = { key: IssueKey; label: string; detail: string };
 
 const LS_KEY = "mqa_acceso_coachee_datos_draft_v1";
-
-// Dominio canónico único (NO Vercel, NO localhost)
 const CANONICAL_BASE_URL = "https://www.misquieroenaccion.com";
-
-type CoachTemplate = {
-  email_subject: string | null;
-  email_body: string | null;
-  header_image_url: string | null;
-};
 
 export default function AccesoCoacheeCargaPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -544,7 +506,11 @@ export default function AccesoCoacheeCargaPage() {
       issues.push({ key: "email", label: "Email", detail: "ingresá un email válido" });
     }
     if (!isValidDateMask(fechaNacimiento)) {
-      issues.push({ key: "fechaNacimiento", label: "Fecha de nacimiento", detail: "formato válido dd/mm/aaaa (día 01-31, mes 01-12)" });
+      issues.push({
+        key: "fechaNacimiento",
+        label: "Fecha de nacimiento",
+        detail: "formato válido dd/mm/aaaa (día 01-31, mes 01-12)",
+      });
     }
     if (clean(calle).length <= 1) {
       issues.push({ key: "calle", label: "Calle", detail: "completá este campo" });
@@ -676,25 +642,26 @@ export default function AccesoCoacheeCargaPage() {
     return coachRow.id as string;
   }
 
-  async function fetchActiveCoachTemplateOrNull(coach_id: string): Promise<CoachTemplate | null> {
+  // ✅ CANÓNICO (post-migración): usar first_name si existe, luego full_name
+  async function resolveCoachNameOrDefault(coach_id: string): Promise<string> {
     try {
-      const { data, error: tErr } = await supabase
-        .from("coach_invitation_templates")
-        .select("email_subject,email_body,header_image_url")
-        .eq("coach_id", coach_id)
-        .eq("is_active", true)
-        .limit(1)
+      const { data, error } = await supabase
+        .from("coaches")
+        .select("first_name, full_name")
+        .eq("id", coach_id)
         .maybeSingle();
 
-      if (tErr || !data) return null;
+      if (error) return "Tu coach";
 
-      return {
-        email_subject: (data as any)?.email_subject ?? null,
-        email_body: (data as any)?.email_body ?? null,
-        header_image_url: (data as any)?.header_image_url ?? null,
-      };
+      const first = clean((data as any)?.first_name);
+      if (first) return first;
+
+      const full = clean((data as any)?.full_name);
+      if (full) return full;
+
+      return "Tu coach";
     } catch {
-      return null;
+      return "Tu coach";
     }
   }
 
@@ -804,48 +771,43 @@ export default function AccesoCoacheeCargaPage() {
         return;
       }
 
-      if (!coachId) {
-        setError("No se detectó coach_id. Volvé a Guardar y luego enviá.");
+      // 🔒 RESOLVER coach_id EN EL MOMENTO DE ENVIAR (NO DEPENDER DE LS)
+      const resolvedCoachId = coachId || (await resolveCoachIdOrFail());
+      if (!resolvedCoachId) {
+        setError("No se pudo resolver coach_id al enviar. Volvé a iniciar sesión e intentá nuevamente.");
         return;
       }
-
       if (!coacheeId) {
         setError("No se detectó coachee_id. Volvé a Guardar y luego enviá.");
         return;
       }
 
       const coacheeNombre = clean(`${nombre} ${apellido}`) || "Coachee";
+      const coachNombre = await resolveCoachNameOrDefault(resolvedCoachId);
 
-      let coachNombre = "Tu coach";
-      try {
-        const { data: coachRow } = await supabase
-          .from("coaches")
-          .select("full_name")
-          .eq("id", coachId)
-          .maybeSingle();
-        coachNombre = clean((coachRow as any)?.full_name) || coachNombre;
-      } catch {
-        // silencio
-      }
-
-      // 2) Link canónico a producción, SIEMPRE a /loginprimeracceso
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const { invitation_id, token } = await upsertInvitation({
         supabase,
-        coach_id: coachId,
+        coach_id: resolvedCoachId,
         coachee_id: coacheeId,
         email: toEmail,
         expires_at: expiresAt,
       });
 
+      const login_url =
+        `${CANONICAL_BASE_URL}/loginprimeracceso?token=${encodeURIComponent(token)}` +
+        `&email=${encodeURIComponent(toEmail)}`;
+
       const { data, error: fnErr } = await supabase.functions.invoke("send-coachee-invite", {
         body: {
           token,
           to_email: toEmail,
-          coach_id: coachId,
+          email: toEmail, // compat (por si queda algo del otro lado)
+          coach_id: resolvedCoachId, // ✅ CRÍTICO
           coachee_nombre: coacheeNombre,
-          coach_nombre: coachNombre,
+          coach_nombre: coachNombre, // ✅ ahora será "Hugo"
+          login_url, // por si alguna versión lo usa (no rompe)
         },
       });
 
@@ -862,17 +824,18 @@ export default function AccesoCoacheeCargaPage() {
       }
 
       const ok = (data as any)?.ok;
-      if (ok === false) {
+      if (ok !== true) {
         try {
           await supabase.from("coachee_invitations").update({ status: "revoked" }).eq("id", invitation_id);
         } catch {
           // silencio
         }
-        setError(`No fue posible enviar el mail.\nbody: ${String((data as any)?.error || "sin detalle")}`);
+        setError(`No fue posible enviar el mail.\nbody: ${JSON.stringify(data || {})}`);
         return;
       }
 
       setError(`✅ Mail enviado a ${toEmail}. Revisá Gmail.`);
+      setCoachId(resolvedCoachId);
     } catch (e: any) {
       setError(e?.message ? String(e.message) : "No fue posible enviar el mail. Intentá nuevamente.");
     } finally {
