@@ -57,25 +57,20 @@ const btnCrearCuenta: React.CSSProperties = {
     "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
 };
 
-const btnIngresar: React.CSSProperties = {
+const btnAcceder: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
 };
 
+const btnSalir: React.CSSProperties = {
+  ...btnBase,
+  background:
+    "linear-gradient(135deg, rgba(90,130,255,0.45), rgba(60,90,220,0.35))",
+};
+
 function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
-function claveGuidance() {
-  return (
-    <>
-      Ahora solo colocá la clave que deseas utilizar en este ámbito.
-      <br />
-      Criterios simples: mínimo 6 caracteres (recomendado 8 a 20). Idealmente
-      letras y números. Nada complejo.
-    </>
-  );
 }
 
 function LoginPrimerIngresoInner() {
@@ -92,22 +87,17 @@ function LoginPrimerIngresoInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
+  // 1) Presentar el mail del coachee en el campo mail
+  useEffect(() => {
+    if (emailFromLink) setEmail(emailFromLink);
+  }, [emailFromLink]);
+
+  // 2) Estado de sesión (para habilitar banner derecho con Acceder/Salir)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setHasSession(Boolean(data.session));
     });
   }, [supabase]);
-
-  // 1) Presentar el mail del coachee en el campo mail
-  useEffect(() => {
-    if (emailFromLink) {
-      setEmail(emailFromLink);
-      setMsg(claveGuidance());
-    } else {
-      // Si no viene email, igual mostramos la guía
-      setMsg(claveGuidance());
-    }
-  }, [emailFromLink]);
 
   async function onCrearCuenta() {
     setMsg(null);
@@ -116,9 +106,7 @@ function LoginPrimerIngresoInner() {
     const p = clave.trim();
 
     if (!isEmailValid(e) || p.length < 6) {
-      setMsg(
-        "Completá un email válido y una clave de al menos 6 caracteres (recomendado 8 a 20)."
-      );
+      setMsg("Completá un email válido y una clave de al menos 6 caracteres.");
       return;
     }
 
@@ -135,45 +123,20 @@ function LoginPrimerIngresoInner() {
       return;
     }
 
-    // Cuenta creada: pedimos ingresar (o si quedó sesión, lo tomará el getSession)
-    setMsg("Cuenta creada. Ahora podés ingresar con tu email y clave.");
-    setLoading(false);
-  }
+    // Intentamos reflejar sesión real (en prod tienen Confirm email desactivado)
+    const { data } = await supabase.auth.getSession();
+    const okSession = Boolean(data.session);
+    setHasSession(okSession);
 
-  async function onIngresar(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-
-    const eMail = email.trim();
-    const p = clave.trim();
-
-    if (!isEmailValid(eMail) || p.length < 6) {
-      setMsg(
-        "Completá un email válido y una clave de al menos 6 caracteres (recomendado 8 a 20)."
-      );
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: eMail,
-      password: p,
-    });
-
-    if (error) {
-      setMsg("Email o clave incorrectos.");
-      setHasSession(false);
-    } else {
-      setHasSession(true);
-      setMsg(null);
-    }
+    // Mensaje de éxito coherente (el banner derecho queda habilitado si hay sesión)
+    setMsg("Cuenta creada.");
 
     setLoading(false);
   }
 
   function onAcceder() {
-    router.push("/menu");
+    // Canon: ir directo a Quieros (sin pasar por menu.tsx)
+    router.push("/quieros");
   }
 
   async function onSalir() {
@@ -181,7 +144,7 @@ function LoginPrimerIngresoInner() {
     await supabase.auth.signOut();
     setHasSession(false);
     setClave("");
-    setMsg(claveGuidance());
+    setMsg(null);
     setLoading(false);
   }
 
@@ -209,16 +172,16 @@ function LoginPrimerIngresoInner() {
           <div style={glassCard}>
             <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
+            {/* COPY CANÓNICO */}
             <p style={{ fontSize: 20, marginTop: 10 }}>
-              Primer ingreso: creá tu cuenta con tu mail y una clave.
+              Bienvenido, solo te resta que ingreses una clave, porque tu
+              dirección de mail ya te la estás viendo.
             </p>
 
             {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
 
-            <form
-              style={{ display: "grid", gap: 14, marginTop: 18 }}
-              onSubmit={onIngresar}
-            >
+            {/* Solo Crear cuenta (Ingresar desaparece del panel izquierdo) */}
+            <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
               <div>
                 <div style={labelStyle}>Email</div>
                 <input
@@ -241,7 +204,6 @@ function LoginPrimerIngresoInner() {
                 />
               </div>
 
-              {/* 3) Primer botón: Crear cuenta */}
               <button
                 type="button"
                 style={btnCrearCuenta}
@@ -250,12 +212,7 @@ function LoginPrimerIngresoInner() {
               >
                 Crear cuenta
               </button>
-
-              {/* Si ya existe cuenta, puede ingresar */}
-              <button type="submit" style={btnIngresar} disabled={loading}>
-                Ingresar
-              </button>
-            </form>
+            </div>
           </div>
 
           {/* DERECHA (Banner) */}
@@ -282,15 +239,18 @@ function LoginPrimerIngresoInner() {
                   Quiero… empecemos con la acción…!!!!!!!
                 </div>
 
-                <div style={{ width: "100%", marginTop: 22, display: "grid", gap: 12 }}>
+                <div
+                  style={{
+                    width: "100%",
+                    marginTop: 22,
+                    display: "grid",
+                    gap: 12,
+                  }}
+                >
                   <button
                     onClick={onAcceder}
                     disabled={loading}
-                    style={{
-                      ...btnBase,
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
-                    }}
+                    style={btnAcceder}
                   >
                     Acceder
                   </button>
@@ -298,11 +258,7 @@ function LoginPrimerIngresoInner() {
                   <button
                     onClick={onSalir}
                     disabled={loading}
-                    style={{
-                      ...btnBase,
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06))",
-                    }}
+                    style={btnSalir}
                   >
                     Salir
                   </button>
