@@ -828,9 +828,6 @@ export default function AccesoCoacheeCargaPage() {
         // silencio
       }
 
-      // 1) Obtener template activo del coach (si existe)
-      const tpl = await fetchActiveCoachTemplateOrNull(coachId);
-
       // 2) Link canónico a producción, SIEMPRE a /loginprimeracceso
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -842,29 +839,13 @@ export default function AccesoCoacheeCargaPage() {
         expires_at: expiresAt,
       });
 
-      const login_url =
-        `${CANONICAL_BASE_URL}/loginprimeracceso?token=${encodeURIComponent(token)}` +
-        `&email=${encodeURIComponent(toEmail)}`;
-
-      const email_subject = (tpl?.email_subject || "").trim();
-      const email_body = (tpl?.email_body || "").trim();
-      const header_image_url = (tpl?.header_image_url || "").trim();
-
       const { data, error: fnErr } = await supabase.functions.invoke("send-coachee-invite", {
         body: {
-          email: toEmail,
-          coachee_id: coacheeId,
           token,
-          invitation_id,
           to_email: toEmail,
+          coach_id: coachId,
           coachee_nombre: coacheeNombre,
           coach_nombre: coachNombre,
-
-          // NUEVO: template + link canónico
-          login_url,
-          email_subject,
-          email_body,
-          header_image_url,
         },
       });
 
