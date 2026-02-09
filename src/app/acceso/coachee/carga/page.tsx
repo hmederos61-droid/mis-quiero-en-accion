@@ -479,6 +479,15 @@ type Issue = { key: IssueKey; label: string; detail: string };
 
 const LS_KEY = "mqa_acceso_coachee_datos_draft_v1";
 
+// Dominio canónico único (NO Vercel, NO localhost)
+const CANONICAL_BASE_URL = "https://www.misquieroenaccion.com";
+
+type CoachTemplate = {
+  email_subject: string | null;
+  email_body: string | null;
+  header_image_url: string | null;
+};
+
 export default function AccesoCoacheeCargaPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
@@ -667,6 +676,28 @@ export default function AccesoCoacheeCargaPage() {
     return coachRow.id as string;
   }
 
+  async function fetchActiveCoachTemplateOrNull(coach_id: string): Promise<CoachTemplate | null> {
+    try {
+      const { data, error: tErr } = await supabase
+        .from("coach_invitation_templates")
+        .select("email_subject,email_body,header_image_url")
+        .eq("coach_id", coach_id)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (tErr || !data) return null;
+
+      return {
+        email_subject: (data as any)?.email_subject ?? null,
+        email_body: (data as any)?.email_body ?? null,
+        header_image_url: (data as any)?.header_image_url ?? null,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async function handleGuardar() {
     setError(null);
     setSubmitAttempted(true);
@@ -797,6 +828,10 @@ export default function AccesoCoacheeCargaPage() {
         // silencio
       }
 
+      // 1) Obtener template activo del coach (si existe)
+      const tpl = await fetchActiveCoachTemplateOrNull(coachId);
+
+      // 2) Link canónico a producción, SIEMPRE a /loginprimeracceso
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const { invitation_id, token } = await upsertInvitation({
@@ -807,6 +842,14 @@ export default function AccesoCoacheeCargaPage() {
         expires_at: expiresAt,
       });
 
+      const login_url =
+        `${CANONICAL_BASE_URL}/loginprimeracceso?token=${encodeURIComponent(token)}` +
+        `&email=${encodeURIComponent(toEmail)}`;
+
+      const email_subject = (tpl?.email_subject || "").trim();
+      const email_body = (tpl?.email_body || "").trim();
+      const header_image_url = (tpl?.header_image_url || "").trim();
+
       const { data, error: fnErr } = await supabase.functions.invoke("send-coachee-invite", {
         body: {
           email: toEmail,
@@ -816,6 +859,12 @@ export default function AccesoCoacheeCargaPage() {
           to_email: toEmail,
           coachee_nombre: coacheeNombre,
           coach_nombre: coachNombre,
+
+          // NUEVO: template + link canónico
+          login_url,
+          email_subject,
+          email_body,
+          header_image_url,
         },
       });
 
