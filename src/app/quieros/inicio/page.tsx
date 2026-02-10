@@ -1,11 +1,16 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    QUIEROS / INICIO
    - ESCALA CANÓNICA
    - SIN FONDO LOCAL (criterio global)
    - Alineado a Login + Menú + /quieros
+   - BLINDAJE: si no hay sesión -> /login (sin ?next)
 ========================= */
 
 const pageWrap: React.CSSProperties = {
@@ -149,6 +154,41 @@ function ActionRow({
 }
 
 export default function QuierosInicioPage() {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const router = useRouter();
+
+  // Blindaje: hasta chequear sesión no mostramos nada (evita exposición).
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+
+    async function checkAuth() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (cancel) return;
+
+        const hasSession = !!data.session;
+
+        if (!hasSession) {
+          router.replace("/login");
+          return;
+        }
+
+        setAuthChecked(true);
+      } catch {
+        if (!cancel) router.replace("/login");
+      }
+    }
+
+    checkAuth();
+    return () => {
+      cancel = true;
+    };
+  }, [supabase, router]);
+
+  if (!authChecked) return <div />;
+
   return (
     <main>
       <div style={pageWrap}>
