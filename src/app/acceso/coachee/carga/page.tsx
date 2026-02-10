@@ -340,7 +340,11 @@ async function upsertInvitation(params: {
   coachee_id: string;
   email: string;
   expires_at: string;
-}): Promise<{ invitation_id: string; token: string; operation: "update" | "insert" }> {
+}): Promise<{
+  invitation_id: string;
+  token: string;
+  operation: "update" | "insert";
+}> {
   const { supabase, coach_id, coachee_id, email, expires_at } = params;
 
   const { data: existing, error: exErr } = await supabase
@@ -494,13 +498,25 @@ export default function AccesoCoacheeCargaPage() {
     const issues: Issue[] = [];
 
     if (clean(nombre).length <= 1) {
-      issues.push({ key: "nombre", label: "Nombre", detail: "completá al menos 2 caracteres" });
+      issues.push({
+        key: "nombre",
+        label: "Nombre",
+        detail: "completá al menos 2 caracteres",
+      });
     }
     if (clean(apellido).length <= 1) {
-      issues.push({ key: "apellido", label: "Apellido", detail: "completá al menos 2 caracteres" });
+      issues.push({
+        key: "apellido",
+        label: "Apellido",
+        detail: "completá al menos 2 caracteres",
+      });
     }
     if (!isValidPhone(whatsapp)) {
-      issues.push({ key: "whatsapp", label: "WhatsApp", detail: "ingresá un número válido (mínimo 8 dígitos)" });
+      issues.push({
+        key: "whatsapp",
+        label: "WhatsApp",
+        detail: "ingresá un número válido (mínimo 8 dígitos)",
+      });
     }
     if (!isValidEmail(email)) {
       issues.push({ key: "email", label: "Email", detail: "ingresá un email válido" });
@@ -519,7 +535,11 @@ export default function AccesoCoacheeCargaPage() {
       issues.push({ key: "numero", label: "Número", detail: "completá este campo" });
     }
     if (clean(codigoPostal).length <= 1) {
-      issues.push({ key: "codigoPostal", label: "Código Postal", detail: "completá este campo" });
+      issues.push({
+        key: "codigoPostal",
+        label: "Código Postal",
+        detail: "completá este campo",
+      });
     }
     if (clean(pais).length <= 1) {
       issues.push({ key: "pais", label: "País", detail: "completá este campo" });
@@ -527,11 +547,19 @@ export default function AccesoCoacheeCargaPage() {
 
     const nro = onlyDigits(nroDocumento);
     if (clean(nroDocumento).length <= 4 || !/^\d+$/.test(nro) || nro.length <= 4) {
-      issues.push({ key: "nroDocumento", label: "Nro de documento", detail: "ingresá solo números (mínimo 5 dígitos)" });
+      issues.push({
+        key: "nroDocumento",
+        label: "Nro de documento",
+        detail: "ingresá solo números (mínimo 5 dígitos)",
+      });
     }
 
     if (!isValidCuitMask(cuitCuil)) {
-      issues.push({ key: "cuitCuil", label: "CUIT/CUIL", detail: "formato válido 99/99999999-9 (o dejalo vacío)" });
+      issues.push({
+        key: "cuitCuil",
+        label: "CUIT/CUIL",
+        detail: "formato válido 99/99999999-9 (o dejalo vacío)",
+      });
     }
 
     return issues;
@@ -684,7 +712,9 @@ export default function AccesoCoacheeCargaPage() {
     try {
       const resolvedCoachId = await resolveCoachIdOrFail();
       if (!resolvedCoachId) {
-        setError("No se pudo resolver el Coach (sesión/coach_id). Volvé a iniciar sesión e intentá nuevamente.");
+        setError(
+          "No se pudo resolver el Coach (sesión/coach_id). Volvé a iniciar sesión e intentá nuevamente."
+        );
         return;
       }
 
@@ -700,16 +730,47 @@ export default function AccesoCoacheeCargaPage() {
       const dniDigits = onlyDigits(draft.nroDocumento);
       const cuitDigits = onlyDigits(draft.cuitCuil);
 
+      // =========================================================
+      // ✅ CAMBIO CANÓNICO (NÚCLEO): al GUARDAR se crea identidad coachee
+      // - Crear Auth user + app_users + role='coachee' vía Edge Function
+      // - Luego persistir auth_user_id en public.coachees.auth_user_id
+      // - Si falla: NO se guarda nada en coachees, NO se marca savedOnce
+      // =========================================================
+      const normalizedEmail = clean(draft.email).toLowerCase();
+      const { data: idData, error: idFnErr } = await supabase.functions.invoke(
+        "create-coachee-auth-and-role",
+        { body: { email: normalizedEmail } }
+      );
+
+      if (idFnErr) {
+        const detail = await extractFunctionErrorDetail(idFnErr);
+        setError(`No fue posible crear la identidad del coachee (Auth/Rol).\n${detail}`);
+        return;
+      }
+
+      const ok = (idData as any)?.ok;
+      const auth_user_id = (idData as any)?.auth_user_id;
+
+      if (ok !== true || !auth_user_id || typeof auth_user_id !== "string") {
+        setError(
+          `No fue posible crear la identidad del coachee (respuesta inválida).\nbody: ${JSON.stringify(
+            idData || {}
+          )}`
+        );
+        return;
+      }
+
       const payload: any = {
         coach_id: resolvedCoachId,
         full_name: fullName,
-        email: clean(draft.email).toLowerCase(),
+        email: normalizedEmail,
         dni: dniDigits,
         cuit_cuil: cuitDigits || "",
         address: buildAddressString(draft),
         postal_code: draft.codigoPostal,
         birth_date: birthIso,
         status: "pending",
+        auth_user_id, // ✅ NUEVO: vínculo canónico
       };
 
       let finalCoacheeId: string | null = null;
@@ -723,7 +784,9 @@ export default function AccesoCoacheeCargaPage() {
           .single();
 
         if (updErr || !upd?.id) {
-          setError(`No fue posible guardar en BBDD (update coachees): ${updErr?.message || "sin detalle"}`);
+          setError(
+            `No fue posible guardar en BBDD (update coachees): ${updErr?.message || "sin detalle"}`
+          );
           return;
         }
         finalCoacheeId = upd.id as string;
@@ -735,7 +798,9 @@ export default function AccesoCoacheeCargaPage() {
           .single();
 
         if (insErr || !ins?.id) {
-          setError(`No fue posible guardar en BBDD (insert coachees): ${insErr?.message || "sin detalle"}`);
+          setError(
+            `No fue posible guardar en BBDD (insert coachees): ${insErr?.message || "sin detalle"}`
+          );
           return;
         }
         finalCoacheeId = ins.id as string;
