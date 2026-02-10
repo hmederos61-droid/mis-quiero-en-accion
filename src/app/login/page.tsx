@@ -123,9 +123,7 @@ function LoginInner() {
   const [clave, setClave] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [hasSession, setHasSession] = useState(false);
 
-  // Si viene token, redirigimos a flujo de acceso coachee (sin tocar)
   useEffect(() => {
     if (!token) return;
 
@@ -133,22 +131,6 @@ function LoginInner() {
 
     router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
   }, [token, emailFromLink, router]);
-
-  // Si ya hay sesión, queremos llevar directo a /quieros (sin menu)
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const ok = Boolean(data.session);
-      setHasSession(ok);
-      if (ok) {
-        router.replace("/quieros");
-      }
-    });
-  }, [supabase, router]);
-
-  // Prefetch para minimizar “pantalla fugaz”
-  useEffect(() => {
-    if (hasSession) router.prefetch("/quieros");
-  }, [hasSession, router]);
 
   useEffect(() => {
     if (emailFromLink && !email) {
@@ -175,7 +157,10 @@ function LoginInner() {
     e.preventDefault();
     setMsg(null);
 
-    if (!isEmailValid(email) || clave.trim().length < 6) {
+    const eMail = email.trim();
+    const p = clave.trim();
+
+    if (!isEmailValid(eMail) || p.length < 6) {
       setMsg("Completá email y clave válida.");
       return;
     }
@@ -183,8 +168,8 @@ function LoginInner() {
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: clave,
+      email: eMail,
+      password: p,
     });
 
     if (error) {
@@ -194,9 +179,9 @@ function LoginInner() {
     }
 
     clearInviteEmail();
-    setHasSession(true);
+    setMsg(null);
 
-    // Canon: ir directo a /quieros (sin pantalla intermedia ni menu)
+    // ✅ Regla canónica: solo se entra después de click en “Ingresar”
     router.replace("/quieros");
   }
 
@@ -324,8 +309,8 @@ function LoginInner() {
               justifyContent: "space-between",
             }}
           >
-            {/* Antes había “Comenzar” -> /menu. Ahora eliminamos ese paso.
-                Si hay sesión, redirigimos directo a /quieros (useEffect). */}
+            {/* ✅ Sin auto-redirección por sesión.
+                La entrada a /quieros se hace SOLO con click en Ingresar. */}
             <div />
           </div>
         </section>
