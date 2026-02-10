@@ -181,8 +181,9 @@ function LoginInner() {
     clearInviteEmail();
     setMsg(null);
 
-    // ✅ Regla canónica: solo se entra después de click en “Ingresar”
-    router.replace("/quieros");
+    // ✅ Canónico: solo se entra después de click en “Ingresar”
+    // ✅ Canónico: aterrizaje post-login -> /quieros/inicio
+    router.replace("/quieros/inicio");
   }
 
   async function onCrearCuenta() {
@@ -310,7 +311,7 @@ function LoginInner() {
             }}
           >
             {/* ✅ Sin auto-redirección por sesión.
-                La entrada a /quieros se hace SOLO con click en Ingresar. */}
+                La entrada se hace SOLO con click en Ingresar. */}
             <div />
           </div>
         </section>
