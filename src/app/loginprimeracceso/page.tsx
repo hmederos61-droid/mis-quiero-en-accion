@@ -86,15 +86,30 @@ const btnSalir: React.CSSProperties = {
     "linear-gradient(135deg, rgba(90,130,255,0.45), rgba(60,90,220,0.35))",
 };
 
+const btnIrLogin: React.CSSProperties = {
+  ...btnBase,
+  background:
+    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
+};
+
 function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
+
+type TokenGate =
+  | "checking"
+  | "ok"
+  | "missing"
+  | "invalid"
+  | "expired"
+  | "used";
 
 function LoginPrimerIngresoInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const sp = useSearchParams();
 
+  const token = sp.get("token")?.trim() || "";
   const emailFromLink = sp.get("email")?.trim() || "";
 
   const [email, setEmail] = useState("");
@@ -103,6 +118,9 @@ function LoginPrimerIngresoInner() {
 
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+
+  // Gating del link (token) para impedir reuso
+  const [gate, setGate] = useState<TokenGate>("checking");
 
   // 1) Presentar el mail del coachee en el campo mail
   useEffect(() => {
@@ -116,13 +134,129 @@ function LoginPrimerIngresoInner() {
     });
   }, [supabase]);
 
-  // 3) Prefetch para reducir “pantalla fugaz” al ir a /quieros
+  // 3) Prefetch para reducir “pantalla fugaz” al ir a /quieros/inicio
   useEffect(() => {
-    if (hasSession) router.prefetch("/quieros");
+    if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
+
+  // 4) Validación canónica del token (una sola vez por token)
+  useEffect(() => {
+    let cancel = false;
+
+    async function validateToken() {
+      try {
+        setMsg(null);
+
+        if (!token) {
+          if (!cancel) {
+            setGate("missing");
+            setMsg(
+              <div>
+                Link inválido. Para continuar, ingresá en{" "}
+                <b>www.misquieroenaccion.com</b> con tu email y clave.
+              </div>
+            );
+          }
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("coachee_invitations")
+          .select("token, used_at, expires_at")
+          .eq("token", token)
+          .maybeSingle();
+
+        if (cancel) return;
+
+        if (error || !data) {
+          setGate("invalid");
+          setMsg(
+            <div>
+              Link inválido. Para continuar, ingresá en{" "}
+              <b>www.misquieroenaccion.com</b> con tu email y clave.
+            </div>
+          );
+          return;
+        }
+
+        // expires_at puede ser null
+        const expiresAt = data.expires_at ? new Date(String(data.expires_at)) : null;
+        if (expiresAt && Date.now() > expiresAt.getTime()) {
+          setGate("expired");
+          setMsg(
+            <div>
+              Este link de acceso venció. Para continuar, ingresá en{" "}
+              <b>www.misquieroenaccion.com</b> con tu email y clave.
+            </div>
+          );
+          return;
+        }
+
+        // token ya usado
+        if (data.used_at) {
+          setGate("used");
+
+          // Mensaje canónico elegido por vos
+          setMsg(
+            <div>
+              Ya existe una cuenta creada con este link de acceso. <br />
+              Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu
+              email y clave.
+            </div>
+          );
+          return;
+        }
+
+        setGate("ok");
+      } catch {
+        if (!cancel) {
+          setGate("invalid");
+          setMsg(
+            <div>
+              Link inválido. Para continuar, ingresá en{" "}
+              <b>www.misquieroenaccion.com</b> con tu email y clave.
+            </div>
+          );
+        }
+      }
+    }
+
+    validateToken();
+    return () => {
+      cancel = true;
+    };
+  }, [supabase, token]);
+
+  async function markTokenUsedSafe() {
+    // Intento “best-effort”: si RLS lo permite, marca used_at. Si no, no rompe UX.
+    if (!token) return;
+
+    try {
+      const nowIso = new Date().toISOString();
+      await supabase
+        .from("coachee_invitations")
+        .update({ used_at: nowIso })
+        .eq("token", token)
+        .is("used_at", null);
+    } catch {
+      // silencio (deuda técnica si RLS bloquea)
+    }
+  }
 
   async function onCrearCuenta() {
     setMsg(null);
+
+    if (gate !== "ok") {
+      // Si el link ya no es válido, no permite crear
+      setMsg(
+        <div>
+          Ya existe una cuenta creada con este link de acceso. <br />
+          Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu
+          email y clave.
+        </div>
+      );
+      return;
+    }
 
     const e = email.trim();
     const p = clave.trim();
@@ -145,21 +279,27 @@ function LoginPrimerIngresoInner() {
       return;
     }
 
+    // Marcar token como usado (para impedir reuso del link)
+    await markTokenUsedSafe();
+
     // Refrescar sesión (en prod: Confirm email desactivado)
     const { data } = await supabase.auth.getSession();
     const okSession = Boolean(data.session);
     setHasSession(okSession);
 
-    // 2) Mensaje post-creación (canónico)
+    // Mensaje post-creación (canónico)
     setMsg("Cuenta creada. Ahora hacé un click en Acceder.");
 
     setLoading(false);
   }
 
   function onAcceder() {
-    // Canon: ir directo a Quieros (sin pasar por menu.tsx)
-    // replace reduce el “flash”
-    router.replace("/quieros");
+    // Canon: ir directo a /quieros/inicio
+    router.replace("/quieros/inicio");
+  }
+
+  function onIrLogin() {
+    router.replace("/login");
   }
 
   async function onSalir() {
@@ -171,7 +311,15 @@ function LoginPrimerIngresoInner() {
     setLoading(false);
   }
 
-  const disableCrearCuenta = loading || hasSession;
+  // Regla de habilitación:
+  // - si ya hay sesión: no crear
+  // - si gate no es ok: no crear
+  const disableCrearCuenta = loading || hasSession || gate !== "ok";
+
+  // Mostrar “pantalla de bloqueo” cuando el token no sirve y NO hay sesión.
+  // (si hay sesión, permitimos Acceder aunque el token esté usado, porque ya estás adentro)
+  const showBlocked =
+    !hasSession && (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -213,6 +361,7 @@ function LoginPrimerIngresoInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   autoComplete="email"
+                  disabled={showBlocked}
                 />
               </div>
 
@@ -224,19 +373,33 @@ function LoginPrimerIngresoInner() {
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   autoComplete="new-password"
+                  disabled={showBlocked}
                 />
               </div>
 
-              {/* 1) Grisado/disabled cuando ya hay sesión */}
+              {/* Crear cuenta: grisado/disabled cuando ya hay sesión o el token no es válido */}
               <button
                 type="button"
                 style={disableCrearCuenta ? btnCrearCuentaDisabled : btnCrearCuenta}
                 disabled={disableCrearCuenta}
                 onClick={onCrearCuenta}
-                title={hasSession ? "Cuenta ya creada. Usá el botón Acceder." : undefined}
+                title={
+                  hasSession
+                    ? "Cuenta ya creada. Usá el botón Acceder."
+                    : gate !== "ok"
+                    ? "Este link ya no es válido. Ingresá desde el Login."
+                    : undefined
+                }
               >
                 Crear cuenta
               </button>
+
+              {/* Si el token está bloqueado y NO hay sesión: botón directo a Login */}
+              {showBlocked && (
+                <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                  Ir al Login
+                </button>
+              )}
             </div>
           </div>
 
@@ -252,7 +415,22 @@ function LoginPrimerIngresoInner() {
               padding: 34,
             }}
           >
-            {!hasSession ? (
+            {showBlocked ? (
+              <>
+                <div style={{ fontSize: 28, lineHeight: 1.25 }}>
+                  Ya existe una cuenta creada con este link de acceso.
+                </div>
+                <div style={{ fontSize: 18, marginTop: 14, opacity: 0.95, lineHeight: 1.35 }}>
+                  Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu email y clave.
+                </div>
+
+                <div style={{ width: "100%", marginTop: 22 }}>
+                  <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                    Ingresar
+                  </button>
+                </div>
+              </>
+            ) : !hasSession ? (
               <div style={{ fontSize: 34, lineHeight: 1.25 }}>
                 Vamos, estás a un paso de acceder a una nueva posibilidad de
                 cambio…!!!
@@ -272,7 +450,7 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
-                  {/* 3) Acceder destacado */}
+                  {/* Acceder destacado */}
                   <button
                     onClick={onAcceder}
                     disabled={loading}
