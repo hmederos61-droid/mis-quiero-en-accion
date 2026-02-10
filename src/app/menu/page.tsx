@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -17,14 +17,14 @@ const glassCard: React.CSSProperties = {
   boxShadow: "0 18px 60px rgba(0,0,0,0.23)",
   color: "rgba(255,255,255,0.94)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
-  width: "92%", // ✅ antes 92vw
+  width: "92%",
   maxWidth: 980,
 };
 
 const titleStyle: React.CSSProperties = {
   fontSize: 28,
-  fontWeight: 600, // ✅ antes 900 (menos resaltado, según canónico)
-  opacity: 0.88,   // ✅ antes 0.95
+  fontWeight: 600,
+  opacity: 0.88,
   marginBottom: 8,
 };
 
@@ -37,8 +37,8 @@ const subStyle: React.CSSProperties = {
 
 const sectionTitle: React.CSSProperties = {
   fontSize: 18,
-  fontWeight: 600, // ✅ antes 900 (menos resaltado, según canónico)
-  opacity: 0.88,   // ✅ antes 0.95
+  fontWeight: 600,
+  opacity: 0.88,
   marginTop: 16,
   marginBottom: 10,
 };
@@ -57,22 +57,20 @@ const btnBase: React.CSSProperties = {
 
 const btnAdmin: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(255,170,90,0.95), rgba(255,130,90,0.95))",
+  background:
+    "linear-gradient(135deg, rgba(255,170,90,0.95), rgba(255,130,90,0.95))",
 };
 
 const btnCoach: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(120,160,255,0.95), rgba(160,120,255,0.95))",
-};
-
-const btnCoachee: React.CSSProperties = {
-  ...btnBase,
-  background: "linear-gradient(135deg, rgba(90,200,140,0.95), rgba(60,170,120,0.95))",
+  background:
+    "linear-gradient(135deg, rgba(120,160,255,0.95), rgba(160,120,255,0.95))",
 };
 
 const btnSalir: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(110,140,180,0.90), rgba(90,110,150,0.90))",
+  background:
+    "linear-gradient(135deg, rgba(110,140,180,0.90), rgba(90,110,150,0.90))",
 };
 
 const btnDisabled: React.CSSProperties = {
@@ -88,10 +86,23 @@ export default function MenuPage() {
 
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [error, setError] = useState<string | null>(null);
+
+  // Control de intentos: evita loops infinitos si hay error persistente.
+  const attemptsRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  async function safeExitToLogin() {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // silencio
+    } finally {
+      router.replace("/login");
+    }
+  }
 
   async function loadRoles() {
-    setError(null);
+    // Mientras no haya resolución confiable -> SOLO "Cargando..."
     setLoading(true);
 
     try {
@@ -114,10 +125,9 @@ export default function MenuPage() {
 
       if (e0) throw e0;
 
+      // Si falta perfil en la app: salida controlada (sin pantalla de error)
       if (!u0?.auth_user_id) {
-        setRoles([]);
-        setError("Tu usuario no tiene perfil en la aplicación. Volvé a iniciar sesión o pedí activación.");
-        setLoading(false);
+        await safeExitToLogin();
         return;
       }
 
@@ -131,40 +141,57 @@ export default function MenuPage() {
 
       const rs = (Array.isArray(r1) ? r1 : [])
         .map((x: any) => String(x.role || "").toLowerCase())
-        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee") as Role[];
+        .filter(
+          (x: string) => x === "admin" || x === "coach" || x === "coachee"
+        ) as Role[];
 
       const unique = Array.from(new Set(rs));
 
-      // 4) Regla: si no hay rol operativo, es coachee (no es error)
       const hasAdmin = unique.includes("admin");
       const hasCoach = unique.includes("coach");
 
+      // ✅ CANÓNICO: Coachee NO usa /menu nunca.
       if (!hasAdmin && !hasCoach) {
-        setRoles(["coachee"]);
-      } else {
-        setRoles(unique);
+        router.replace("/quieros/inicio");
+        return;
       }
 
+      // Admin/Coach -> menú (selector si aplica)
+      setRoles(unique);
       setLoading(false);
     } catch {
-      setError("No fue posible cargar tu perfil. Volvé a iniciar sesión.");
-      setLoading(false);
+      // ✅ Regla canónica: NUNCA mostrar pantalla de error.
+      // Reintento breve por latencia/timing.
+      attemptsRef.current += 1;
+
+      if (attemptsRef.current <= 2) {
+        setTimeout(() => {
+          if (mountedRef.current) loadRoles();
+        }, 350);
+        return;
+      }
+
+      // Persistente -> salida controlada a /login
+      await safeExitToLogin();
+      return;
     }
   }
 
   useEffect(() => {
+    mountedRef.current = true;
     loadRoles();
+
+    return () => {
+      mountedRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isAdmin = roles.includes("admin");
   const isCoach = roles.includes("coach");
-  const isCoachee = !isAdmin && !isCoach; // default funcional
-
   const showSelector = isAdmin && isCoach;
 
   async function handleSalir() {
-    setError(null);
     try {
       await supabase.auth.signOut();
     } finally {
@@ -187,7 +214,7 @@ export default function MenuPage() {
       <div
         style={{
           minHeight: "100vh",
-          width: "100%", // ✅ antes 100vw (corrige descentrado)
+          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -203,12 +230,6 @@ export default function MenuPage() {
             Vas a ver solo las opciones habilitadas por tu rol.
           </div>
 
-          {error && (
-            <div style={{ marginTop: 10, marginBottom: 12, fontSize: 16, color: "#ffb4b4", opacity: 0.98 }}>
-              {error}
-            </div>
-          )}
-
           {loading ? (
             <div style={{ fontSize: 16, opacity: 0.9 }}>Cargando perfil…</div>
           ) : (
@@ -217,18 +238,40 @@ export default function MenuPage() {
                 <>
                   <div style={sectionTitle}>¿Cómo querés ingresar?</div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                    <button style={btnAdmin} onClick={() => router.push("/administrador")} title="Ingresar como Administrador">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr",
+                      gap: 12,
+                    }}
+                  >
+                    <button
+                      style={btnAdmin}
+                      onClick={() => router.push("/administrador")}
+                      title="Ingresar como Administrador"
+                    >
                       Ingresar como Administrador
                     </button>
 
-                    <button style={btnCoach} onClick={() => router.push("/coach")} title="Ingresar como Coach">
+                    <button
+                      style={btnCoach}
+                      onClick={() => router.push("/coach")}
+                      title="Ingresar como Coach"
+                    >
                       Ingresar como Coach
                     </button>
                   </div>
 
-                  <div style={{ marginTop: 14, fontSize: 15, opacity: 0.9, lineHeight: 1.35 }}>
-                    <b>Administrador</b>: gestión global · control de accesos · alta de coaches · auditoría
+                  <div
+                    style={{
+                      marginTop: 14,
+                      fontSize: 15,
+                      opacity: 0.9,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    <b>Administrador</b>: gestión global · control de accesos · alta
+                    de coaches · auditoría
                     <br />
                     <b>Coach</b>: alta de coachee · gestión de quieros · seguimiento
                   </div>
@@ -238,8 +281,18 @@ export default function MenuPage() {
                   {isAdmin && (
                     <>
                       <div style={sectionTitle}>Administrador</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                        <button style={btnAdmin} onClick={() => router.push("/administrador")} title="Acceder como Administrador">
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: 12,
+                        }}
+                      >
+                        <button
+                          style={btnAdmin}
+                          onClick={() => router.push("/administrador")}
+                          title="Acceder como Administrador"
+                        >
                           Acceder como Administrador
                         </button>
                       </div>
@@ -249,20 +302,19 @@ export default function MenuPage() {
                   {isCoach && (
                     <>
                       <div style={sectionTitle}>Coach</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                        <button style={btnCoach} onClick={() => router.push("/coach")} title="Acceder como Coach">
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: 12,
+                        }}
+                      >
+                        <button
+                          style={btnCoach}
+                          onClick={() => router.push("/coach")}
+                          title="Acceder como Coach"
+                        >
                           Acceder como Coach
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {isCoachee && (
-                    <>
-                      <div style={sectionTitle}>Coachee</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                        <button style={btnCoachee} onClick={() => router.push("/quieros")} title="Ingresar como Coachee">
-                          Ingresar como Coachee
                         </button>
                       </div>
                     </>
@@ -270,7 +322,14 @@ export default function MenuPage() {
                 </>
               )}
 
-              <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+              <div
+                style={{
+                  marginTop: 18,
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: 12,
+                }}
+              >
                 <button
                   style={{ ...btnSalir, ...(loading ? btnDisabled : {}) }}
                   onClick={handleSalir}
