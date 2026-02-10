@@ -1,94 +1,174 @@
+// src/app/menu1/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
-   Estética glass (patrón LOGIN)
+   MENU1 — CANÓNICO
+   - Solo Admin + Coach
+   - Selector visual: Administrador / Coach
+   - Estética glass + fondo welcome.png
+   - Sin pantallas intermedias ni mensajes raros
 ========================= */
+
+const pageWrap: React.CSSProperties = {
+  minHeight: "100vh",
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "28px 18px",
+};
+
 const glassCard: React.CSSProperties = {
+  width: "min(1180px, 92vw)",
   borderRadius: 22,
-  padding: 42,
+  padding: "34px 38px",
   background: "rgba(255,255,255,0.055)",
   border: "1px solid rgba(255,255,255,0.16)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  boxShadow: "0 18px 60px rgba(0,0,0,0.23)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  boxShadow: "0 18px 60px rgba(0,0,0,0.25)",
   color: "rgba(255,255,255,0.94)",
-  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
-  width: "92%",
-  maxWidth: 980,
+  textShadow: "0 1px 2px rgba(0,0,0,0.36)",
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: 28,
-  fontWeight: 600,
-  opacity: 0.88,
-  marginBottom: 8,
+  margin: 0,
+  fontSize: 44,
+  letterSpacing: 0.2,
 };
 
 const subStyle: React.CSSProperties = {
-  fontSize: 16,
-  opacity: 0.9,
-  lineHeight: 1.4,
-  marginBottom: 18,
+  marginTop: 10,
+  marginBottom: 0,
+  fontSize: 18,
+  opacity: 0.92,
+  lineHeight: 1.5,
 };
 
-const sectionTitle: React.CSSProperties = {
+const sectionLabel: React.CSSProperties = {
+  marginTop: 18,
   fontSize: 18,
-  fontWeight: 600,
-  opacity: 0.88,
-  marginTop: 16,
-  marginBottom: 10,
+  opacity: 0.95,
+  fontWeight: 700,
 };
 
 const btnBase: React.CSSProperties = {
   width: "100%",
-  padding: "14px 18px",
-  borderRadius: 14,
-  border: "none",
-  fontSize: 18,
-  fontWeight: 900,
+  padding: "16px 18px",
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.22)",
   cursor: "pointer",
-  color: "#fff",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+  fontWeight: 800,
+  fontSize: 18,
+  color: "rgba(255,255,255,0.96)",
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+  boxShadow: "0 12px 30px rgba(0,0,0,0.22)",
+  transition: "transform 140ms ease, filter 140ms ease",
 };
 
 const btnAdmin: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(255,170,90,0.95), rgba(255,130,90,0.95))",
+  background:
+    "linear-gradient(135deg, rgba(255,160,80,0.85), rgba(255,110,90,0.82))",
 };
 
 const btnCoach: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(120,160,255,0.95), rgba(160,120,255,0.95))",
+  background:
+    "linear-gradient(135deg, rgba(120,160,255,0.85), rgba(160,120,255,0.85))",
 };
 
 const btnSalir: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(110,140,180,0.90), rgba(90,110,150,0.90))",
+  background: "rgba(120,140,165,0.55)",
 };
 
-const btnDisabled: React.CSSProperties = {
-  opacity: 0.55,
-  cursor: "default",
+const hintBlock: React.CSSProperties = {
+  marginTop: 14,
+  fontSize: 14,
+  opacity: 0.9,
+  lineHeight: 1.5,
 };
 
-type Role = "admin" | "coach" | "coachee";
+const divider: React.CSSProperties = {
+  height: 1,
+  background: "rgba(255,255,255,0.12)",
+  margin: "18px 0 14px",
+};
 
 export default function Menu1Page() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCoach, setIsCoach] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  const attemptsRef = useRef(0);
-  const mountedRef = useRef(true);
+  // Guard canónico: /menu1 solo para Admin+Coach
+  useEffect(() => {
+    let alive = true;
 
-  async function safeExitToLogin() {
+    (async () => {
+      try {
+        const { data: userRes, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+
+        const user = userRes.user;
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+
+        const { data: r1, error: e1 } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("auth_user_id", user.id);
+
+        if (e1) throw e1;
+
+        const roles = (Array.isArray(r1) ? r1 : [])
+          .map((x: any) => String(x.role || "").toLowerCase())
+          .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
+
+        const unique = Array.from(new Set(roles));
+        const hasAdmin = unique.includes("admin");
+        const hasCoach = unique.includes("coach");
+
+        // Canónico:
+        // - Admin+Coach => /menu1 (OK)
+        // - Solo Admin => /administrador
+        // - Solo Coach => /coach
+        // - Coachee => /quieros/inicio
+        if (hasAdmin && hasCoach) {
+          // OK: se queda acá
+        } else if (hasAdmin) {
+          router.replace("/administrador");
+          return;
+        } else if (hasCoach) {
+          router.replace("/coach");
+          return;
+        } else {
+          router.replace("/quieros/inicio");
+          return;
+        }
+      } catch {
+        router.replace("/login");
+        return;
+      } finally {
+        if (alive) setChecking(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [router, supabase]);
+
+  async function onSalir() {
     try {
       await supabase.auth.signOut();
     } catch {
@@ -98,107 +178,18 @@ export default function Menu1Page() {
     }
   }
 
-  async function resolveAccess() {
-    setLoading(true);
-
-    try {
-      // 1) Sesión válida
-      const { data: userRes, error: userErr } = await supabase.auth.getUser();
-      if (userErr) throw userErr;
-
-      const user = userRes.user;
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      // 2) Debe existir en app_users (si no, fuera)
-      const { data: u0, error: e0 } = await supabase
-        .from("app_users")
-        .select("auth_user_id")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-
-      if (e0) throw e0;
-
-      if (!u0?.auth_user_id) {
-        await safeExitToLogin();
-        return;
-      }
-
-      // 3) Leer roles reales
-      const { data: r1, error: e1 } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("auth_user_id", user.id);
-
-      if (e1) throw e1;
-
-      const rs = (Array.isArray(r1) ? r1 : [])
-        .map((x: any) => String(x.role || "").toLowerCase())
-        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee") as Role[];
-
-      const unique = Array.from(new Set(rs));
-      const hasAdmin = unique.includes("admin");
-      const hasCoach = unique.includes("coach");
-
-      // ✅ CANÓNICO: coachee NO entra jamás a menús
-      if (!hasAdmin && !hasCoach) {
-        router.replace("/quieros/inicio");
-        return;
-      }
-
-      // Si tiene un solo rol, no mostramos selector: vamos directo
-      if (hasAdmin && !hasCoach) {
-        router.replace("/administrador");
-        return;
-      }
-      if (!hasAdmin && hasCoach) {
-        router.replace("/coach");
-        return;
-      }
-
-      // Admin + Coach -> mostrar esta pantalla
-      setIsAdmin(true);
-      setIsCoach(true);
-      setLoading(false);
-    } catch {
-      attemptsRef.current += 1;
-
-      // Reintentos breves por latencia/timing
-      if (attemptsRef.current <= 2) {
-        setTimeout(() => {
-          if (mountedRef.current) resolveAccess();
-        }, 350);
-        return;
-      }
-
-      await safeExitToLogin();
-      return;
-    }
+  function hoverOn(e: React.MouseEvent<HTMLButtonElement>) {
+    e.currentTarget.style.transform = "translateY(-1px)";
+    e.currentTarget.style.filter = "brightness(1.03)";
   }
-
-  useEffect(() => {
-    mountedRef.current = true;
-    resolveAccess();
-    return () => {
-      mountedRef.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleSalir() {
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      router.replace("/login");
-    }
+  function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
+    e.currentTarget.style.transform = "translateY(0px)";
+    e.currentTarget.style.filter = "none";
   }
-
-  const showSelector = isAdmin && isCoach;
 
   return (
     <>
+      {/* Fondo global welcome.png, sin franjas */}
       <style jsx global>{`
         html,
         body {
@@ -209,65 +200,69 @@ export default function Menu1Page() {
         }
       `}</style>
 
-      <div
-        style={{
-          minHeight: "100vh",
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "36px 0",
-        }}
-      >
-        <div style={glassCard}>
-          <div style={titleStyle}>Menú principal</div>
+      <main style={pageWrap}>
+        <section style={glassCard} aria-busy={checking}>
+          <h1 style={titleStyle}>Menú principal</h1>
 
-          <div style={subStyle}>
+          <p style={subStyle}>
             Este menú se adapta automáticamente a tu perfil.
             <br />
             Vas a ver solo las opciones habilitadas por tu rol.
+          </p>
+
+          <div style={divider} />
+
+          <div style={sectionLabel}>¿Cómo querés ingresar?</div>
+
+          <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+            <button
+              type="button"
+              style={btnAdmin}
+              onMouseEnter={hoverOn}
+              onMouseLeave={hoverOff}
+              onClick={() => router.replace("/administrador")}
+              disabled={checking}
+            >
+              Ingresar como Administrador
+            </button>
+
+            <button
+              type="button"
+              style={btnCoach}
+              onMouseEnter={hoverOn}
+              onMouseLeave={hoverOff}
+              onClick={() => router.replace("/coach")}
+              disabled={checking}
+            >
+              Ingresar como Coach
+            </button>
           </div>
 
-          {loading ? (
-            <div style={{ fontSize: 16, opacity: 0.9 }}>Cargando perfil…</div>
-          ) : (
-            <>
-              {showSelector && (
-                <>
-                  <div style={sectionTitle}>¿Cómo querés ingresar?</div>
+          <div style={hintBlock}>
+            <div>
+              <strong>Administrador</strong>: gestión global · control de accesos ·
+              alta de coaches · auditoría
+            </div>
+            <div>
+              <strong>Coach</strong>: alta de coachee · gestión de quieros ·
+              seguimiento
+            </div>
+          </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                    <button style={btnAdmin} onClick={() => router.push("/administrador")} title="Ingresar como Administrador">
-                      Ingresar como Administrador
-                    </button>
-
-                    <button style={btnCoach} onClick={() => router.push("/coach")} title="Ingresar como Coach">
-                      Ingresar como Coach
-                    </button>
-                  </div>
-
-                  <div style={{ marginTop: 14, fontSize: 15, opacity: 0.9, lineHeight: 1.35 }}>
-                    <b>Administrador</b>: gestión global · control de accesos · alta de coaches · auditoría
-                    <br />
-                    <b>Coach</b>: alta de coachee · gestión de quieros · seguimiento
-                  </div>
-                </>
-              )}
-
-              <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                <button
-                  style={{ ...btnSalir, ...(loading ? btnDisabled : {}) }}
-                  onClick={handleSalir}
-                  disabled={loading}
-                  title="Cerrar sesión"
-                >
-                  Salir
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+          <div style={{ marginTop: 18 }}>
+            <button
+              type="button"
+              style={btnSalir}
+              onMouseEnter={hoverOn}
+              onMouseLeave={hoverOff}
+              onClick={onSalir}
+              disabled={checking}
+            >
+              Salir
+            </button>
+          </div>
+        </section>
+      </main>
     </>
   );
 }
