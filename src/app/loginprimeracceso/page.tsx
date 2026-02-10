@@ -57,10 +57,27 @@ const btnCrearCuenta: React.CSSProperties = {
     "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
 };
 
+const btnCrearCuentaDisabled: React.CSSProperties = {
+  ...btnBase,
+  cursor: "not-allowed",
+  opacity: 0.48,
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08))",
+};
+
 const btnAcceder: React.CSSProperties = {
   ...btnBase,
   background:
-    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
+    "linear-gradient(135deg, rgba(30,180,120,0.72), rgba(20,140,95,0.62))",
+  border: "1px solid rgba(255,255,255,0.28)",
+  boxShadow: "0 18px 70px rgba(0,0,0,0.28)",
+};
+
+const btnAccederDestacado: React.CSSProperties = {
+  ...btnAcceder,
+  transform: "scale(1.03)",
+  boxShadow: "0 22px 85px rgba(0,0,0,0.34)",
+  border: "1px solid rgba(255,255,255,0.36)",
 };
 
 const btnSalir: React.CSSProperties = {
@@ -99,6 +116,11 @@ function LoginPrimerIngresoInner() {
     });
   }, [supabase]);
 
+  // 3) Prefetch para reducir “pantalla fugaz” al ir a /quieros
+  useEffect(() => {
+    if (hasSession) router.prefetch("/quieros");
+  }, [hasSession, router]);
+
   async function onCrearCuenta() {
     setMsg(null);
 
@@ -128,14 +150,16 @@ function LoginPrimerIngresoInner() {
     const okSession = Boolean(data.session);
     setHasSession(okSession);
 
-    // Mensaje corto (el banner derecho es el que guía)
-    setMsg("Cuenta creada.");
+    // 2) Mensaje post-creación (canónico)
+    setMsg("Cuenta creada. Ahora hacé un click en Acceder.");
+
     setLoading(false);
   }
 
   function onAcceder() {
-    // B) Canon: ir directo a Quieros (sin pasar por menu.tsx)
-    router.push("/quieros");
+    // Canon: ir directo a Quieros (sin pasar por menu.tsx)
+    // replace reduce el “flash”
+    router.replace("/quieros");
   }
 
   async function onSalir() {
@@ -146,6 +170,8 @@ function LoginPrimerIngresoInner() {
     setMsg(null);
     setLoading(false);
   }
+
+  const disableCrearCuenta = loading || hasSession;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -171,7 +197,6 @@ function LoginPrimerIngresoInner() {
           <div style={glassCard}>
             <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
-            {/* COPY CANÓNICO */}
             <p style={{ fontSize: 20, marginTop: 10 }}>
               Bienvenido, solo te resta que ingreses una clave, porque tu
               dirección de mail ya te la estás viendo.
@@ -179,7 +204,6 @@ function LoginPrimerIngresoInner() {
 
             {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
 
-            {/* Solo Crear cuenta (Ingresar desaparece del panel izquierdo) */}
             <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
               <div>
                 <div style={labelStyle}>Email</div>
@@ -203,11 +227,13 @@ function LoginPrimerIngresoInner() {
                 />
               </div>
 
+              {/* 1) Grisado/disabled cuando ya hay sesión */}
               <button
                 type="button"
-                style={btnCrearCuenta}
-                disabled={loading}
+                style={disableCrearCuenta ? btnCrearCuentaDisabled : btnCrearCuenta}
+                disabled={disableCrearCuenta}
                 onClick={onCrearCuenta}
+                title={hasSession ? "Cuenta ya creada. Usá el botón Acceder." : undefined}
               >
                 Crear cuenta
               </button>
@@ -246,20 +272,16 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
-                  {/* A) Estilo canónico + B) Acceder directo a /quieros */}
+                  {/* 3) Acceder destacado */}
                   <button
                     onClick={onAcceder}
                     disabled={loading}
-                    style={btnAcceder}
+                    style={btnAccederDestacado}
                   >
                     Acceder
                   </button>
 
-                  <button
-                    onClick={onSalir}
-                    disabled={loading}
-                    style={btnSalir}
-                  >
+                  <button onClick={onSalir} disabled={loading} style={btnSalir}>
                     Salir
                   </button>
                 </div>
