@@ -123,19 +123,18 @@ function LoginPrimerIngresoInner() {
       return;
     }
 
-    // Intentamos reflejar sesión real (en prod tienen Confirm email desactivado)
+    // Refrescar sesión (en prod: Confirm email desactivado)
     const { data } = await supabase.auth.getSession();
     const okSession = Boolean(data.session);
     setHasSession(okSession);
 
-    // Mensaje de éxito coherente (el banner derecho queda habilitado si hay sesión)
+    // Mensaje corto (el banner derecho es el que guía)
     setMsg("Cuenta creada.");
-
     setLoading(false);
   }
 
   function onAcceder() {
-    // Canon: ir directo a Quieros (sin pasar por menu.tsx)
+    // B) Canon: ir directo a Quieros (sin pasar por menu.tsx)
     router.push("/quieros");
   }
 
@@ -247,6 +246,7 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
+                  {/* A) Estilo canónico + B) Acceder directo a /quieros */}
                   <button
                     onClick={onAcceder}
                     disabled={loading}
