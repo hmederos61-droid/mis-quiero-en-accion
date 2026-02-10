@@ -68,12 +68,6 @@ const btnCambiarMail: React.CSSProperties = {
     "linear-gradient(135deg, rgba(255,170,60,0.55), rgba(230,140,20,0.45))",
 };
 
-const btnCrearCuenta: React.CSSProperties = {
-  ...btnBase,
-  background:
-    "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
-};
-
 function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
@@ -136,7 +130,7 @@ function LoginInner() {
     if (emailFromLink && !email) {
       setEmail(emailFromLink);
       setMsg(
-        "Ingresá el mismo email al que te llegó la invitación. Si ya tenés cuenta, podés ingresar. Si no, creala con “Crear cuenta”."
+        "Ingresá el mismo email al que te llegó la invitación. Si ya tenés cuenta, podés ingresar."
       );
       return;
     }
@@ -146,7 +140,7 @@ function LoginInner() {
       if (cached) {
         setEmail(cached);
         setMsg(
-          "Ingresá el mismo email al que te llegó la invitación. Si ya tenés cuenta, podés ingresar. Si no, creala con “Crear cuenta”."
+          "Ingresá el mismo email al que te llegó la invitación. Si ya tenés cuenta, podés ingresar."
         );
       }
     }
@@ -184,40 +178,6 @@ function LoginInner() {
     // ✅ Canónico: solo se entra después de click en “Ingresar”
     // ✅ Canónico: aterrizaje post-login -> /quieros/inicio
     router.replace("/quieros/inicio");
-  }
-
-  async function onCrearCuenta() {
-    setMsg(null);
-
-    const e = email.trim();
-    const p = clave;
-
-    if (!isEmailValid(e) || p.trim().length < 6) {
-      setMsg("Completá email válido y una clave de al menos 6 caracteres.");
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email: e,
-      password: p,
-    });
-
-    if (error) {
-      setMsg("No se pudo crear la cuenta. Revisá el email o probá otra clave.");
-      setLoading(false);
-      return;
-    }
-
-    clearInviteEmail();
-    setMsg("Cuenta creada. Ahora podés ingresar con tu email y clave.");
-
-    setTimeout(() => {
-      router.replace("/login");
-    }, 700);
-
-    setLoading(false);
   }
 
   return (
@@ -287,15 +247,6 @@ function LoginInner() {
 
                 <button type="button" style={btnCambiarMail} disabled={false}>
                   Cambiar mi email
-                </button>
-
-                <button
-                  type="button"
-                  style={btnCrearCuenta}
-                  disabled={loading}
-                  onClick={onCrearCuenta}
-                >
-                  Crear cuenta
                 </button>
               </div>
             </form>
