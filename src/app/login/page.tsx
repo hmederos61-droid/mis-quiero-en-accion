@@ -175,9 +175,45 @@ function LoginInner() {
     clearInviteEmail();
     setMsg(null);
 
-    // ✅ Canónico: solo se entra después de click en “Ingresar”
-    // ✅ Canónico: aterrizaje post-login -> /quieros/inicio
-    router.replace("/quieros/inicio");
+    // ✅ Canónico:
+    // - Admin/Coach (incluye el caso admin+coach) -> /menu (selector si aplica)
+    // - Coachee -> /quieros/inicio (sin menú)
+    try {
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+
+      const user = userRes.user;
+      if (!user) {
+        router.replace("/login");
+        return;
+      }
+
+      const { data: r1, error: e1 } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("auth_user_id", user.id);
+
+      if (e1) throw e1;
+
+      const rs = (Array.isArray(r1) ? r1 : [])
+        .map((x: any) => String(x.role || "").toLowerCase())
+        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
+
+      const unique = Array.from(new Set(rs));
+      const hasAdmin = unique.includes("admin");
+      const hasCoach = unique.includes("coach");
+
+      if (hasAdmin || hasCoach) {
+        router.replace("/menu");
+      } else {
+        router.replace("/quieros/inicio");
+      }
+      return;
+    } catch {
+      // Fallback seguro: coachee directo
+      router.replace("/quieros/inicio");
+      return;
+    }
   }
 
   return (
