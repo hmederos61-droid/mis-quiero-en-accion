@@ -125,6 +125,7 @@ function LoginInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
+  // Si viene token, redirigimos a flujo de acceso coachee (sin tocar)
   useEffect(() => {
     if (!token) return;
 
@@ -133,11 +134,21 @@ function LoginInner() {
     router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
   }, [token, emailFromLink, router]);
 
+  // Si ya hay sesión, queremos llevar directo a /quieros (sin menu)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setHasSession(Boolean(data.session));
+      const ok = Boolean(data.session);
+      setHasSession(ok);
+      if (ok) {
+        router.replace("/quieros");
+      }
     });
-  }, [supabase]);
+  }, [supabase, router]);
+
+  // Prefetch para minimizar “pantalla fugaz”
+  useEffect(() => {
+    if (hasSession) router.prefetch("/quieros");
+  }, [hasSession, router]);
 
   useEffect(() => {
     if (emailFromLink && !email) {
@@ -178,13 +189,15 @@ function LoginInner() {
 
     if (error) {
       setMsg("Email o clave incorrectos.");
-    } else {
-      clearInviteEmail();
-      setMsg("Login exitoso. Cuando estés listo, hacé click en “Comenzar”.");
-      setHasSession(true);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    clearInviteEmail();
+    setHasSession(true);
+
+    // Canon: ir directo a /quieros (sin pantalla intermedia ni menu)
+    router.replace("/quieros");
   }
 
   async function onCrearCuenta() {
@@ -219,10 +232,6 @@ function LoginInner() {
     }, 700);
 
     setLoading(false);
-  }
-
-  function onComenzar() {
-    router.push("/menu");
   }
 
   return (
@@ -315,33 +324,9 @@ function LoginInner() {
               justifyContent: "space-between",
             }}
           >
-            {hasSession ? (
-              <>
-                <div>
-                  <h2 style={{ fontSize: 32, margin: 0 }}>
-                    Si ya llegaste hasta acá,
-                    <br />
-                    estás en el inicio de un nuevo camino.
-                  </h2>
-                  <p style={{ fontSize: 18, marginTop: 12 }}>
-                    Vamos: te invito a dar el primer paso.
-                  </p>
-                </div>
-
-                <button
-                  onClick={onComenzar}
-                  style={{
-                    ...btnBase,
-                    background:
-                      "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.12))",
-                  }}
-                >
-                  Comenzar
-                </button>
-              </>
-            ) : (
-              <div />
-            )}
+            {/* Antes había “Comenzar” -> /menu. Ahora eliminamos ese paso.
+                Si hay sesión, redirigimos directo a /quieros (useEffect). */}
+            <div />
           </div>
         </section>
       </div>
