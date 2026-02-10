@@ -119,6 +119,9 @@ function LoginPrimerIngresoInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
+  // Nuevo: indica que la clave ya fue creada con éxito (para UX)
+  const [passwordCreated, setPasswordCreated] = useState(false);
+
   // Gating del link (token) para impedir reuso
   const [gate, setGate] = useState<TokenGate>("checking");
 
@@ -127,19 +130,19 @@ function LoginPrimerIngresoInner() {
     if (emailFromLink) setEmail(emailFromLink);
   }, [emailFromLink]);
 
-  // 2) Estado de sesión (para habilitar banner derecho con Acceder/Salir)
+  // 2) Estado de sesión
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setHasSession(Boolean(data.session));
     });
   }, [supabase]);
 
-  // 3) Prefetch para reducir “pantalla fugaz” al ir a /quieros/inicio
+  // 3) Prefetch
   useEffect(() => {
     if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
 
-  // 4) Validación canónica del token (una sola vez por token)
+  // 4) Validación del token (una sola vez por token)
   useEffect(() => {
     let cancel = false;
 
@@ -179,7 +182,6 @@ function LoginPrimerIngresoInner() {
           return;
         }
 
-        // expires_at puede ser null
         const expiresAt = data.expires_at ? new Date(String(data.expires_at)) : null;
         if (expiresAt && Date.now() > expiresAt.getTime()) {
           setGate("expired");
@@ -192,11 +194,8 @@ function LoginPrimerIngresoInner() {
           return;
         }
 
-        // token ya usado
         if (data.used_at) {
           setGate("used");
-
-          // Mensaje canónico elegido por vos
           setMsg(
             <div>
               Ya existe una cuenta creada con este link de acceso. <br />
@@ -227,27 +226,11 @@ function LoginPrimerIngresoInner() {
     };
   }, [supabase, token]);
 
-  async function markTokenUsedSafe() {
-    // Intento “best-effort”: si RLS lo permite, marca used_at. Si no, no rompe UX.
-    if (!token) return;
-
-    try {
-      const nowIso = new Date().toISOString();
-      await supabase
-        .from("coachee_invitations")
-        .update({ used_at: nowIso })
-        .eq("token", token)
-        .is("used_at", null);
-    } catch {
-      // silencio (deuda técnica si RLS bloquea)
-    }
-  }
-
   async function onCrearCuenta() {
     setMsg(null);
+    setPasswordCreated(false);
 
     if (gate !== "ok") {
-      // Si el link ya no es válido, no permite crear
       setMsg(
         <div>
           Ya existe una cuenta creada con este link de acceso. <br />
@@ -268,33 +251,61 @@ function LoginPrimerIngresoInner() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email: e,
-      password: p,
-    });
+    // ✅ CANÓNICO: el usuario YA existe en Auth (se creó al Guardar coachee).
+    // Acá solo se debe SETEAR LA PASSWORD usando una Edge Function con Service Role,
+    // validando token y marcándolo como usado.
+    const { data, error: fnErr } = await supabase.functions.invoke(
+      "set-coachee-password-by-token",
+      {
+        body: {
+          token,
+          email: e,
+          password: p,
+        },
+      }
+    );
 
-    if (error) {
-      setMsg("No se pudo crear la cuenta. Revisá el email o probá otra clave.");
+    if (fnErr) {
+      setMsg("No se pudo crear la clave. Probá nuevamente.");
       setLoading(false);
       return;
     }
 
-    // Marcar token como usado (para impedir reuso del link)
-    await markTokenUsedSafe();
+    const ok = (data as any)?.ok === true;
+    if (!ok) {
+      const detail = (data as any)?.error ? String((data as any).error) : "";
+      setMsg(
+        detail
+          ? `No se pudo crear la clave. ${detail}`
+          : "No se pudo crear la clave. Probá nuevamente."
+      );
+      setLoading(false);
+      return;
+    }
 
-    // Refrescar sesión (en prod: Confirm email desactivado)
-    const { data } = await supabase.auth.getSession();
-    const okSession = Boolean(data.session);
+    // Ahora intentamos iniciar sesión con esa clave (para habilitar el panel derecho)
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      email: e,
+      password: p,
+    });
+
+    const okSession = Boolean(signInData.session) && !signInErr;
     setHasSession(okSession);
 
-    // Mensaje post-creación (canónico)
+    // Mensaje canónico requerido por vos
+    setPasswordCreated(true);
     setMsg("Cuenta creada. Ahora hacé un click en Acceder.");
+
+    // Si por algún motivo no quedó sesión, igual dejamos el mensaje y el usuario puede ir al Login.
+    if (!okSession) {
+      // Mostramos alternativa sin romper UX
+      // (No forzamos nada: Acceder no se habilita si no hay sesión)
+    }
 
     setLoading(false);
   }
 
   function onAcceder() {
-    // Canon: ir directo a /quieros/inicio
     router.replace("/quieros/inicio");
   }
 
@@ -306,20 +317,26 @@ function LoginPrimerIngresoInner() {
     setLoading(true);
     await supabase.auth.signOut();
     setHasSession(false);
+    setPasswordCreated(false);
     setClave("");
     setMsg(null);
     setLoading(false);
   }
 
-  // Regla de habilitación:
-  // - si ya hay sesión: no crear
+  // Si el token está bloqueado y NO hay sesión: pantalla de bloqueo + botón a Login
+  const showBlocked =
+    !hasSession &&
+    (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
+
+  // Regla de habilitación (CANÓNICA):
+  // - si ya hay sesión: no crear (ya está adentro)
   // - si gate no es ok: no crear
+  // - si loading: no crear
   const disableCrearCuenta = loading || hasSession || gate !== "ok";
 
-  // Mostrar “pantalla de bloqueo” cuando el token no sirve y NO hay sesión.
-  // (si hay sesión, permitimos Acceder aunque el token esté usado, porque ya estás adentro)
-  const showBlocked =
-    !hasSession && (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
+  // Importante: el coachee SIEMPRE debe poder escribir la clave cuando gate=ok.
+  // Solo bloqueamos inputs cuando el link está bloqueado (showBlocked).
+  const disableInputs = showBlocked || loading || hasSession;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -346,8 +363,7 @@ function LoginPrimerIngresoInner() {
             <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
             <p style={{ fontSize: 20, marginTop: 10 }}>
-              Bienvenido, solo te resta que ingreses una clave, porque tu
-              dirección de mail ya te la estás viendo.
+              Bienvenido. Ingresá una clave para activar tu cuenta.
             </p>
 
             {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
@@ -361,7 +377,7 @@ function LoginPrimerIngresoInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   autoComplete="email"
-                  disabled={showBlocked}
+                  disabled={disableInputs}
                 />
               </div>
 
@@ -373,11 +389,10 @@ function LoginPrimerIngresoInner() {
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   autoComplete="new-password"
-                  disabled={showBlocked}
+                  disabled={disableInputs}
                 />
               </div>
 
-              {/* Crear cuenta: grisado/disabled cuando ya hay sesión o el token no es válido */}
               <button
                 type="button"
                 style={disableCrearCuenta ? btnCrearCuentaDisabled : btnCrearCuenta}
@@ -394,8 +409,14 @@ function LoginPrimerIngresoInner() {
                 Crear cuenta
               </button>
 
-              {/* Si el token está bloqueado y NO hay sesión: botón directo a Login */}
               {showBlocked && (
+                <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                  Ir al Login
+                </button>
+              )}
+
+              {/* Si la clave fue creada pero no hay sesión, dejamos un botón directo al login */}
+              {!hasSession && passwordCreated && !showBlocked && (
                 <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
                   Ir al Login
                 </button>
@@ -432,14 +453,12 @@ function LoginPrimerIngresoInner() {
               </>
             ) : !hasSession ? (
               <div style={{ fontSize: 34, lineHeight: 1.25 }}>
-                Vamos, estás a un paso de acceder a una nueva posibilidad de
-                cambio…!!!
+                Vamos, estás a un paso de acceder a una nueva posibilidad de cambio…!!!
               </div>
             ) : (
               <>
                 <div style={{ fontSize: 30, lineHeight: 1.25 }}>
-                  Genial, un primer paso ya logrado… vamos por establecer esos
-                  Quiero… empecemos con la acción…!!!!!!!
+                  Genial, un primer paso ya logrado… vamos por establecer esos Quiero… empecemos con la acción…!!!!!!!
                 </div>
 
                 <div
@@ -450,12 +469,7 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
-                  {/* Acceder destacado */}
-                  <button
-                    onClick={onAcceder}
-                    disabled={loading}
-                    style={btnAccederDestacado}
-                  >
+                  <button onClick={onAcceder} disabled={loading} style={btnAccederDestacado}>
                     Acceder
                   </button>
 
