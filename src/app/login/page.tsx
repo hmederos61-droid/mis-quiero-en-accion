@@ -123,7 +123,7 @@ function LoginInner() {
 
     if (emailFromLink) writeInviteEmail(emailFromLink);
 
-    router.replace(`/acceso/coachee?token=${encodeURIComponent(token)}`);
+    router.replace(`/acceso/coachee/carga?token=${encodeURIComponent(token)}`);
   }, [token, emailFromLink, router]);
 
   useEffect(() => {
@@ -175,9 +175,6 @@ function LoginInner() {
     clearInviteEmail();
     setMsg(null);
 
-    // ✅ Canónico:
-    // - Admin/Coach (incluye el caso admin+coach) -> /menu (selector si aplica)
-    // - Coachee -> /quieros/inicio (sin menú)
     try {
       const { data: userRes, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
@@ -197,20 +194,23 @@ function LoginInner() {
 
       const rs = (Array.isArray(r1) ? r1 : [])
         .map((x: any) => String(x.role || "").toLowerCase())
-        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
+        .filter(
+          (x: string) =>
+            x === "admin" || x === "coach" || x === "coachee"
+        );
 
       const unique = Array.from(new Set(rs));
       const hasAdmin = unique.includes("admin");
       const hasCoach = unique.includes("coach");
 
+      // 🔴 CAMBIO CANÓNICO ÚNICO
       if (hasAdmin || hasCoach) {
-        router.replace("/menu");
+        router.replace("/menu1");
       } else {
         router.replace("/quieros/inicio");
       }
       return;
     } catch {
-      // Fallback seguro: coachee directo
       router.replace("/quieros/inicio");
       return;
     }
@@ -236,9 +236,10 @@ function LoginInner() {
             alignItems: "stretch",
           }}
         >
-          {/* IZQUIERDA */}
           <div style={glassCard}>
-            <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
+            <h1 style={{ fontSize: 42, margin: 0 }}>
+              Mis Quiero en Acción
+            </h1>
 
             <p style={{ fontSize: 20, marginTop: 10 }}>
               Ingreso con mail y clave.
@@ -277,18 +278,17 @@ function LoginInner() {
               </button>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <button type="button" style={btnOlvide} disabled={false}>
+                <button type="button" style={btnOlvide}>
                   Olvidé mi clave
                 </button>
 
-                <button type="button" style={btnCambiarMail} disabled={false}>
+                <button type="button" style={btnCambiarMail}>
                   Cambiar mi email
                 </button>
               </div>
             </form>
           </div>
 
-          {/* DERECHA */}
           <div
             style={{
               ...glassCard,
@@ -297,8 +297,6 @@ function LoginInner() {
               justifyContent: "space-between",
             }}
           >
-            {/* ✅ Sin auto-redirección por sesión.
-                La entrada se hace SOLO con click en Ingresar. */}
             <div />
           </div>
         </section>
@@ -307,9 +305,6 @@ function LoginInner() {
   );
 }
 
-/* =========================================================
-   Wrapper: Suspense obligatorio para useSearchParams()
-========================================================= */
 export default function LoginPage() {
   return (
     <Suspense fallback={<div />}>
