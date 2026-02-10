@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Plazo = "corto" | "mediano" | "largo";
@@ -31,7 +32,10 @@ function diffDays(fromISO: string, toYYYYMMDD: string) {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
-function plazoFromCreatedAtAndDueDate(createdAtISO?: string | null, dueDateYYYYMMDD?: string | null): Plazo {
+function plazoFromCreatedAtAndDueDate(
+  createdAtISO?: string | null,
+  dueDateYYYYMMDD?: string | null
+): Plazo {
   if (!createdAtISO || !dueDateYYYYMMDD) return "mediano";
   const days = diffDays(createdAtISO, dueDateYYYYMMDD);
   if (days <= 30) return "corto";
@@ -149,12 +153,14 @@ const btnBase: React.CSSProperties = {
 
 const btnSecondary: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.10))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.10))",
 };
 
 const btnPrimary: React.CSSProperties = {
   ...btnBase,
-  background: "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
+  background:
+    "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
 const topToolsRow: React.CSSProperties = {
@@ -256,13 +262,51 @@ const emptyText: React.CSSProperties = {
 ========================= */
 export default function QuierosListadoPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const router = useRouter();
+
   const [items, setItems] = useState<Quiero[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
 
+  // ✅ BLINDAJE CANÓNICO:
+  // Si NO hay sesión, NO se puede ver /quieros.
+  // Redirección limpia a /login (sin ?next=).
+  const [authChecked, setAuthChecked] = useState(false);
+
   useEffect(() => {
+    let cancel = false;
+
+    async function checkAuth() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (cancel) return;
+
+        const hasSession = !!data.session;
+
+        if (!hasSession) {
+          router.replace("/login");
+          return;
+        }
+
+        setAuthChecked(true);
+      } catch {
+        if (!cancel) {
+          router.replace("/login");
+        }
+      }
+    }
+
+    checkAuth();
+    return () => {
+      cancel = true;
+    };
+  }, [supabase, router]);
+
+  useEffect(() => {
+    if (!authChecked) return;
+
     let cancel = false;
 
     async function load() {
@@ -325,7 +369,7 @@ export default function QuierosListadoPage() {
     return () => {
       cancel = true;
     };
-  }, [supabase]);
+  }, [supabase, authChecked]);
 
   const total = items.length;
 
@@ -343,6 +387,11 @@ export default function QuierosListadoPage() {
   }, [items, query]);
 
   const shown = filtered.length;
+
+  // Mientras chequeamos sesión: no renderizamos nada (evita “flash”).
+  if (!authChecked) {
+    return <div />;
+  }
 
   return (
     <main style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
