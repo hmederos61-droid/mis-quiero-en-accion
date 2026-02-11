@@ -224,12 +224,8 @@ function LoginInner() {
 
     setLoading(true);
 
-    // ✅ CANÓNICO: mandamos recovery y lo devolvemos a NUESTRA pantalla reset-password
-    // (ahí el usuario define la nueva clave)
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/reset-password`
-        : "https://misquieroenaccion.com/reset-password";
+    // ✅ CANÓNICO: SIEMPRE PRODUCCIÓN (evita que vaya a localhost)
+    const redirectTo = "https://misquieroenaccion.com/reset-password";
 
     const { error } = await supabase.auth.resetPasswordForEmail(eMail, {
       redirectTo,
