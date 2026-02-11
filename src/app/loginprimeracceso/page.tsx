@@ -119,11 +119,13 @@ function LoginPrimerIngresoInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  // Nuevo: indica que la clave ya fue creada con éxito (para UX)
+  // indica que la clave ya fue creada con éxito (para UX)
   const [passwordCreated, setPasswordCreated] = useState(false);
 
-  // Gating del link (token) para impedir reuso
+  // Gating del link (token)
   const [gate, setGate] = useState<TokenGate>("checking");
+
+  const PROD_LOGIN_URL = "https://misquieroenaccion.com/login";
 
   // 1) Presentar el mail del coachee en el campo mail
   useEffect(() => {
@@ -142,6 +144,10 @@ function LoginPrimerIngresoInner() {
     if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
 
+  function goToProdLogin() {
+    window.location.href = PROD_LOGIN_URL;
+  }
+
   // 4) Validación del token (una sola vez por token)
   useEffect(() => {
     let cancel = false;
@@ -156,7 +162,7 @@ function LoginPrimerIngresoInner() {
             setMsg(
               <div>
                 Link inválido. Para continuar, ingresá en{" "}
-                <b>www.misquieroenaccion.com</b> con tu email y clave.
+                <b>misquieroenaccion.com</b> con tu email y clave.
               </div>
             );
           }
@@ -176,33 +182,30 @@ function LoginPrimerIngresoInner() {
           setMsg(
             <div>
               Link inválido. Para continuar, ingresá en{" "}
-              <b>www.misquieroenaccion.com</b> con tu email y clave.
+              <b>misquieroenaccion.com</b> con tu email y clave.
             </div>
           );
           return;
         }
 
-        const expiresAt = data.expires_at ? new Date(String(data.expires_at)) : null;
+        const expiresAt = data.expires_at
+          ? new Date(String(data.expires_at))
+          : null;
         if (expiresAt && Date.now() > expiresAt.getTime()) {
           setGate("expired");
           setMsg(
             <div>
-              Este link de acceso venció. Para continuar, ingresá en{" "}
-              <b>www.misquieroenaccion.com</b> con tu email y clave.
+              Este link de acceso venció. Para continuar, contactá a tu coach
+              para que te reenvíe un link nuevo.
             </div>
           );
           return;
         }
 
         if (data.used_at) {
+          // CANÓNICO: si está usado → redirección directa a /login (sin mensaje intermedio)
           setGate("used");
-          setMsg(
-            <div>
-              Ya existe una cuenta creada con este link de acceso. <br />
-              Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu
-              email y clave.
-            </div>
-          );
+          goToProdLogin();
           return;
         }
 
@@ -213,7 +216,7 @@ function LoginPrimerIngresoInner() {
           setMsg(
             <div>
               Link inválido. Para continuar, ingresá en{" "}
-              <b>www.misquieroenaccion.com</b> con tu email y clave.
+              <b>misquieroenaccion.com</b> con tu email y clave.
             </div>
           );
         }
@@ -231,11 +234,14 @@ function LoginPrimerIngresoInner() {
     setPasswordCreated(false);
 
     if (gate !== "ok") {
+      if (gate === "used") {
+        goToProdLogin();
+        return;
+      }
       setMsg(
         <div>
-          Ya existe una cuenta creada con este link de acceso. <br />
-          Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu
-          email y clave.
+          Este link no es válido. Para continuar, ingresá en{" "}
+          <b>misquieroenaccion.com</b> con tu email y clave.
         </div>
       );
       return;
@@ -251,22 +257,48 @@ function LoginPrimerIngresoInner() {
 
     setLoading(true);
 
-    // ✅ CANÓNICO: el usuario YA existe en Auth (se creó al Guardar coachee).
-    // Acá solo se debe SETEAR LA PASSWORD usando una Edge Function con Service Role,
-    // validando token y marcándolo como usado.
+    // CANÓNICO: el usuario YA existe en Auth (se creó al Guardar coachee).
+    // Acá solo se SETEA PASSWORD y se marca used_at (en la Edge Function).
     const { data, error: fnErr } = await supabase.functions.invoke(
       "set-coachee-password-by-token",
       {
         body: {
           token,
-          email: e,
           password: p,
         },
       }
     );
 
     if (fnErr) {
+      // Si la función responde "used" o "expired" vía http status, supabase puede devolver fnErr.
+      // Reintentamos interpretar el payload si vino.
+      const st = (data as any)?.status ? String((data as any).status) : "";
+      if (st === "used") {
+        goToProdLogin();
+        return;
+      }
+      if (st === "expired") {
+        setMsg("Este link venció. Contactá a tu coach para reenvío.");
+        setLoading(false);
+        return;
+      }
       setMsg("No se pudo crear la clave. Probá nuevamente.");
+      setLoading(false);
+      return;
+    }
+
+    const status = String((data as any)?.status || "");
+    if (status === "used") {
+      goToProdLogin();
+      return;
+    }
+    if (status === "expired") {
+      setMsg("Este link venció. Contactá a tu coach para reenvío.");
+      setLoading(false);
+      return;
+    }
+    if (status === "invalid") {
+      setMsg("Link inválido. Ingresá desde producción con tu email y clave.");
       setLoading(false);
       return;
     }
@@ -283,24 +315,18 @@ function LoginPrimerIngresoInner() {
       return;
     }
 
-    // Ahora intentamos iniciar sesión con esa clave (para habilitar el panel derecho)
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-      email: e,
-      password: p,
-    });
+    // Intentar iniciar sesión con esa clave (para habilitar el panel derecho)
+    const { data: signInData, error: signInErr } =
+      await supabase.auth.signInWithPassword({
+        email: e,
+        password: p,
+      });
 
     const okSession = Boolean(signInData.session) && !signInErr;
     setHasSession(okSession);
 
-    // Mensaje canónico requerido por vos
     setPasswordCreated(true);
     setMsg("Cuenta creada. Ahora hacé un click en Acceder.");
-
-    // Si por algún motivo no quedó sesión, igual dejamos el mensaje y el usuario puede ir al Login.
-    if (!okSession) {
-      // Mostramos alternativa sin romper UX
-      // (No forzamos nada: Acceder no se habilita si no hay sesión)
-    }
 
     setLoading(false);
   }
@@ -310,7 +336,7 @@ function LoginPrimerIngresoInner() {
   }
 
   function onIrLogin() {
-    router.replace("/login");
+    goToProdLogin();
   }
 
   async function onSalir() {
@@ -328,14 +354,10 @@ function LoginPrimerIngresoInner() {
     !hasSession &&
     (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
 
-  // Regla de habilitación (CANÓNICA):
-  // - si ya hay sesión: no crear (ya está adentro)
-  // - si gate no es ok: no crear
-  // - si loading: no crear
+  // Regla de habilitación:
   const disableCrearCuenta = loading || hasSession || gate !== "ok";
 
   // Importante: el coachee SIEMPRE debe poder escribir la clave cuando gate=ok.
-  // Solo bloqueamos inputs cuando el link está bloqueado (showBlocked).
   const disableInputs = showBlocked || loading || hasSession;
 
   return (
@@ -410,14 +432,24 @@ function LoginPrimerIngresoInner() {
               </button>
 
               {showBlocked && (
-                <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                <button
+                  type="button"
+                  onClick={onIrLogin}
+                  disabled={loading}
+                  style={btnIrLogin}
+                >
                   Ir al Login
                 </button>
               )}
 
               {/* Si la clave fue creada pero no hay sesión, dejamos un botón directo al login */}
               {!hasSession && passwordCreated && !showBlocked && (
-                <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                <button
+                  type="button"
+                  onClick={onIrLogin}
+                  disabled={loading}
+                  style={btnIrLogin}
+                >
                   Ir al Login
                 </button>
               )}
@@ -439,10 +471,18 @@ function LoginPrimerIngresoInner() {
             {showBlocked ? (
               <>
                 <div style={{ fontSize: 28, lineHeight: 1.25 }}>
-                  Ya existe una cuenta creada con este link de acceso.
+                  Este link no es válido para crear la clave.
                 </div>
-                <div style={{ fontSize: 18, marginTop: 14, opacity: 0.95, lineHeight: 1.35 }}>
-                  Para continuar, ingresá en <b>www.misquieroenaccion.com</b> con tu email y clave.
+                <div
+                  style={{
+                    fontSize: 18,
+                    marginTop: 14,
+                    opacity: 0.95,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  Para continuar, ingresá en <b>misquieroenaccion.com</b> con tu
+                  email y clave.
                 </div>
 
                 <div style={{ width: "100%", marginTop: 22 }}>
