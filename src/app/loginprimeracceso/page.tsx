@@ -39,6 +39,13 @@ const inputStyle: React.CSSProperties = {
   fontSize: 17,
 };
 
+const inputStyleDisabled: React.CSSProperties = {
+  ...inputStyle,
+  opacity: 0.58,
+  background: "rgba(0,0,0,0.06)",
+  cursor: "not-allowed",
+};
+
 const btnBase: React.CSSProperties = {
   width: "100%",
   padding: "14px 16px",
@@ -80,7 +87,6 @@ const btnAccederDestacado: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.36)",
 };
 
-// ✅ MÁS DESTACADO (cuando la cuenta ya fue creada)
 const btnAccederPostCreacion: React.CSSProperties = {
   ...btnAccederDestacado,
   background:
@@ -137,7 +143,6 @@ type TokenGate =
   | "used";
 
 function EyeIcon({ off }: { off: boolean }) {
-  // SVG simple (sin libs). "off" = ojo tachado.
   return off ? (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path
@@ -199,18 +204,12 @@ function LoginPrimerIngresoInner() {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  // indica que la clave ya fue creada con éxito (para UX)
   const [passwordCreated, setPasswordCreated] = useState(false);
-
-  // Gating del link (token)
   const [gate, setGate] = useState<TokenGate>("checking");
-
-  // 👁 Mostrar/ocultar clave (unificado con recovery)
   const [showPassword, setShowPassword] = useState(false);
 
   const PROD_LOGIN_URL = "https://misquieroenaccion.com/login";
 
-  // 1) Presentar el mail del coachee en el campo mail
   useEffect(() => {
     if (emailFromLink) setEmail(emailFromLink);
   }, [emailFromLink]);
@@ -219,7 +218,6 @@ function LoginPrimerIngresoInner() {
     window.location.href = PROD_LOGIN_URL;
   }
 
-  // 2) Estado de sesión
   useEffect(() => {
     let cancel = false;
 
@@ -233,14 +231,9 @@ function LoginPrimerIngresoInner() {
         return;
       }
 
-      // ✅ CORRECCIÓN CANÓNICA (PUNTO 3):
-      // Si el usuario abre el link con una sesión previa (coach/admin en el mismo navegador),
-      // eso NO debe bloquear que el coachee ingrese su nueva clave.
-      // Entonces: cerramos la sesión previa automáticamente.
       await supabase.auth.signOut();
       if (cancel) return;
 
-      // ✅ Ajuste UX: NO mostrar mensaje "Se cerró una sesión..."
       setHasSession(false);
       setMsg(null);
     }
@@ -251,12 +244,10 @@ function LoginPrimerIngresoInner() {
     };
   }, [supabase]);
 
-  // 3) Prefetch
   useEffect(() => {
     if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
 
-  // 4) Validación del token (una sola vez por token)
   useEffect(() => {
     let cancel = false;
 
@@ -311,14 +302,11 @@ function LoginPrimerIngresoInner() {
         }
 
         if (data.used_at) {
-          // CANÓNICO: token ya consumido → ir a login
           setGate("used");
           goToProdLogin();
           return;
         }
 
-        // ✅ CANÓNICO:
-        // token válido + used_at NULL → habilitar ingreso de clave SIEMPRE
         setGate("ok");
       } catch {
         if (!cancel) {
@@ -370,10 +358,7 @@ function LoginPrimerIngresoInner() {
     const { data, error: fnErr } = await supabase.functions.invoke(
       "set-coachee-password-by-token",
       {
-        body: {
-          token,
-          password: p,
-        },
+        body: { token, password: p },
       }
     );
 
@@ -421,18 +406,12 @@ function LoginPrimerIngresoInner() {
       return;
     }
 
-    // Intentar iniciar sesión con esa clave (para habilitar el panel derecho)
     const { data: signInData, error: signInErr } =
-      await supabase.auth.signInWithPassword({
-        email: e,
-        password: p,
-      });
+      await supabase.auth.signInWithPassword({ email: e, password: p });
 
     const okSession = Boolean(signInData.session) && !signInErr;
     setHasSession(okSession);
 
-    // ✅ Ajuste UX:
-    // No mostramos el mensaje "Bienvenido..." ni usamos msg para "Cuenta creada".
     setPasswordCreated(true);
     setMsg(null);
 
@@ -465,7 +444,9 @@ function LoginPrimerIngresoInner() {
       gate === "used");
 
   const disableCrearCuenta = loading || gate !== "ok";
-  const disableInputs = showBlocked || loading;
+
+  // ✅ Ajuste: después de crear cuenta, grisamos clave + deshabilitamos ojo
+  const disableInputs = showBlocked || loading || passwordCreated;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -491,18 +472,16 @@ function LoginPrimerIngresoInner() {
           <div style={glassCard}>
             <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
-            {/* ✅ Ajuste UX (2): cambia el texto superior cuando cuenta creada */}
             {!passwordCreated ? (
               <p style={{ fontSize: 20, marginTop: 10 }}>
                 Bienvenido. Ingresá una clave para activar tu cuenta.
               </p>
             ) : (
-              <p style={{ fontSize: 22, marginTop: 12, fontWeight: 800 }}>
-                Cuenta creada. Ahora por favor, da un click en <b>ACCEDER</b>...
+              <p style={{ fontSize: 22, marginTop: 12 }}>
+                Cuenta CREADA, ahora por favor, da un click en ACCEDER
               </p>
             )}
 
-            {/* ✅ msg solo para errores/avisos, pero NO se muestra en estado "cuenta creada" */}
             {msg && !passwordCreated && (
               <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>
             )}
@@ -511,7 +490,7 @@ function LoginPrimerIngresoInner() {
               <div>
                 <div style={labelStyle}>Email</div>
                 <input
-                  style={inputStyle}
+                  style={disableInputs ? inputStyleDisabled : inputStyle}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
@@ -525,7 +504,10 @@ function LoginPrimerIngresoInner() {
 
                 <div style={inputWrap}>
                   <input
-                    style={{ ...inputStyle, paddingRight: 56 }}
+                    style={{
+                      ...(disableInputs ? inputStyleDisabled : inputStyle),
+                      paddingRight: 56,
+                    }}
                     type={showPassword ? "text" : "password"}
                     value={clave}
                     onChange={(e) => setClave(e.target.value)}
@@ -541,7 +523,7 @@ function LoginPrimerIngresoInner() {
                     disabled={disableInputs}
                     style={{
                       ...eyeBtn,
-                      opacity: disableInputs ? 0.55 : 1,
+                      opacity: disableInputs ? 0.45 : 1,
                       cursor: disableInputs ? "not-allowed" : "pointer",
                     }}
                   >
@@ -577,7 +559,6 @@ function LoginPrimerIngresoInner() {
                 </button>
               )}
 
-              {/* Si la clave fue creada pero no hay sesión, dejamos un botón directo al login */}
               {!hasSession && passwordCreated && !showBlocked && (
                 <button
                   type="button"
@@ -651,7 +632,6 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
-                  {/* ✅ Ajuste UX (3): botón Acceder MÁS destacado cuando passwordCreated=true */}
                   <button
                     onClick={onAcceder}
                     disabled={loading}
