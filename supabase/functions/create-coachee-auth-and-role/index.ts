@@ -1,154 +1,189 @@
-// supabase/functions/create-coachee-auth-and-role/index.ts
-// Edge Function: crea (o reutiliza) un usuario Auth sin password,
-// crea/asegura la identidad en public.app_users,
-// y asegura role='coachee' en public.user_roles.
-// Devuelve: { ok: true, auth_user_id: string }
+// Edge Function CANÓNICA
+// create-coachee-auth-and-role
+//
+// RESPONSABILIDAD ÚNICA:
+// - Garantizar que un COACHEE tenga:
+//   1) auth.users
+//   2) app_users
+//   3) user_roles = 'coachee'
+//
+// NO:
+// - No envía mails
+// - No crea sesiones
+// - No toca passwords
+// - No marca tokens
+//
+// Se ejecuta DESDE:
+// - Alta de Coachee (Guardar)
+// - Antes del envío de mail
+//
+// Idempotente: puede llamarse múltiples veces sin romper datos
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+/* =========================
+   ✅ CORS (CANÓNICO)
+   - Permitir producción con y sin www
+   - Responder OPTIONS (preflight)
+========================= */
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  });
-}
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
 
-async function findUserIdByEmail(
-  supabaseAdmin: ReturnType<typeof createClient>,
-  emailLower: string,
-): Promise<string | null> {
-  const perPage = 1000;
+  // ✅ Permitimos ambos orígenes de producción
+  const allowedOrigins = new Set([
+    "https://misquieroenaccion.com",
+    "https://www.misquieroenaccion.com",
+  ]);
 
-  for (let page = 1; page <= 10; page++) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage,
-    });
-    if (error) throw error;
+  // Si viene un Origin permitido, lo devolvemos. Si no, devolvemos el principal.
+  const allowOrigin = allowedOrigins.has(origin)
+    ? origin
+    : "https://misquieroenaccion.com";
 
-    const users = data?.users ?? [];
-    const found = users.find((u) => (u.email ?? "").toLowerCase() === emailLower);
-    if (found?.id) return found.id;
-
-    if (users.length < perPage) break;
-  }
-
-  return null;
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Vary": "Origin",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Max-Age": "86400",
+  };
 }
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+
+  // ✅ Preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   try {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders });
-    }
-
     if (req.method !== "POST") {
-      return json({ ok: false, error: "Use POST." }, 405);
-    }
-
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
-      return json(
-        { ok: false, error: "Missing env vars SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY." },
-        500,
+      return new Response(
+        JSON.stringify({ ok: false, error: "Method not allowed" }),
+        {
+          status: 405,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    const { email } = await req.json();
+
+    if (!email || typeof email !== "string") {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Email requerido" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
     });
 
-    const payload = await req.json().catch(() => ({}));
-    const emailRaw = (payload?.email ?? "").toString().trim();
-    const emailLower = emailRaw.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!emailRaw || !emailRaw.includes("@")) {
-      return json({ ok: false, error: "Invalid email. Provide { email }." }, 400);
-    }
+    /* ======================================================
+       1. BUSCAR / CREAR auth.users
+    ====================================================== */
 
-    // 1) Crear Auth user sin password (si ya existe, reutiliza)
     let authUserId: string | null = null;
 
-    const { data: created, error: createErr } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: emailRaw,
-        email_confirm: false,
-      });
+    const { data: users, error: listErr } = await supabase.auth.admin.listUsers();
 
-    if (createErr) {
-      const existingId = await findUserIdByEmail(supabaseAdmin, emailLower);
-      if (!existingId) {
-        return json(
-          {
-            ok: false,
-            error: "Auth create failed and existing user not found by email.",
-            details: createErr.message,
-          },
-          500,
-        );
-      }
-      authUserId = existingId;
+    if (listErr) {
+      throw new Error("No se pudo listar auth.users");
+    }
+
+    const existingUser = users.users.find(
+      (u) => u.email?.toLowerCase() === normalizedEmail
+    );
+
+    if (existingUser) {
+      authUserId = existingUser.id;
     } else {
-      authUserId = created.user?.id ?? null;
+      const { data: created, error: createErr } =
+        await supabase.auth.admin.createUser({
+          email: normalizedEmail,
+          email_confirm: true,
+        });
+
+      if (createErr || !created.user) {
+        throw new Error("No se pudo crear auth user");
+      }
+
+      authUserId = created.user.id;
     }
 
-    if (!authUserId) {
-      return json({ ok: false, error: "Could not resolve auth_user_id." }, 500);
-    }
+    /* ======================================================
+       2. UPSERT app_users
+    ====================================================== */
 
-    // 2) Asegurar identidad en public.app_users (obligatorio por FK en user_roles)
-    //    Usamos upsert para que sea idempotente.
-    const { error: appUserErr } = await supabaseAdmin
+    const { error: appUserErr } = await supabase
       .from("app_users")
-      .upsert([{ auth_user_id: authUserId }], { onConflict: "auth_user_id" });
+      .upsert(
+        {
+          auth_user_id: authUserId,
+          email: normalizedEmail,
+        },
+        { onConflict: "auth_user_id" }
+      );
 
     if (appUserErr) {
-      return json(
-        {
-          ok: false,
-          error: "Failed to upsert into public.app_users.",
-          details: appUserErr.message,
-          auth_user_id: authUserId,
-        },
-        500,
-      );
+      throw new Error("No se pudo upsert app_users");
     }
 
-    // 3) Asegurar rol coachee (idempotente)
-    const { error: roleErr } = await supabaseAdmin
+    /* ======================================================
+       3. UPSERT user_roles (coachee)
+    ====================================================== */
+
+    const { error: roleErr } = await supabase
       .from("user_roles")
-      .upsert([{ auth_user_id: authUserId, role: "coachee" }], {
-        onConflict: "auth_user_id,role",
-      });
+      .upsert(
+        {
+          auth_user_id: authUserId,
+          role: "coachee",
+        },
+        { onConflict: "auth_user_id,role" }
+      );
 
     if (roleErr) {
-      return json(
-        {
-          ok: false,
-          error: "Failed to upsert role coachee.",
-          details: roleErr.message,
-          auth_user_id: authUserId,
-        },
-        500,
-      );
+      throw new Error("Failed to upsert role coachee");
     }
 
-    return json({ ok: true, auth_user_id: authUserId }, 200);
+    /* ======================================================
+       OK
+    ====================================================== */
+
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        auth_user_id: authUserId,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return json({ ok: false, error: "Unhandled error", details: msg }, 500);
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "Edge Function error",
+        details: String(e),
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
