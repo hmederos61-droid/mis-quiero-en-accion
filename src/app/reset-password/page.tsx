@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -75,57 +75,15 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const code = sp.get("code")?.trim() || "";
+  // ✅ CANÓNICO: token propio (NO code, NO PKCE)
+  const token = sp.get("token")?.trim() || "";
 
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [ready, setReady] = useState(false); // ✅ sesión de recovery OK
   const [msg, setMsg] = useState<React.ReactNode>(null);
-
-  // 1) Intercambiar code → session (PASO CANÓNICO)
-  useEffect(() => {
-    let cancel = false;
-
-    async function run() {
-      setMsg(null);
-
-      if (!code) {
-        if (!cancel) {
-          setReady(false);
-          setMsg(
-            <div>
-              Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
-            </div>
-          );
-        }
-        return;
-      }
-
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-      if (cancel) return;
-
-      if (error) {
-        setReady(false);
-        setMsg(
-          <div>
-            Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
-          </div>
-        );
-        return;
-      }
-
-      setReady(true);
-      setMsg(null);
-    }
-
-    run();
-    return () => {
-      cancel = true;
-    };
-  }, [code, supabase]);
+  const [done, setDone] = useState(false);
 
   async function onGuardar() {
     setMsg(null);
@@ -133,6 +91,10 @@ export default function ResetPasswordPage() {
     const a = p1.trim();
     const b = p2.trim();
 
+    if (!token) {
+      setMsg("Link inválido. Pedí uno nuevo desde Login.");
+      return;
+    }
     if (a.length < 6) {
       setMsg("La clave debe tener al menos 6 caracteres.");
       return;
@@ -141,26 +103,45 @@ export default function ResetPasswordPage() {
       setMsg("Las claves no coinciden.");
       return;
     }
-    if (!ready) {
-      setMsg(
-        <div>
-          Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
-        </div>
-      );
-      return;
-    }
 
     setLoading(true);
 
-    const { error } = await supabase.auth.updateUser({ password: a });
+    const { data, error: fnErr } = await supabase.functions.invoke(
+      "set-password-by-reset-token",
+      {
+        body: { token, password: a },
+      }
+    );
 
-    if (error) {
-      setMsg("No se pudo guardar la nueva clave. Reintentá desde el mail.");
+    if (fnErr) {
+      setMsg("No se pudo guardar la nueva clave. Pedí un link nuevo.");
       setLoading(false);
       return;
     }
 
-    setMsg("Clave actualizada. Volvé a Login e ingresá con tu nueva clave.");
+    const status = String((data as any)?.status || "");
+    const ok = (data as any)?.ok === true;
+
+    if (ok && status === "ok") {
+      setDone(true);
+      setMsg("Clave actualizada. Volvé a Login e ingresá con tu nueva clave.");
+      setLoading(false);
+      return;
+    }
+
+    if (status === "used") {
+      setMsg("Link ya utilizado. Pedí uno nuevo desde Login.");
+      setLoading(false);
+      return;
+    }
+
+    if (status === "expired") {
+      setMsg("Link vencido. Pedí uno nuevo desde Login.");
+      setLoading(false);
+      return;
+    }
+
+    setMsg("Link inválido. Pedí uno nuevo desde Login.");
     setLoading(false);
   }
 
@@ -168,7 +149,7 @@ export default function ResetPasswordPage() {
     router.replace("/login");
   }
 
-  const disableSave = loading || !ready;
+  const disableSave = loading || done;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -199,7 +180,7 @@ export default function ResetPasswordPage() {
                   value={p1}
                   onChange={(e) => setP1(e.target.value)}
                   autoComplete="new-password"
-                  disabled={loading || !ready}
+                  disabled={loading || done}
                 />
               </div>
 
@@ -211,7 +192,7 @@ export default function ResetPasswordPage() {
                   value={p2}
                   onChange={(e) => setP2(e.target.value)}
                   autoComplete="new-password"
-                  disabled={loading || !ready}
+                  disabled={loading || done}
                 />
               </div>
 
@@ -220,7 +201,6 @@ export default function ResetPasswordPage() {
                 onClick={onGuardar}
                 disabled={disableSave}
                 style={disableSave ? btnPrimaryDisabled : btnPrimary}
-                title={!ready ? "Link inválido o vencido" : undefined}
               >
                 Guardar nueva clave
               </button>
