@@ -194,10 +194,7 @@ function LoginInner() {
 
       const rs = (Array.isArray(r1) ? r1 : [])
         .map((x: any) => String(x.role || "").toLowerCase())
-        .filter(
-          (x: string) =>
-            x === "admin" || x === "coach" || x === "coachee"
-        );
+        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
 
       const unique = Array.from(new Set(rs));
       const hasAdmin = unique.includes("admin");
@@ -214,6 +211,42 @@ function LoginInner() {
       router.replace("/quieros/inicio");
       return;
     }
+  }
+
+  async function onOlvideClave() {
+    setMsg(null);
+
+    const eMail = email.trim();
+    if (!isEmailValid(eMail)) {
+      setMsg("Ingresá un email válido y luego hacé click en Olvidé mi clave.");
+      return;
+    }
+
+    setLoading(true);
+
+    // ✅ CANÓNICO: mandamos recovery y lo devolvemos a NUESTRA pantalla reset-password
+    // (ahí el usuario define la nueva clave)
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/reset-password`
+        : "https://misquieroenaccion.com/reset-password";
+
+    const { error } = await supabase.auth.resetPasswordForEmail(eMail, {
+      redirectTo,
+    });
+
+    if (error) {
+      setMsg("No se pudo enviar el mail de recuperación. Probá nuevamente.");
+      setLoading(false);
+      return;
+    }
+
+    setMsg("Listo. Te enviamos un mail para cambiar tu clave.");
+    setLoading(false);
+  }
+
+  function onCambiarMail() {
+    setMsg("Para cambiar el email, contactá al administrador.");
   }
 
   return (
@@ -237,9 +270,7 @@ function LoginInner() {
           }}
         >
           <div style={glassCard}>
-            <h1 style={{ fontSize: 42, margin: 0 }}>
-              Mis Quiero en Acción
-            </h1>
+            <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
             <p style={{ fontSize: 20, marginTop: 10 }}>
               Ingreso con mail y clave.
@@ -259,6 +290,7 @@ function LoginInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   autoComplete="email"
+                  disabled={loading}
                 />
               </div>
 
@@ -270,6 +302,7 @@ function LoginInner() {
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   autoComplete="current-password"
+                  disabled={loading}
                 />
               </div>
 
@@ -278,11 +311,21 @@ function LoginInner() {
               </button>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <button type="button" style={btnOlvide}>
+                <button
+                  type="button"
+                  style={btnOlvide}
+                  disabled={loading}
+                  onClick={onOlvideClave}
+                >
                   Olvidé mi clave
                 </button>
 
-                <button type="button" style={btnCambiarMail}>
+                <button
+                  type="button"
+                  style={btnCambiarMail}
+                  disabled={loading}
+                  onClick={onCambiarMail}
+                >
                   Cambiar mi email
                 </button>
               </div>
