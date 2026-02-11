@@ -248,6 +248,7 @@ function LoginPrimerIngresoInner() {
     if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
 
+  // ✅ CANÓNICO: Validación determinística por backend (Edge Function)
   useEffect(() => {
     let cancel = false;
 
@@ -268,15 +269,16 @@ function LoginPrimerIngresoInner() {
           return;
         }
 
-        const { data, error } = await supabase
-          .from("coachee_invitations")
-          .select("token, used_at, expires_at")
-          .eq("token", token)
-          .maybeSingle();
+        setGate("checking");
+
+        const { data, error } = await supabase.functions.invoke(
+          "validate-coachee-invite-token",
+          { body: { token } }
+        );
 
         if (cancel) return;
 
-        if (error || !data) {
+        if (error || !data?.ok) {
           setGate("invalid");
           setMsg(
             <div>
@@ -287,10 +289,20 @@ function LoginPrimerIngresoInner() {
           return;
         }
 
-        const expiresAt = data.expires_at
-          ? new Date(String(data.expires_at))
-          : null;
-        if (expiresAt && Date.now() > expiresAt.getTime()) {
+        const status = String((data as any)?.status || "");
+
+        if (status === "ok") {
+          setGate("ok");
+          return;
+        }
+
+        if (status === "used") {
+          setGate("used");
+          goToProdLogin();
+          return;
+        }
+
+        if (status === "expired") {
           setGate("expired");
           setMsg(
             <div>
@@ -301,13 +313,13 @@ function LoginPrimerIngresoInner() {
           return;
         }
 
-        if (data.used_at) {
-          setGate("used");
-          goToProdLogin();
-          return;
-        }
-
-        setGate("ok");
+        setGate("invalid");
+        setMsg(
+          <div>
+            Link inválido. Para continuar, ingresá en{" "}
+            <b>misquieroenaccion.com</b> con tu email y clave.
+          </div>
+        );
       } catch {
         if (!cancel) {
           setGate("invalid");
