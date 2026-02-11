@@ -194,7 +194,9 @@ function LoginInner() {
 
       const rs = (Array.isArray(r1) ? r1 : [])
         .map((x: any) => String(x.role || "").toLowerCase())
-        .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
+        .filter(
+          (x: string) => x === "admin" || x === "coach" || x === "coachee"
+        );
 
       const unique = Array.from(new Set(rs));
       const hasAdmin = unique.includes("admin");
@@ -224,20 +226,24 @@ function LoginInner() {
 
     setLoading(true);
 
-    // ✅ CANÓNICO: SIEMPRE PRODUCCIÓN (evita que vaya a localhost)
-    const redirectTo = "https://misquieroenaccion.com/reset-password";
+    // ✅ CANÓNICO: recovery propio (token propio) – NO usar resetPasswordForEmail
+    const { error: fnErr } = await supabase.functions.invoke(
+      "send-password-reset",
+      { body: { email: eMail } }
+    );
 
-    const { error } = await supabase.auth.resetPasswordForEmail(eMail, {
-      redirectTo,
-    });
-
-    if (error) {
-      setMsg("No se pudo enviar el mail de recuperación. Probá nuevamente.");
+    // Mensaje neutro SIEMPRE (no revelar si existe o no)
+    if (fnErr) {
+      setMsg(
+        "Si el email es correcto, recibirás un correo con instrucciones para cambiar tu clave."
+      );
       setLoading(false);
       return;
     }
 
-    setMsg("Listo. Te enviamos un mail para cambiar tu clave.");
+    setMsg(
+      "Si el email es correcto, recibirás un correo con instrucciones para cambiar tu clave."
+    );
     setLoading(false);
   }
 
