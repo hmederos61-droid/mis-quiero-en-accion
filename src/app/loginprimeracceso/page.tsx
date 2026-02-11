@@ -80,6 +80,16 @@ const btnAccederDestacado: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.36)",
 };
 
+// ✅ MÁS DESTACADO (cuando la cuenta ya fue creada)
+const btnAccederPostCreacion: React.CSSProperties = {
+  ...btnAccederDestacado,
+  background:
+    "linear-gradient(135deg, rgba(40,210,135,0.92), rgba(22,155,105,0.78))",
+  border: "2px solid rgba(255,255,255,0.62)",
+  boxShadow:
+    "0 0 0 3px rgba(40,210,135,0.25), 0 26px 95px rgba(0,0,0,0.38)",
+};
+
 const btnSalir: React.CSSProperties = {
   ...btnBase,
   background:
@@ -230,13 +240,9 @@ function LoginPrimerIngresoInner() {
       await supabase.auth.signOut();
       if (cancel) return;
 
+      // ✅ Ajuste UX: NO mostrar mensaje "Se cerró una sesión..."
       setHasSession(false);
-      setMsg(
-        <div>
-          Se cerró una sesión previa para que puedas activar tu cuenta con este
-          link.
-        </div>
-      );
+      setMsg(null);
     }
 
     checkSession();
@@ -312,8 +318,7 @@ function LoginPrimerIngresoInner() {
         }
 
         // ✅ CANÓNICO:
-        // token válido + used_at NULL → habilitar ingreso de clave SIEMPRE,
-        // aunque exista auth.user (y aunque hubiera existido una sesión previa).
+        // token válido + used_at NULL → habilitar ingreso de clave SIEMPRE
         setGate("ok");
       } catch {
         if (!cancel) {
@@ -362,8 +367,6 @@ function LoginPrimerIngresoInner() {
 
     setLoading(true);
 
-    // CANÓNICO: el usuario YA existe en Auth (se creó al Guardar coachee).
-    // Acá solo se SETEA PASSWORD y se marca used_at (en la Edge Function).
     const { data, error: fnErr } = await supabase.functions.invoke(
       "set-coachee-password-by-token",
       {
@@ -428,8 +431,10 @@ function LoginPrimerIngresoInner() {
     const okSession = Boolean(signInData.session) && !signInErr;
     setHasSession(okSession);
 
+    // ✅ Ajuste UX:
+    // No mostramos el mensaje "Bienvenido..." ni usamos msg para "Cuenta creada".
     setPasswordCreated(true);
-    setMsg("Cuenta creada. Ahora hacé un click en Acceder.");
+    setMsg(null);
 
     setLoading(false);
   }
@@ -452,18 +457,14 @@ function LoginPrimerIngresoInner() {
     setLoading(false);
   }
 
-  // Si el token está bloqueado y NO hay sesión: pantalla de bloqueo + botón a Login
   const showBlocked =
     !hasSession &&
-    (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
+    (gate === "missing" ||
+      gate === "invalid" ||
+      gate === "expired" ||
+      gate === "used");
 
-  // ✅ CANÓNICO (PUNTO 3):
-  // Crear cuenta NO se deshabilita por "hasSession".
-  // Si hay sesión, ya la cerramos automáticamente arriba.
   const disableCrearCuenta = loading || gate !== "ok";
-
-  // ✅ CANÓNICO:
-  // Inputs se deshabilitan solo si el link está bloqueado o está cargando.
   const disableInputs = showBlocked || loading;
 
   return (
@@ -490,11 +491,21 @@ function LoginPrimerIngresoInner() {
           <div style={glassCard}>
             <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
 
-            <p style={{ fontSize: 20, marginTop: 10 }}>
-              Bienvenido. Ingresá una clave para activar tu cuenta.
-            </p>
+            {/* ✅ Ajuste UX (2): cambia el texto superior cuando cuenta creada */}
+            {!passwordCreated ? (
+              <p style={{ fontSize: 20, marginTop: 10 }}>
+                Bienvenido. Ingresá una clave para activar tu cuenta.
+              </p>
+            ) : (
+              <p style={{ fontSize: 22, marginTop: 12, fontWeight: 800 }}>
+                Cuenta creada. Ahora por favor, da un click en <b>ACCEDER</b>...
+              </p>
+            )}
 
-            {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
+            {/* ✅ msg solo para errores/avisos, pero NO se muestra en estado "cuenta creada" */}
+            {msg && !passwordCreated && (
+              <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>
+            )}
 
             <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
               <div>
@@ -541,7 +552,9 @@ function LoginPrimerIngresoInner() {
 
               <button
                 type="button"
-                style={disableCrearCuenta ? btnCrearCuentaDisabled : btnCrearCuenta}
+                style={
+                  disableCrearCuenta ? btnCrearCuentaDisabled : btnCrearCuenta
+                }
                 disabled={disableCrearCuenta}
                 onClick={onCrearCuenta}
                 title={
@@ -620,12 +633,14 @@ function LoginPrimerIngresoInner() {
               </>
             ) : !hasSession ? (
               <div style={{ fontSize: 34, lineHeight: 1.25 }}>
-                Vamos, estás a un paso de acceder a una nueva posibilidad de cambio…!!!
+                Vamos, estás a un paso de acceder a una nueva posibilidad de
+                cambio…!!!
               </div>
             ) : (
               <>
                 <div style={{ fontSize: 30, lineHeight: 1.25 }}>
-                  Genial, un primer paso ya logrado… vamos por establecer esos Quiero… empecemos con la acción…!!!!!!!
+                  Genial, un primer paso ya logrado… vamos por establecer esos
+                  Quiero… empecemos con la acción…!!!!!!!
                 </div>
 
                 <div
@@ -636,10 +651,15 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
+                  {/* ✅ Ajuste UX (3): botón Acceder MÁS destacado cuando passwordCreated=true */}
                   <button
                     onClick={onAcceder}
                     disabled={loading}
-                    style={btnAccederDestacado}
+                    style={
+                      passwordCreated
+                        ? btnAccederPostCreacion
+                        : btnAccederDestacado
+                    }
                   >
                     Acceder
                   </button>
