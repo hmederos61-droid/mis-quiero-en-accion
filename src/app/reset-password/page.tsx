@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -29,7 +29,7 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "14px 16px",
+  padding: "14px 44px 14px 16px", // espacio para el ojo
   borderRadius: 14,
   border: "1px solid rgba(255,255,255,0.18)",
   background: "rgba(0,0,0,0.10)",
@@ -50,55 +50,107 @@ const btnBase: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
-const btnPrimary: React.CSSProperties = {
+const btnGuardar: React.CSSProperties = {
   ...btnBase,
   background:
-    "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
+    "linear-gradient(135deg, rgba(30,180,120,0.65), rgba(20,140,95,0.55))",
 };
 
-const btnPrimaryDisabled: React.CSSProperties = {
-  ...btnBase,
-  cursor: "not-allowed",
-  opacity: 0.48,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08))",
-};
-
-const btnLogin: React.CSSProperties = {
+const btnVolver: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
-export default function ResetPasswordPage() {
+const eyeBtn: React.CSSProperties = {
+  position: "absolute",
+  right: 10,
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: 34,
+  height: 34,
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.92)",
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+  userSelect: "none",
+};
+
+const MIN_PASSWORD_LEN = 6;
+
+function interpretServerError(raw: unknown): string {
+  const s = String(raw || "").toLowerCase();
+
+  // Mensajes explícitos (si el backend los devuelve)
+  if (
+    s.includes("same password") ||
+    s.includes("same as old") ||
+    s.includes("previous") ||
+    s.includes("no puede repetir") ||
+    s.includes("repetir una clave anterior")
+  ) {
+    return "No podés repetir una clave anterior. Elegí una diferente.";
+  }
+
+  if (s.includes("expired") || s.includes("venc")) {
+    return "Link vencido. Volvé a Login y repetí Olvidé mi clave.";
+  }
+
+  if (s.includes("used") || s.includes("ya fue utilizado") || s.includes("ya usado")) {
+    return "Link ya utilizado. Volvé a Login.";
+  }
+
+  if (s.includes("invalid") || s.includes("inval")) {
+    return "Link inválido. Volvé a Login y repetí Olvidé mi clave.";
+  }
+
+  if (s.includes("weak") || s.includes("password")) {
+    return `La clave no cumple los requisitos. Usá al menos ${MIN_PASSWORD_LEN} caracteres.`;
+  }
+
+  // Fallback
+  return "No se pudo cambiar la clave. Probá nuevamente.";
+}
+
+function ResetPasswordInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const sp = useSearchParams();
 
-  // ✅ CANÓNICO: token propio (NO code, NO PKCE)
   const token = sp.get("token")?.trim() || "";
 
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [show1, setShow1] = useState(false);
+  const [show2, setShow2] = useState(false);
 
-  const [msg, setMsg] = useState<React.ReactNode>(null);
-  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   async function onGuardar() {
     setMsg(null);
 
+    if (!token) {
+      setMsg("Link inválido. Volvé a Login y repetí Olvidé mi clave.");
+      return;
+    }
+
     const a = p1.trim();
     const b = p2.trim();
 
-    if (!token) {
-      setMsg("Link inválido. Pedí uno nuevo desde Login.");
+    if (!a || !b) {
+      setMsg("Completá la nueva clave y repetila.");
       return;
     }
-    if (a.length < 6) {
-      setMsg("La clave debe tener al menos 6 caracteres.");
+
+    if (a.length < MIN_PASSWORD_LEN) {
+      setMsg(`La clave debe tener al menos ${MIN_PASSWORD_LEN} caracteres.`);
       return;
     }
+
     if (a !== b) {
       setMsg("Las claves no coinciden.");
       return;
@@ -114,42 +166,27 @@ export default function ResetPasswordPage() {
     );
 
     if (fnErr) {
-      setMsg("No se pudo guardar la nueva clave. Pedí un link nuevo.");
+      setMsg(interpretServerError(fnErr.message || fnErr));
       setLoading(false);
       return;
     }
 
-    const status = String((data as any)?.status || "");
     const ok = (data as any)?.ok === true;
-
-    if (ok && status === "ok") {
-      setDone(true);
-      setMsg("Clave actualizada. Volvé a Login e ingresá con tu nueva clave.");
+    if (!ok) {
+      const detail = (data as any)?.error || (data as any)?.details || "";
+      setMsg(interpretServerError(detail));
       setLoading(false);
       return;
     }
 
-    if (status === "used") {
-      setMsg("Link ya utilizado. Pedí uno nuevo desde Login.");
-      setLoading(false);
-      return;
-    }
-
-    if (status === "expired") {
-      setMsg("Link vencido. Pedí uno nuevo desde Login.");
-      setLoading(false);
-      return;
-    }
-
-    setMsg("Link inválido. Pedí uno nuevo desde Login.");
+    // éxito
+    setMsg("Clave actualizada correctamente. Volvé a Login e ingresá con tu nueva clave.");
     setLoading(false);
   }
 
   function onVolverLogin() {
     router.replace("/login");
   }
-
-  const disableSave = loading || done;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -164,53 +201,67 @@ export default function ResetPasswordPage() {
       >
         <section style={{ width: "min(980px, 100%)" }}>
           <div style={glassCard}>
-            <h1 style={{ fontSize: 38, margin: 0 }}>Cambiar clave</h1>
-            <p style={{ fontSize: 18, marginTop: 10, opacity: 0.92 }}>
+            <h1 style={{ fontSize: 42, margin: 0 }}>Cambiar clave</h1>
+            <p style={{ fontSize: 18, marginTop: 10, opacity: 0.95 }}>
               Ingresá tu nueva clave.
             </p>
 
-            {msg && <div style={{ fontSize: 16, marginTop: 10 }}>{msg}</div>}
+            {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
 
             <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
               <div>
                 <div style={labelStyle}>Nueva clave</div>
-                <input
-                  style={inputStyle}
-                  type="password"
-                  value={p1}
-                  onChange={(e) => setP1(e.target.value)}
-                  autoComplete="new-password"
-                  disabled={loading || done}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={inputStyle}
+                    type={show1 ? "text" : "password"}
+                    value={p1}
+                    onChange={(e) => setP1(e.target.value)}
+                    autoComplete="new-password"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    style={eyeBtn}
+                    onClick={() => setShow1((v) => !v)}
+                    disabled={loading}
+                    aria-label={show1 ? "Ocultar clave" : "Mostrar clave"}
+                    title={show1 ? "Ocultar" : "Mostrar"}
+                  >
+                    {show1 ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <div style={labelStyle}>Repetir nueva clave</div>
-                <input
-                  style={inputStyle}
-                  type="password"
-                  value={p2}
-                  onChange={(e) => setP2(e.target.value)}
-                  autoComplete="new-password"
-                  disabled={loading || done}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={inputStyle}
+                    type={show2 ? "text" : "password"}
+                    value={p2}
+                    onChange={(e) => setP2(e.target.value)}
+                    autoComplete="new-password"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    style={eyeBtn}
+                    onClick={() => setShow2((v) => !v)}
+                    disabled={loading}
+                    aria-label={show2 ? "Ocultar clave" : "Mostrar clave"}
+                    title={show2 ? "Ocultar" : "Mostrar"}
+                  >
+                    {show2 ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={onGuardar}
-                disabled={disableSave}
-                style={disableSave ? btnPrimaryDisabled : btnPrimary}
-              >
+              <button type="button" style={btnGuardar} disabled={loading} onClick={onGuardar}>
                 Guardar nueva clave
               </button>
 
-              <button
-                type="button"
-                onClick={onVolverLogin}
-                disabled={loading}
-                style={btnLogin}
-              >
+              <button type="button" style={btnVolver} disabled={loading} onClick={onVolverLogin}>
                 Volver a Login
               </button>
             </div>
@@ -218,5 +269,13 @@ export default function ResetPasswordPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <ResetPasswordInner />
+    </Suspense>
   );
 }
