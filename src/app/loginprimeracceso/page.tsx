@@ -92,6 +92,28 @@ const btnIrLogin: React.CSSProperties = {
     "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
 };
 
+const inputWrap: React.CSSProperties = {
+  position: "relative",
+  width: "100%",
+};
+
+const eyeBtn: React.CSSProperties = {
+  position: "absolute",
+  right: 10,
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: 40,
+  height: 40,
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.16)",
+  background: "rgba(0,0,0,0.10)",
+  color: "rgba(255,255,255,0.92)",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
 function isEmailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
@@ -103,6 +125,54 @@ type TokenGate =
   | "invalid"
   | "expired"
   | "used";
+
+function EyeIcon({ off }: { off: boolean }) {
+  // SVG simple (sin libs). "off" = ojo tachado.
+  return off ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M3 3l18 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9.88 5.1A11 11 0 0 1 12 5c7 0 10 7 10 7a18.4 18.4 0 0 1-3.02 4.16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.23 6.23A18.6 18.6 0 0 0 2 12s3 7 10 7a11 11 0 0 0 3.11-.44"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="3"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
 
 function LoginPrimerIngresoInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -125,6 +195,9 @@ function LoginPrimerIngresoInner() {
   // Gating del link (token)
   const [gate, setGate] = useState<TokenGate>("checking");
 
+  // 👁 Mostrar/ocultar clave (unificado con recovery)
+  const [showPassword, setShowPassword] = useState(false);
+
   const PROD_LOGIN_URL = "https://misquieroenaccion.com/login";
 
   // 1) Presentar el mail del coachee en el campo mail
@@ -132,21 +205,50 @@ function LoginPrimerIngresoInner() {
     if (emailFromLink) setEmail(emailFromLink);
   }, [emailFromLink]);
 
+  function goToProdLogin() {
+    window.location.href = PROD_LOGIN_URL;
+  }
+
   // 2) Estado de sesión
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(Boolean(data.session));
-    });
+    let cancel = false;
+
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (cancel) return;
+
+      const sessionExists = Boolean(data.session);
+      if (!sessionExists) {
+        setHasSession(false);
+        return;
+      }
+
+      // ✅ CORRECCIÓN CANÓNICA (PUNTO 3):
+      // Si el usuario abre el link con una sesión previa (coach/admin en el mismo navegador),
+      // eso NO debe bloquear que el coachee ingrese su nueva clave.
+      // Entonces: cerramos la sesión previa automáticamente.
+      await supabase.auth.signOut();
+      if (cancel) return;
+
+      setHasSession(false);
+      setMsg(
+        <div>
+          Se cerró una sesión previa para que puedas activar tu cuenta con este
+          link.
+        </div>
+      );
+    }
+
+    checkSession();
+    return () => {
+      cancel = true;
+    };
   }, [supabase]);
 
   // 3) Prefetch
   useEffect(() => {
     if (hasSession) router.prefetch("/quieros/inicio");
   }, [hasSession, router]);
-
-  function goToProdLogin() {
-    window.location.href = PROD_LOGIN_URL;
-  }
 
   // 4) Validación del token (una sola vez por token)
   useEffect(() => {
@@ -203,12 +305,15 @@ function LoginPrimerIngresoInner() {
         }
 
         if (data.used_at) {
-          // CANÓNICO: si está usado → redirección directa a /login (sin mensaje intermedio)
+          // CANÓNICO: token ya consumido → ir a login
           setGate("used");
           goToProdLogin();
           return;
         }
 
+        // ✅ CANÓNICO:
+        // token válido + used_at NULL → habilitar ingreso de clave SIEMPRE,
+        // aunque exista auth.user (y aunque hubiera existido una sesión previa).
         setGate("ok");
       } catch {
         if (!cancel) {
@@ -270,8 +375,6 @@ function LoginPrimerIngresoInner() {
     );
 
     if (fnErr) {
-      // Si la función responde "used" o "expired" vía http status, supabase puede devolver fnErr.
-      // Reintentamos interpretar el payload si vino.
       const st = (data as any)?.status ? String((data as any).status) : "";
       if (st === "used") {
         goToProdLogin();
@@ -354,11 +457,14 @@ function LoginPrimerIngresoInner() {
     !hasSession &&
     (gate === "missing" || gate === "invalid" || gate === "expired" || gate === "used");
 
-  // Regla de habilitación:
-  const disableCrearCuenta = loading || hasSession || gate !== "ok";
+  // ✅ CANÓNICO (PUNTO 3):
+  // Crear cuenta NO se deshabilita por "hasSession".
+  // Si hay sesión, ya la cerramos automáticamente arriba.
+  const disableCrearCuenta = loading || gate !== "ok";
 
-  // Importante: el coachee SIEMPRE debe poder escribir la clave cuando gate=ok.
-  const disableInputs = showBlocked || loading || hasSession;
+  // ✅ CANÓNICO:
+  // Inputs se deshabilitan solo si el link está bloqueado o está cargando.
+  const disableInputs = showBlocked || loading;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -405,14 +511,32 @@ function LoginPrimerIngresoInner() {
 
               <div>
                 <div style={labelStyle}>Clave</div>
-                <input
-                  style={inputStyle}
-                  type="password"
-                  value={clave}
-                  onChange={(e) => setClave(e.target.value)}
-                  autoComplete="new-password"
-                  disabled={disableInputs}
-                />
+
+                <div style={inputWrap}>
+                  <input
+                    style={{ ...inputStyle, paddingRight: 56 }}
+                    type={showPassword ? "text" : "password"}
+                    value={clave}
+                    onChange={(e) => setClave(e.target.value)}
+                    autoComplete="new-password"
+                    disabled={disableInputs}
+                  />
+
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
+                    title={showPassword ? "Ocultar" : "Mostrar"}
+                    onClick={() => setShowPassword((v) => !v)}
+                    disabled={disableInputs}
+                    style={{
+                      ...eyeBtn,
+                      opacity: disableInputs ? 0.55 : 1,
+                      cursor: disableInputs ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <EyeIcon off={showPassword} />
+                  </button>
+                </div>
               </div>
 
               <button
@@ -421,9 +545,7 @@ function LoginPrimerIngresoInner() {
                 disabled={disableCrearCuenta}
                 onClick={onCrearCuenta}
                 title={
-                  hasSession
-                    ? "Cuenta ya creada. Usá el botón Acceder."
-                    : gate !== "ok"
+                  gate !== "ok"
                     ? "Este link ya no es válido. Ingresá desde el Login."
                     : undefined
                 }
@@ -486,7 +608,12 @@ function LoginPrimerIngresoInner() {
                 </div>
 
                 <div style={{ width: "100%", marginTop: 22 }}>
-                  <button type="button" onClick={onIrLogin} disabled={loading} style={btnIrLogin}>
+                  <button
+                    type="button"
+                    onClick={onIrLogin}
+                    disabled={loading}
+                    style={btnIrLogin}
+                  >
                     Ingresar
                   </button>
                 </div>
@@ -509,7 +636,11 @@ function LoginPrimerIngresoInner() {
                     gap: 12,
                   }}
                 >
-                  <button onClick={onAcceder} disabled={loading} style={btnAccederDestacado}>
+                  <button
+                    onClick={onAcceder}
+                    disabled={loading}
+                    style={btnAccederDestacado}
+                  >
                     Acceder
                   </button>
 
