@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
@@ -50,15 +50,13 @@ const btnBase: React.CSSProperties = {
   textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
-const btnGuardar: React.CSSProperties = {
+const btnPrimary: React.CSSProperties = {
   ...btnBase,
   background:
-    "linear-gradient(135deg, rgba(30,180,120,0.72), rgba(20,140,95,0.62))",
-  border: "1px solid rgba(255,255,255,0.28)",
-  boxShadow: "0 18px 70px rgba(0,0,0,0.28)",
+    "linear-gradient(135deg, rgba(180,90,255,0.55), rgba(140,60,220,0.45))",
 };
 
-const btnDisabled: React.CSSProperties = {
+const btnPrimaryDisabled: React.CSSProperties = {
   ...btnBase,
   cursor: "not-allowed",
   opacity: 0.48,
@@ -66,7 +64,7 @@ const btnDisabled: React.CSSProperties = {
     "linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08))",
 };
 
-const btnVolver: React.CSSProperties = {
+const btnLogin: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(70,120,255,0.55), rgba(40,80,220,0.45))",
@@ -75,76 +73,102 @@ const btnVolver: React.CSSProperties = {
 export default function ResetPasswordPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
+  const sp = useSearchParams();
 
-  const [clave1, setClave1] = useState("");
-  const [clave2, setClave2] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
+  const code = sp.get("code")?.trim() || "";
+
+  const [p1, setP1] = useState("");
+  const [p2, setP2] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasSession, setHasSession] = useState(false);
 
-  // 1) Verificar si Supabase ya levantó sesión de recovery desde el link
+  const [ready, setReady] = useState(false); // ✅ sesión de recovery OK
+  const [msg, setMsg] = useState<React.ReactNode>(null);
+
+  // 1) Intercambiar code → session (PASO CANÓNICO)
   useEffect(() => {
-    let alive = true;
+    let cancel = false;
 
-    async function check() {
-      const { data } = await supabase.auth.getSession();
-      if (!alive) return;
-      setHasSession(Boolean(data.session));
-      if (!data.session) {
-        setMsg(
-          "Link inválido o vencido. Volvé a Login y repetí Olvidé mi clave."
-        );
-      } else {
-        setMsg(null);
+    async function run() {
+      setMsg(null);
+
+      if (!code) {
+        if (!cancel) {
+          setReady(false);
+          setMsg(
+            <div>
+              Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
+            </div>
+          );
+        }
+        return;
       }
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (cancel) return;
+
+      if (error) {
+        setReady(false);
+        setMsg(
+          <div>
+            Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
+          </div>
+        );
+        return;
+      }
+
+      setReady(true);
+      setMsg(null);
     }
 
-    check();
+    run();
     return () => {
-      alive = false;
+      cancel = true;
     };
-  }, [supabase]);
+  }, [code, supabase]);
 
   async function onGuardar() {
     setMsg(null);
 
-    const p1 = clave1.trim();
-    const p2 = clave2.trim();
+    const a = p1.trim();
+    const b = p2.trim();
 
-    if (p1.length < 6) {
+    if (a.length < 6) {
       setMsg("La clave debe tener al menos 6 caracteres.");
       return;
     }
-    if (p1 !== p2) {
+    if (a !== b) {
       setMsg("Las claves no coinciden.");
       return;
     }
-    if (!hasSession) {
-      setMsg("Link inválido o vencido. Volvé a Login y repetí el proceso.");
+    if (!ready) {
+      setMsg(
+        <div>
+          Link inválido o vencido. Volvé a Login y repetí <b>Olvidé mi clave</b>.
+        </div>
+      );
       return;
     }
 
     setLoading(true);
 
-    const { error } = await supabase.auth.updateUser({ password: p1 });
+    const { error } = await supabase.auth.updateUser({ password: a });
 
     if (error) {
-      setMsg("No se pudo cambiar la clave. Probá nuevamente.");
+      setMsg("No se pudo guardar la nueva clave. Reintentá desde el mail.");
       setLoading(false);
       return;
     }
 
-    // Cierre de circuito: logout y volver a login
-    await supabase.auth.signOut();
+    setMsg("Clave actualizada. Volvé a Login e ingresá con tu nueva clave.");
     setLoading(false);
+  }
+
+  function onVolverLogin() {
     router.replace("/login");
   }
 
-  function onVolver() {
-    router.replace("/login");
-  }
-
-  const disabled = loading || !hasSession;
+  const disableSave = loading || !ready;
 
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
@@ -157,14 +181,14 @@ export default function ResetPasswordPage() {
           padding: 24,
         }}
       >
-        <section style={{ width: "min(640px, 100%)" }}>
+        <section style={{ width: "min(980px, 100%)" }}>
           <div style={glassCard}>
-            <h1 style={{ fontSize: 36, margin: 0 }}>Cambiar clave</h1>
-            <p style={{ fontSize: 18, marginTop: 10, opacity: 0.95 }}>
+            <h1 style={{ fontSize: 38, margin: 0 }}>Cambiar clave</h1>
+            <p style={{ fontSize: 18, marginTop: 10, opacity: 0.92 }}>
               Ingresá tu nueva clave.
             </p>
 
-            {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
+            {msg && <div style={{ fontSize: 16, marginTop: 10 }}>{msg}</div>}
 
             <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
               <div>
@@ -172,10 +196,10 @@ export default function ResetPasswordPage() {
                 <input
                   style={inputStyle}
                   type="password"
-                  value={clave1}
-                  onChange={(e) => setClave1(e.target.value)}
+                  value={p1}
+                  onChange={(e) => setP1(e.target.value)}
                   autoComplete="new-password"
-                  disabled={disabled}
+                  disabled={loading || !ready}
                 />
               </div>
 
@@ -184,27 +208,28 @@ export default function ResetPasswordPage() {
                 <input
                   style={inputStyle}
                   type="password"
-                  value={clave2}
-                  onChange={(e) => setClave2(e.target.value)}
+                  value={p2}
+                  onChange={(e) => setP2(e.target.value)}
                   autoComplete="new-password"
-                  disabled={disabled}
+                  disabled={loading || !ready}
                 />
               </div>
 
               <button
                 type="button"
                 onClick={onGuardar}
-                style={disabled ? btnDisabled : btnGuardar}
-                disabled={disabled}
+                disabled={disableSave}
+                style={disableSave ? btnPrimaryDisabled : btnPrimary}
+                title={!ready ? "Link inválido o vencido" : undefined}
               >
                 Guardar nueva clave
               </button>
 
               <button
                 type="button"
-                onClick={onVolver}
-                style={btnVolver}
+                onClick={onVolverLogin}
                 disabled={loading}
+                style={btnLogin}
               >
                 Volver a Login
               </button>
