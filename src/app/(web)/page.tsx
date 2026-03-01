@@ -663,7 +663,7 @@ export default function WebPublicCoachingPersonal() {
                               </div>
                             </div>
                             {/* ⚠️ Si en producción no aparece, revisá mayúsculas/minúsculas del archivo en /public */}
-                            <img className="qr" src="/whatsapp/WhatsApp.jpeg" alt="QR WhatsApp" />
+                            <img className="qr" src="/whatsapp.jpeg" alt="QR WhatsApp" />
                           </div>
 
                           <div className="cItem">
