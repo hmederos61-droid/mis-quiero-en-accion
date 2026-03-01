@@ -393,37 +393,44 @@ export default function WebPublicCoachingPersonal() {
     return !LOGO_CFG.hideOnScreens.includes(screen);
   }, [screen]);
 
+  // ✅ Regla clave: Pantalla 0 SOLO portada.png (sin bg / sin overlay)
+  const isPortadaGlobal = screen === 0;
+
   return (
     <main className="page" data-screen={screen}>
-      {/* ✅ Background global (se mantiene para pantallas 1..7) */}
-      <div
-        className="bg"
-        aria-hidden="true"
-        style={{
-          backgroundImage: `url("${step.img}")`,
-          filter: `saturate(1.06) contrast(1.02) brightness(1.06) blur(${blurLevel}px)`,
-          transform: "scale(1.06)",
-        }}
-      />
+      {/* ✅ Background + overlay SOLO en pantallas 1..7 */}
+      {!isPortadaGlobal && (
+        <>
+          <div
+            className="bg"
+            aria-hidden="true"
+            style={{
+              backgroundImage: `url("${step.img}")`,
+              filter: `saturate(1.06) contrast(1.02) brightness(1.06) blur(${blurLevel}px)`,
+              transform: "scale(1.06)",
+            }}
+          />
 
-      <div
-        className="overlay"
-        aria-hidden="true"
-        style={{
-          background: `
-            radial-gradient(1200px 650px at 55% 35%,
-              rgba(255,255,255,${Math.min(0.16, overlayLevel * 0.62)}),
-              rgba(255,255,255,0) 62%),
-            linear-gradient(180deg,
-              rgba(255,255,255,${Math.min(0.14, overlayLevel * 0.52)}),
-              rgba(255,255,255,0.02) 58%,
-              rgba(0,0,0,${Math.max(0, overlayLevel * 0.50)}) ),
-            linear-gradient(180deg,
-              rgba(0,0,0,${Math.max(0, dimLevel)}),
-              rgba(0,0,0,${Math.max(0, dimLevel)}) )
-          `,
-        }}
-      />
+          <div
+            className="overlay"
+            aria-hidden="true"
+            style={{
+              background: `
+                radial-gradient(1200px 650px at 55% 35%,
+                  rgba(255,255,255,${Math.min(0.16, overlayLevel * 0.62)}),
+                  rgba(255,255,255,0) 62%),
+                linear-gradient(180deg,
+                  rgba(255,255,255,${Math.min(0.14, overlayLevel * 0.52)}),
+                  rgba(255,255,255,0.02) 58%,
+                  rgba(0,0,0,${Math.max(0, overlayLevel * 0.50)}) ),
+                linear-gradient(180deg,
+                  rgba(0,0,0,${Math.max(0, dimLevel)}),
+                  rgba(0,0,0,${Math.max(0, dimLevel)}) )
+              `,
+            }}
+          />
+        </>
+      )}
 
       {/* ✅ Logo global (fuera de la card, fijo al viewport) */}
       {showLogo && (
@@ -466,7 +473,7 @@ export default function WebPublicCoachingPersonal() {
 
             return (
               <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
-                {/* ✅ PANTALLA 0: portada fidelidad total (sin zoom) */}
+                {/* ✅ PANTALLA 0: SOLO portada.png full-screen (sin fondos extra) */}
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
                     <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
@@ -727,7 +734,12 @@ export default function WebPublicCoachingPersonal() {
 
       <div className="edgeDots" aria-label="Paginación">
         {([0, 1, 2, 3, 4, 5, 6, 7] as ScreenKey[]).map((i) => (
-          <button key={i} className={`dot ${screen === i ? "on" : ""}`} onClick={() => go(i)} aria-label={`Ir a pantalla ${i + 1}`} />
+          <button
+            key={i}
+            className={`dot ${screen === i ? "on" : ""}`}
+            onClick={() => go(i)}
+            aria-label={`Ir a pantalla ${i + 1}`}
+          />
         ))}
       </div>
 
@@ -791,7 +803,7 @@ export default function WebPublicCoachingPersonal() {
           padding-top: 7.5vh;
         }
 
-        /* ✅ PANTALLA 0 — Stage con fidelidad total (contain, sin zoom) */
+        /* ✅ PANTALLA 0 — SOLO imagen full-screen (sin fondo extra) */
         .portadaStage {
           position: relative;
           width: 100%;
@@ -801,8 +813,7 @@ export default function WebPublicCoachingPersonal() {
           transform: translateY(10px);
           display: grid;
           place-items: center;
-          background: radial-gradient(900px 420px at 70% 20%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0) 60%),
-            rgba(10, 12, 18, 0.55);
+          background: transparent; /* ✅ clave: sin stage oscuro */
         }
         .portadaStage.in {
           opacity: 1;
@@ -814,11 +825,11 @@ export default function WebPublicCoachingPersonal() {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: contain; /* ✅ clave: sin zoom */
+          object-fit: cover; /* ✅ clave: ocupa TODA la pantalla (sin bandas) */
           object-position: center center;
           user-select: none;
           pointer-events: none;
-          filter: saturate(1.02) contrast(1.02);
+          filter: none; /* ✅ sin filtros extra */
         }
         .portadaCTA {
           position: absolute;
@@ -1472,7 +1483,6 @@ export default function WebPublicCoachingPersonal() {
           opacity: 0.95;
           font-weight: 760;
           color: rgba(245, 241, 232, 0.99);
-          /* ✅ FIX TÉCNICO: paréntesis extra eliminado */
           text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
         }
 
