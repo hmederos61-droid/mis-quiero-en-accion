@@ -39,13 +39,13 @@ const SCREEN_STEPS: ReadonlyArray<{
   { img: "/portada.png", overlay: 0.18, blur: 0.0, dim: 0.12, cardDim: 0.18 }, // 0
 
   // 1..7 (Web) — degradé: de más contraste a más luminoso
-  { img: "/webwelcome.png", overlay: 0.22, blur: 0.22, dim: 0.28, cardDim: 0.38 }, // 1
-  { img: "/webwelcome.png", overlay: 0.20, blur: 0.20, dim: 0.24, cardDim: 0.44 }, // 2
-  { img: "/webwelcome.png", overlay: 0.18, blur: 0.18, dim: 0.20, cardDim: 0.44 }, // 3
-  { img: "/webwelcome.png", overlay: 0.15, blur: 0.14, dim: 0.16, cardDim: 0.44 }, // 4
-  { img: "/webwelcome.png", overlay: 0.12, blur: 0.10, dim: 0.12, cardDim: 0.44 }, // 5
-  { img: "/webwelcome.png", overlay: 0.08, blur: 0.06, dim: 0.08, cardDim: 0.44 }, // 6
-  { img: "/webwelcome.png", overlay: 0.08, blur: 0.04, dim: 0.08, cardDim: 0.44 }, // 7
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.22, dim: 0.34, cardDim: 0.38 }, // 1
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.34, cardDim: 0.44 }, // 2
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.34, cardDim: 0.44 }, // 3
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.34, cardDim: 0.44 }, // 4
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.34, cardDim: 0.44 }, // 5
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.34, cardDim: 0.44 }, // 6
+  { img: "/webwelcome.png", overlay: 0.02, blur: 0.20, dim: 0.30, cardDim: 0.55 }, // 7
 ];
 
 function clamp01(n: number) {
