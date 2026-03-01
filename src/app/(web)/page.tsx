@@ -1431,29 +1431,59 @@ export default function WebPublicCoachingPersonal() {
           filter: blur(18px);
         }
 
-        .contactRow .cItem:nth-child(1)::before {
-          background: radial-gradient(520px 210px at 18% 30%, rgba(0, 255, 153, 0.24), rgba(0, 0, 0, 0) 64%),
-            linear-gradient(135deg, rgba(0, 255, 153, 0.14), rgba(0, 0, 0, 0.26) 64%);
-        }
-        .contactRow .cItem:nth-child(1)::after {
-          background: radial-gradient(680px 300px at 22% 40%, rgba(0, 255, 153, 0.16), rgba(0, 0, 0, 0) 72%);
-        }
+/* WhatsApp — verde tipo botón */
+.cItem:nth-child(1)::before {
+  background: linear-gradient(
+    135deg,
+    rgba(78, 190, 125, 0.85),
+    rgba(120, 170, 70, 0.75)
+  );
+  opacity: 0.95;
+}
+.cItem:nth-child(1)::after {
+  background: radial-gradient(
+    700px 260px at 20% 45%,
+    rgba(78, 190, 125, 0.35),
+    rgba(0, 0, 0, 0) 70%
+  );
+  opacity: 0.55;
+}
 
-        .contactRow .cItem:nth-child(2)::before {
-          background: radial-gradient(520px 210px at 18% 30%, rgba(64, 140, 255, 0.24), rgba(0, 0, 0, 0) 64%),
-            linear-gradient(135deg, rgba(64, 140, 255, 0.14), rgba(0, 0, 0, 0.26) 64%);
-        }
-        .contactRow .cItem:nth-child(2)::after {
-          background: radial-gradient(680px 300px at 22% 40%, rgba(64, 140, 255, 0.16), rgba(0, 0, 0, 0) 72%);
-        }
+/* Mail — azul violáceo */
+.cItem:nth-child(2)::before {
+  background: linear-gradient(
+    135deg,
+    rgba(90, 120, 190, 0.85),
+    rgba(150, 120, 210, 0.75)
+  );
+  opacity: 0.95;
+}
+.cItem:nth-child(2)::after {
+  background: radial-gradient(
+    700px 260px at 20% 45%,
+    rgba(120, 140, 255, 0.35),
+    rgba(0, 0, 0, 0) 70%
+  );
+  opacity: 0.55;
+}
 
-        .contactRow .cItem:nth-child(3)::before {
-          background: radial-gradient(520px 210px at 18% 30%, rgba(176, 120, 255, 0.24), rgba(0, 0, 0, 0) 64%),
-            linear-gradient(135deg, rgba(176, 120, 255, 0.14), rgba(0, 0, 0, 0.26) 64%);
-        }
-        .contactRow .cItem:nth-child(3)::after {
-          background: radial-gradient(680px 300px at 22% 40%, rgba(176, 120, 255, 0.16), rgba(0, 0, 0, 0) 72%);
-        }
+/* Aplicación — dorado cálido */
+.cItem:nth-child(3)::before {
+  background: linear-gradient(
+    135deg,
+    rgba(205, 150, 60, 0.90),
+    rgba(230, 180, 95, 0.80)
+  );
+  opacity: 0.95;
+}
+.cItem:nth-child(3)::after {
+  background: radial-gradient(
+    700px 260px at 20% 45%,
+    rgba(230, 180, 95, 0.35),
+    rgba(0, 0, 0, 0) 70%
+  );
+  opacity: 0.55;
+}
 
         .cMain {
           position: relative;
