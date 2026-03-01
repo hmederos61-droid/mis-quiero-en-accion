@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
-type ScreenKey = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type ScreenKey = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 type Quote = {
   id: string;
@@ -16,13 +16,17 @@ type Quote = {
 };
 
 /**
- * ✅ TABLA CANÓNICA EDITABLE — 7 pantallas
+ * ✅ TABLA CANÓNICA EDITABLE — 8 pantallas (0..7)
  * ÚNICO lugar donde se ajusta:
  * - img: imagen de fondo por pantalla
  * - blur: blur del fondo global (pantalla completa)
  * - overlay: película blanca sutil
  * - dim: oscurecimiento global de pantalla (0..1)
- * - cardDim: oscurecimiento interno de card (0..1)  ✅ (por pantalla)
+ * - cardDim: oscurecimiento interno de card (0..1) ✅ (por pantalla)
+ *
+ * ✅ NUEVO:
+ * - Pantalla 0 usa /portada.png (solo CTA "Iniciar recorrido")
+ * - Pantallas 1..7: más nítidas y menos oscuras, en degradé luminoso hacia la 7
  */
 const SCREEN_STEPS: ReadonlyArray<{
   img: string;
@@ -31,13 +35,17 @@ const SCREEN_STEPS: ReadonlyArray<{
   dim: number;
   cardDim: number;
 }> = [
-  { img: "/webwelcome.png", overlay: 0.8, blur: 0.5, dim: 0.7, cardDim: 0.5 }, // 0
-  { img: "/webwelcome.png", overlay: 0.6, blur: 0.4, dim: 0.6, cardDim: 0.45 }, // 1
-  { img: "/webwelcome.png", overlay: 0.4, blur: 0.3, dim: 0.4, cardDim: 0.4 }, // 2
-  { img: "/webwelcome.png", overlay: 0.3, blur: 0.2, dim: 0.3, cardDim: 0.4 }, // 3
-  { img: "/webwelcome.png", overlay: 0.2, blur: 0.1, dim: 0.2, cardDim: 0.4 }, // 4
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.5, dim: 0.1, cardDim: 0.5 }, // 5
-  { img: "/webwelcome.png", overlay: 0.0, blur: 0.0, dim: 0.0, cardDim: 0.6 }, // 6
+  // 0 (Portada) — más clara, sin card protagonista
+  { img: "/portada.png", overlay: 0.18, blur: 0.0, dim: 0.12, cardDim: 0.18 }, // 0
+
+  // 1..7 (Web) — degradé: de más contraste a más luminoso
+  { img: "/webwelcome.png", overlay: 0.22, blur: 0.22, dim: 0.28, cardDim: 0.38 }, // 1
+  { img: "/webwelcome.png", overlay: 0.20, blur: 0.20, dim: 0.24, cardDim: 0.34 }, // 2
+  { img: "/webwelcome.png", overlay: 0.18, blur: 0.18, dim: 0.20, cardDim: 0.30 }, // 3
+  { img: "/webwelcome.png", overlay: 0.15, blur: 0.14, dim: 0.16, cardDim: 0.28 }, // 4
+  { img: "/webwelcome.png", overlay: 0.12, blur: 0.10, dim: 0.12, cardDim: 0.26 }, // 5
+  { img: "/webwelcome.png", overlay: 0.08, blur: 0.06, dim: 0.08, cardDim: 0.24 }, // 6
+  { img: "/webwelcome.png", overlay: 0.04, blur: 0.02, dim: 0.04, cardDim: 0.22 }, // 7
 ];
 
 function clamp01(n: number) {
@@ -199,51 +207,73 @@ export default function WebPublicCoachingPersonal() {
 
   const screens = useMemo(
     () => [
+      // ✅ NUEVA Pantalla 0 (Portada + CTA)
       {
         k: 0 as ScreenKey,
+        eyebrow: "",
+        title: "",
+        lead: "",
+        hint: "",
+      },
+
+      // ✅ Pantalla 1 (antes 0)
+      {
+        k: 1 as ScreenKey,
         eyebrow: "COACHING PERSONAL",
         title: "Coaching Ontológico Individual",
         lead:
           "Un espacio profesional de conversación\npara observar cómo estás interpretando tu realidad\ny descubrir nuevas posibilidades de acción.",
         hint: "Si algo de esto resuena con vos,\nseguí el recorrido.",
       },
+
+      // ✅ Pantalla 2 (antes 1)
       {
-        k: 1 as ScreenKey,
+        k: 2 as ScreenKey,
         eyebrow: "",
         title: "Voces que iluminan el camino",
         lead: "El coaching ontológico se nutre de diversas corrientes del pensamiento humano.",
         hint: "",
       },
+
+      // ✅ Pantalla 3 (antes 2)
       {
-        k: 2 as ScreenKey,
+        k: 3 as ScreenKey,
         eyebrow: "",
         title: "¿Qué te trae hasta aquí?",
         lead: "Primera parada del viaje",
         hint: "",
       },
+
+      // ✅ Pantalla 4 (antes 3)
       {
-        k: 3 as ScreenKey,
+        k: 4 as ScreenKey,
         eyebrow: "",
         title: "¿Qué quisieras que fuera diferente?",
         lead: "Imaginando posibilidades",
         hint: "",
       },
+
+      // ✅ Pantalla 5 (antes 4)
       {
-        k: 4 as ScreenKey,
+        k: 5 as ScreenKey,
         eyebrow: "",
         title: "¿Qué está en tus manos cambiar?",
         lead: "Espacio de decisión",
         hint: "",
       },
+
+      // ✅ Pantalla 6 (antes 5)
       {
-        k: 5 as ScreenKey,
+        k: 6 as ScreenKey,
         eyebrow: "",
         title: "¿Qué primer paso podrías dar?",
         lead: "Momento de elección",
         hint: "",
       },
+
+      // ✅ Pantalla 7 (antes 6)
       {
-        k: 6 as ScreenKey,
+        k: 7 as ScreenKey,
         eyebrow: "",
         title: "Esto es lo que estás viendo hoy",
         lead:
@@ -256,7 +286,7 @@ export default function WebPublicCoachingPersonal() {
 
   function clampScreen(n: number): ScreenKey {
     if (n <= 0) return 0;
-    if (n >= 6) return 6;
+    if (n >= 7) return 7;
     return n as ScreenKey;
   }
 
@@ -284,24 +314,28 @@ export default function WebPublicCoachingPersonal() {
 
   const canGoNext = useMemo(() => {
     const t = (v: string) => v.trim().length >= 3;
-    if (screen === 2) return t(a1);
-    if (screen === 3) return t(a2);
-    if (screen === 4) return t(a3);
-    if (screen === 5) return t(a4);
+
+    // ✅ preguntas ahora son 3..6 (antes 2..5)
+    if (screen === 3) return t(a1);
+    if (screen === 4) return t(a2);
+    if (screen === 5) return t(a3);
+    if (screen === 6) return t(a4);
     return true;
   }, [screen, a1, a2, a3, a4]);
 
   function onNext() {
-    if (screen >= 2 && screen <= 5 && !canGoNext) return;
+    if (screen >= 3 && screen <= 6 && !canGoNext) return;
     next();
   }
 
   const showLeft = screen > 0;
-  const showRight = screen < 6;
+  const showRight = screen < 7;
 
-  // ✅ ancho card por pantalla (pantalla 6 expandida)
-  const cardWidth = screen === 0 ? "75vw" : screen === 6 ? "82vw" : "45vw";
-  const cardHeight = screen === 0 ? "75vh" : "auto";
+  // ✅ ancho card por pantalla
+  // - Pantalla 1 (antes 0): 75% ancho y alto
+  // - Pantalla 7 (antes 6): expandida
+  const cardWidth = screen === 1 ? "75vw" : screen === 7 ? "82vw" : "45vw";
+  const cardHeight = screen === 1 ? "75vh" : "auto";
 
   // ✅ Tamaño QR (solo se usa para el QR local de WhatsApp)
   const qrSize = 56;
@@ -313,7 +347,7 @@ export default function WebPublicCoachingPersonal() {
         aria-hidden="true"
         style={{
           backgroundImage: `url("${step.img}")`,
-          filter: `saturate(1.06) contrast(1.02) brightness(1.03) blur(${blurLevel}px)`,
+          filter: `saturate(1.06) contrast(1.02) brightness(1.06) blur(${blurLevel}px)`,
           transform: "scale(1.06)",
         }}
       />
@@ -324,12 +358,12 @@ export default function WebPublicCoachingPersonal() {
         style={{
           background: `
             radial-gradient(1200px 650px at 55% 35%,
-              rgba(255,255,255,${Math.min(0.14, overlayLevel * 0.55)}),
+              rgba(255,255,255,${Math.min(0.16, overlayLevel * 0.62)}),
               rgba(255,255,255,0) 62%),
             linear-gradient(180deg,
-              rgba(255,255,255,${Math.min(0.12, overlayLevel * 0.45)}),
+              rgba(255,255,255,${Math.min(0.14, overlayLevel * 0.52)}),
               rgba(255,255,255,0.02) 58%,
-              rgba(0,0,0,${Math.max(0, overlayLevel * 0.55)}) ),
+              rgba(0,0,0,${Math.max(0, overlayLevel * 0.50)}) ),
             linear-gradient(180deg,
               rgba(0,0,0,${Math.max(0, dimLevel)}),
               rgba(0,0,0,${Math.max(0, dimLevel)}) )
@@ -337,7 +371,8 @@ export default function WebPublicCoachingPersonal() {
         }}
       />
 
-      {screen === 1 && (
+      {/* ✅ Órbita ahora es pantalla 2 (antes 1) */}
+      {screen === 2 && (
         <section className="orbit" aria-label="Voces orbitales">
           <div className="orbitInner" aria-hidden="true">
             {orbitQuotes.map((q) => (
@@ -361,233 +396,244 @@ export default function WebPublicCoachingPersonal() {
       <section className="viewport" aria-label="Coaching Personal">
         <div className="track" style={trackStyle}>
           {screens.map((s) => {
-            const isZero = s.k === 0;
-            const isOne = s.k === 1;
-            const isQBlock = s.k >= 2 && s.k <= 6;
+            const isPortada = s.k === 0;
+            const isHero = s.k === 1; // antes pantalla 0
+            const isOne = s.k === 2; // antes pantalla 1
+            const isQBlock = s.k >= 3 && s.k <= 7;
 
             return (
-              <article key={s.k} className={`screen ${s.k === 6 ? "screen6" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
-                <div
-                  className={`card ${isZero ? "screen0" : ""} ${s.k === 6 ? "card6" : ""} ${mounted ? "in" : ""}`}
-                  style={{
-                    width: cardWidth,
-                    height: cardHeight,
-                    maxWidth: isZero ? "none" : s.k === 6 ? 1180 : 720,
-                    ["--cardDim" as any]: cardDim,
-                  }}
-                >
-                  {isZero ? (
-                    <div className="s0">
-                      <div className="s0Title">{s.title}</div>
+              <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
+                {/* ✅ PANTALLA 0: solo CTA "Iniciar recorrido" */}
+                {isPortada ? (
+                  <div className={`portada ${mounted ? "in" : ""}`}>
+                    <button className="cta" onClick={next} aria-label="Iniciar recorrido">
+                      Iniciar recorrido
+                    </button>
+                    <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                  </div>
+                ) : (
+                  <div
+                    className={`card ${isHero ? "screen1" : ""} ${s.k === 7 ? "card7" : ""} ${mounted ? "in" : ""}`}
+                    style={{
+                      width: cardWidth,
+                      height: cardHeight,
+                      maxWidth: isHero ? "none" : s.k === 7 ? 1180 : 720,
+                      ["--cardDim" as any]: cardDim,
+                    }}
+                  >
+                    {/* ✅ LOGO: en todas excepto pantalla 0 */}
+                    <img className="brandLogo" src="/logo.png" alt="Hugo Mederos" />
 
-                      <div className="s0Lead">
-                        {s.lead.split("\n").map((line, idx) => (
-                          <React.Fragment key={idx}>
-                            {line}
-                            <br />
-                          </React.Fragment>
-                        ))}
-                      </div>
+                    {isHero ? (
+                      <div className="s1">
+                        <div className="s1Title">{s.title}</div>
 
-                      <div className="s0Lead2">
-                        {"No se trata de convencerte.\nSe trata de mirarte con precisión\ny desde ahí elegir mejor."
-                          .split("\n")
-                          .map((line, idx) => (
+                        <div className="s1Lead">
+                          {s.lead.split("\n").map((line, idx) => (
                             <React.Fragment key={idx}>
                               {line}
                               <br />
                             </React.Fragment>
                           ))}
-                      </div>
-
-                      <div className="s0Hint">
-                        {s.hint.split("\n").map((line, idx) => (
-                          <React.Fragment key={idx}>
-                            {line}
-                            <br />
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
-                  ) : isOne ? (
-                    <div className="s1Center">
-                      <h1 className="h1 s1Title">{s.title}</h1>
-                      <p className="lead s1Lead">{s.lead}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {s.eyebrow ? <div className="eyebrow">{s.eyebrow}</div> : null}
-                      <h1 className={`h1 ${isQBlock ? "h1Center" : ""}`}>{s.title}</h1>
-
-                      <p className="lead">
-                        {s.lead.split("\n").map((line, idx) => (
-                          <React.Fragment key={idx}>
-                            {line}
-                            <br />
-                          </React.Fragment>
-                        ))}
-                      </p>
-
-                      {s.hint ? <p className="hint">{s.hint}</p> : null}
-                    </>
-                  )}
-
-                  {s.k === 2 && (
-                    <div className="qa">
-                      <textarea
-                        className="ta"
-                        value={a1}
-                        onChange={(e) => setA1(e.target.value)}
-                        placeholder="Compartí lo que está pasando en tu vida ahora…"
-                        rows={7}
-                      />
-                    </div>
-                  )}
-
-                  {s.k === 3 && (
-                    <div className="qa">
-                      <div className="prev">
-                        <div className="prevTitle">Tu reflexión anterior</div>
-                        <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
-                      </div>
-                      <textarea
-                        className="ta"
-                        value={a2}
-                        onChange={(e) => setA2(e.target.value)}
-                        placeholder="Si algo pudiera ordenarse, fortalecerse o transformarse, ¿qué sería?…"
-                        rows={7}
-                      />
-                    </div>
-                  )}
-
-                  {s.k === 4 && (
-                    <div className="qa">
-                      <div className="prev">
-                        <div className="prevTitle">Lo que hoy estás viviendo</div>
-                        <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
-                        <div className="prevSpacer" />
-                        <div className="prevTitle">Lo que quisieras que fuera diferente</div>
-                        <div className="prevText">{a2.trim() ? a2.trim() : "—"}</div>
-                      </div>
-                      <textarea
-                        className="ta"
-                        value={a3}
-                        onChange={(e) => setA3(e.target.value)}
-                        placeholder="¿Qué depende de vos, más allá de las circunstancias?…"
-                        rows={7}
-                      />
-                    </div>
-                  )}
-
-                  {s.k === 5 && (
-                    <div className="qa">
-                      <div className="prev">
-                        <div className="prevTitle">Lo que hoy estás viviendo</div>
-                        <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
-                        <div className="prevSpacer" />
-                        <div className="prevTitle">Lo que quisieras que fuera diferente</div>
-                        <div className="prevText">{a2.trim() ? a2.trim() : "—"}</div>
-                        <div className="prevSpacer" />
-                        <div className="prevTitle">Lo que está en tus manos cambiar</div>
-                        <div className="prevText">{a3.trim() ? a3.trim() : "—"}</div>
-                      </div>
-                      <textarea
-                        className="ta"
-                        value={a4}
-                        onChange={(e) => setA4(e.target.value)}
-                        placeholder="Un primer paso posible, simple y realista…"
-                        rows={7}
-                      />
-                    </div>
-                  )}
-
-                  {s.k === 6 && (
-                    <div className="summary">
-                      {/* ✅ 4 mini-cards en UNA línea */}
-                      <div className="sumGrid sumGrid4">
-                        <div className="sumItem">
-                          <div className="sumK">¿Qué te trae hasta aquí?</div>
-                          <div className="sumV">{a1.trim() ? a1.trim() : "—"}</div>
                         </div>
-                        <div className="sumItem">
-                          <div className="sumK">¿Qué quisieras que fuera diferente?</div>
-                          <div className="sumV">{a2.trim() ? a2.trim() : "—"}</div>
+
+                        <div className="s1Lead2">
+                          {"No se trata de convencerte.\nSe trata de mirarte con precisión\ny desde ahí elegir mejor."
+                            .split("\n")
+                            .map((line, idx) => (
+                              <React.Fragment key={idx}>
+                                {line}
+                                <br />
+                              </React.Fragment>
+                            ))}
                         </div>
-                        <div className="sumItem">
-                          <div className="sumK">¿Qué está en tus manos cambiar?</div>
-                          <div className="sumV">{a3.trim() ? a3.trim() : "—"}</div>
-                        </div>
-                        <div className="sumItem">
-                          <div className="sumK">¿Qué primer paso podrías dar?</div>
-                          <div className="sumV">{a4.trim() ? a4.trim() : "—"}</div>
+
+                        <div className="s1Hint">
+                          {s.hint.split("\n").map((line, idx) => (
+                            <React.Fragment key={idx}>
+                              {line}
+                              <br />
+                            </React.Fragment>
+                          ))}
                         </div>
                       </div>
-
-                      {/* ✅ frase brillante 1 renglón */}
-                      <div className="finalLine">
-                        Esto puede quedar como un ejercicio personal. O puede convertirse en una conversación.
+                    ) : isOne ? (
+                      <div className="s2Center">
+                        <h1 className="h1 s2Title">{s.title}</h1>
+                        <p className="lead s2Lead">{s.lead}</p>
                       </div>
+                    ) : (
+                      <>
+                        {s.eyebrow ? <div className="eyebrow">{s.eyebrow}</div> : null}
+                        <h1 className={`h1 ${isQBlock ? "h1Center" : ""}`}>{s.title}</h1>
 
-                      {/* ✅ fila contacto (UNA línea) — QR SOLO en WhatsApp */}
-                      <div className="contactRow" aria-label="Contacto">
-                        <div className="cItem">
-                          <div className="cMain">
-                            <div className="cTop">
-                              <span className="cIco">
-                                <WhatsappIcon />
-                              </span>
-                              <span className="cLabel">WhatsApp</span>
+                        <p className="lead">
+                          {s.lead.split("\n").map((line, idx) => (
+                            <React.Fragment key={idx}>
+                              {line}
+                              <br />
+                            </React.Fragment>
+                          ))}
+                        </p>
+
+                        {s.hint ? <p className="hint">{s.hint}</p> : null}
+                      </>
+                    )}
+
+                    {/* ✅ Preguntas (ahora 3..6) */}
+                    {s.k === 3 && (
+                      <div className="qa">
+                        <textarea
+                          className="ta"
+                          value={a1}
+                          onChange={(e) => setA1(e.target.value)}
+                          placeholder="Compartí lo que está pasando en tu vida ahora…"
+                          rows={7}
+                        />
+                      </div>
+                    )}
+
+                    {s.k === 4 && (
+                      <div className="qa">
+                        <div className="prev">
+                          <div className="prevTitle">Tu reflexión anterior</div>
+                          <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
+                        </div>
+                        <textarea
+                          className="ta"
+                          value={a2}
+                          onChange={(e) => setA2(e.target.value)}
+                          placeholder="Si algo pudiera ordenarse, fortalecerse o transformarse, ¿qué sería?…"
+                          rows={7}
+                        />
+                      </div>
+                    )}
+
+                    {s.k === 5 && (
+                      <div className="qa">
+                        <div className="prev">
+                          <div className="prevTitle">Lo que hoy estás viviendo</div>
+                          <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
+                          <div className="prevSpacer" />
+                          <div className="prevTitle">Lo que quisieras que fuera diferente</div>
+                          <div className="prevText">{a2.trim() ? a2.trim() : "—"}</div>
+                        </div>
+                        <textarea
+                          className="ta"
+                          value={a3}
+                          onChange={(e) => setA3(e.target.value)}
+                          placeholder="¿Qué depende de vos, más allá de las circunstancias?…"
+                          rows={7}
+                        />
+                      </div>
+                    )}
+
+                    {s.k === 6 && (
+                      <div className="qa">
+                        <div className="prev">
+                          <div className="prevTitle">Lo que hoy estás viviendo</div>
+                          <div className="prevText">{a1.trim() ? a1.trim() : "—"}</div>
+                          <div className="prevSpacer" />
+                          <div className="prevTitle">Lo que quisieras que fuera diferente</div>
+                          <div className="prevText">{a2.trim() ? a2.trim() : "—"}</div>
+                          <div className="prevSpacer" />
+                          <div className="prevTitle">Lo que está en tus manos cambiar</div>
+                          <div className="prevText">{a3.trim() ? a3.trim() : "—"}</div>
+                        </div>
+                        <textarea
+                          className="ta"
+                          value={a4}
+                          onChange={(e) => setA4(e.target.value)}
+                          placeholder="Un primer paso posible, simple y realista…"
+                          rows={7}
+                        />
+                      </div>
+                    )}
+
+                    {/* ✅ Resumen (ahora pantalla 7) */}
+                    {s.k === 7 && (
+                      <div className="summary">
+                        <div className="sumGrid sumGrid4">
+                          <div className="sumItem">
+                            <div className="sumK">¿Qué te trae hasta aquí?</div>
+                            <div className="sumV">{a1.trim() ? a1.trim() : "—"}</div>
+                          </div>
+                          <div className="sumItem">
+                            <div className="sumK">¿Qué quisieras que fuera diferente?</div>
+                            <div className="sumV">{a2.trim() ? a2.trim() : "—"}</div>
+                          </div>
+                          <div className="sumItem">
+                            <div className="sumK">¿Qué está en tus manos cambiar?</div>
+                            <div className="sumV">{a3.trim() ? a3.trim() : "—"}</div>
+                          </div>
+                          <div className="sumItem">
+                            <div className="sumK">¿Qué primer paso podrías dar?</div>
+                            <div className="sumV">{a4.trim() ? a4.trim() : "—"}</div>
+                          </div>
+                        </div>
+
+                        <div className="finalLine">
+                          Esto puede quedar como un ejercicio personal. O puede convertirse en una conversación.
+                        </div>
+
+                        <div className="contactRow" aria-label="Contacto">
+                          <div className="cItem">
+                            <div className="cMain">
+                              <div className="cTop">
+                                <span className="cIco">
+                                  <WhatsappIcon />
+                                </span>
+                                <span className="cLabel">WhatsApp</span>
+                              </div>
+                              <div className="cBottom">
+                                <span className="cText">+54 9 11 4412-5789</span>
+                                <span className="cQrIco" title="QR">
+                                  <QrIcon size={14} />
+                                </span>
+                              </div>
                             </div>
-                            <div className="cBottom">
-                              <span className="cText">+54 9 11 4412-5789</span>
-                              <span className="cQrIco" title="QR">
-                                <QrIcon size={14} />
-                              </span>
+                            {/* ⚠️ Si en producción no aparece, revisá mayúsculas/minúsculas del archivo en /public */}
+                            <img className="qr" src="/whatsapp/WhatsApp.jpeg" alt="QR WhatsApp" />
+                          </div>
+
+                          <div className="cItem">
+                            <div className="cMain">
+                              <div className="cTop">
+                                <span className="cIco">
+                                  <MailIcon />
+                                </span>
+                                <span className="cLabel">Mail</span>
+                              </div>
+                              <div className="cBottom cBottom2">
+                                <span className="cText">hmederos61@gmail.com</span>
+                                <span className="cText">misquieroenaccion@gmail.com</span>
+                              </div>
                             </div>
                           </div>
-                          <img className="qr" src="/whatsapp/WhatsApp.jpeg" alt="QR WhatsApp" />
-                        </div>
 
-                        <div className="cItem">
-                          <div className="cMain">
-                            <div className="cTop">
-                              <span className="cIco">
-                                <MailIcon />
-                              </span>
-                              <span className="cLabel">Mail</span>
-                            </div>
-                            <div className="cBottom cBottom2">
-                              <span className="cText">hmederos61@gmail.com</span>
-                              <span className="cText">misquieroenaccion@gmail.com</span>
+                          <div className="cItem">
+                            <div className="cMain">
+                              <div className="cTop">
+                                <span className="cIco">
+                                  <GlobeIcon />
+                                </span>
+                                <span className="cLabel">Aplicación</span>
+                              </div>
+                              <div className="cBottom cBottom2">
+                                <span className="cText">www.misquieroenaccion.com/login</span>
+                                <span className="cText">www.misquieroenaccion.com</span>
+                              </div>
                             </div>
                           </div>
-                          {/* SIN QR */}
-                        </div>
 
-                        <div className="cItem">
-                          <div className="cMain">
-                            <div className="cTop">
-                              <span className="cIco">
-                                <GlobeIcon />
-                              </span>
-                              <span className="cLabel">Aplicación</span>
-                            </div>
-                            <div className="cBottom cBottom2">
-                              <span className="cText">www.misquieroenaccion.com/login</span>
-                              <span className="cText">www.misquieroenaccion.com</span>
-                            </div>
+                          <div className="microText" aria-label="Mensaje final">
+                            Me contactaré con vos en breve. Las herramientas para el cambio están más cerca.
                           </div>
-                          {/* SIN QR */}
-                        </div>
-
-                        {/* ✅ microtexto (zona dedicada) */}
-                        <div className="microText" aria-label="Mensaje final">
-                          Me contactaré con vos en breve. Las herramientas para el cambio están más cerca.
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </article>
             );
           })}
@@ -616,9 +662,8 @@ export default function WebPublicCoachingPersonal() {
         </button>
       )}
 
-      {/* ✅ dots fuera de la card (sin tocar) */}
       <div className="edgeDots" aria-label="Paginación">
-        {([0, 1, 2, 3, 4, 5, 6] as ScreenKey[]).map((i) => (
+        {([0, 1, 2, 3, 4, 5, 6, 7] as ScreenKey[]).map((i) => (
           <button
             key={i}
             className={`dot ${screen === i ? "on" : ""}`}
@@ -668,7 +713,7 @@ export default function WebPublicCoachingPersonal() {
         }
         .track {
           height: 100%;
-          width: 700vw;
+          width: 800vw;
           display: flex;
           transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
         }
@@ -681,11 +726,54 @@ export default function WebPublicCoachingPersonal() {
           padding: 18px 18px 22px;
         }
 
-        /* Pantalla 6 */
-        .screen6 {
+        /* Pantalla 7 (antes 6) */
+        .screen7 {
           align-items: start;
           justify-items: center;
           padding-top: 7.5vh;
+        }
+
+        /* ✅ Pantalla 0 (Portada) */
+        .portada {
+          width: 100%;
+          height: 100%;
+          display: grid;
+          place-items: center;
+          gap: 12px;
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        .portada.in {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
+        }
+        .cta {
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          background: rgba(0, 0, 0, 0.18);
+          color: rgba(245, 241, 232, 0.98);
+          padding: 16px 22px;
+          border-radius: 999px;
+          font-size: 18px;
+          font-weight: 760;
+          letter-spacing: 0.2px;
+          cursor: pointer;
+          backdrop-filter: blur(14px) saturate(1.08);
+          -webkit-backdrop-filter: blur(14px) saturate(1.08);
+          box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+        }
+        .cta:hover {
+          transform: scale(1.02);
+          border-color: rgba(255, 255, 255, 0.32);
+          background: rgba(0, 0, 0, 0.16);
+        }
+        .ctaHint {
+          color: rgba(245, 241, 232, 0.9);
+          font-weight: 560;
+          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+          padding: 0 16px;
+          text-align: center;
         }
 
         .card {
@@ -719,8 +807,21 @@ export default function WebPublicCoachingPersonal() {
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
 
-        /* ✅ SOLUCIÓN: scroll interno SOLO en la card de Pantalla 6 */
-        .card6 {
+        /* ✅ LOGO (pantallas 1..7) */
+        .brandLogo {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          width: clamp(120px, 14vw, 190px);
+          height: auto;
+          opacity: 0.98;
+          filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.26));
+          pointer-events: none;
+          user-select: none;
+        }
+
+        /* ✅ scroll interno SOLO en la card de Pantalla 7 */
+        .card7 {
           max-height: calc(100vh - 18px - 22px - 7.5vh);
           overflow-y: auto;
           overscroll-behavior: contain;
@@ -733,11 +834,16 @@ export default function WebPublicCoachingPersonal() {
             max-width: 980px !important;
             padding: 22px 18px;
           }
-          .screen6 {
+          .screen7 {
             padding-top: 5.5vh;
           }
-          .card6 {
+          .card7 {
             max-height: calc(100vh - 18px - 22px - 5.5vh);
+          }
+          .brandLogo {
+            top: 12px;
+            left: 12px;
+            width: 140px;
           }
         }
 
@@ -781,15 +887,15 @@ export default function WebPublicCoachingPersonal() {
           font-weight: 500;
         }
 
-        /* Pantalla 0 */
-        .card.screen0 {
+        /* Pantalla 1 (Hero) */
+        .card.screen1 {
           padding: 46px 70px;
           display: flex;
           align-items: stretch;
           justify-content: center;
           text-align: center;
         }
-        .s0 {
+        .s1 {
           width: 100%;
           height: 100%;
           display: flex;
@@ -799,7 +905,7 @@ export default function WebPublicCoachingPersonal() {
           padding-top: 5vh;
           gap: 22px;
         }
-        .s0Title {
+        .s1Title {
           font-size: clamp(44px, 4vw, 64px);
           line-height: 1.05;
           font-weight: 520;
@@ -808,7 +914,7 @@ export default function WebPublicCoachingPersonal() {
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
           text-wrap: balance;
         }
-        .s0Lead {
+        .s1Lead {
           font-size: clamp(22px, 2.05vw, 28px);
           line-height: 1.62;
           opacity: 0.94;
@@ -818,7 +924,7 @@ export default function WebPublicCoachingPersonal() {
           text-wrap: balance;
           font-weight: 500;
         }
-        .s0Lead2 {
+        .s1Lead2 {
           font-size: clamp(21px, 1.95vw, 27px);
           line-height: 1.62;
           opacity: 0.92;
@@ -828,7 +934,7 @@ export default function WebPublicCoachingPersonal() {
           text-wrap: balance;
           font-weight: 500;
         }
-        .s0Hint {
+        .s1Hint {
           margin-top: auto;
           padding-bottom: 4.5vh;
           font-size: clamp(21px, 1.9vw, 26px);
@@ -842,22 +948,22 @@ export default function WebPublicCoachingPersonal() {
         }
 
         @media (max-width: 900px) {
-          .card.screen0 {
+          .card.screen1 {
             padding: 32px 22px;
           }
-          .s0 {
+          .s1 {
             padding-top: 3.5vh;
             gap: 16px;
           }
-          .s0Lead,
-          .s0Lead2,
-          .s0Hint {
+          .s1Lead,
+          .s1Lead2,
+          .s1Hint {
             max-width: 92%;
           }
         }
 
-        /* Pantalla 1 */
-        .s1Center {
+        /* Pantalla 2 */
+        .s2Center {
           width: 100%;
           height: 100%;
           display: grid;
@@ -866,10 +972,10 @@ export default function WebPublicCoachingPersonal() {
           gap: 10px;
           padding: 4px 6px;
         }
-        .s1Title {
+        .s2Title {
           text-wrap: balance;
         }
-        .s1Lead {
+        .s2Lead {
           margin-top: 0;
           max-width: 36ch;
           opacity: 0.9;
@@ -1103,7 +1209,7 @@ export default function WebPublicCoachingPersonal() {
           gap: 10px;
         }
 
-        /* ✅ Pantalla 6: 4 columnas 1 fila */
+        /* Pantalla 7: 4 columnas 1 fila */
         .sumGrid4 {
           grid-template-columns: repeat(4, minmax(0, 1fr));
         }
@@ -1128,7 +1234,6 @@ export default function WebPublicCoachingPersonal() {
           font-weight: 520;
         }
 
-        /* ✅ SOLUCIÓN: el texto NO empuja la pantalla; scrollea dentro de la mini-card */
         .sumV {
           margin-top: 6px;
           font-size: 14px;
@@ -1143,7 +1248,6 @@ export default function WebPublicCoachingPersonal() {
           padding-right: 6px;
         }
 
-        /* ✅ frase brillante 1 línea */
         .finalLine {
           margin-top: 2px;
           padding: 10px 12px;
@@ -1159,7 +1263,6 @@ export default function WebPublicCoachingPersonal() {
           border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        /* ✅ fila de contacto dentro de la misma card */
         .contactRow {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
@@ -1167,8 +1270,7 @@ export default function WebPublicCoachingPersonal() {
           margin-top: 2px;
         }
 
-        /* ✅ Relevancia de contacto: más color + menos traslúcidas (sin quemar)
-           ✅ Tipografía más grande SOLO en contacto */
+        /* Contacto */
         .cItem {
           position: relative;
           overflow: hidden;
@@ -1181,37 +1283,31 @@ export default function WebPublicCoachingPersonal() {
           border: none;
           min-height: 110px;
           box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
-          background: rgba(0, 0, 0, 0.14); /* ✅ menos traslúcida pero suave */
-          backdrop-filter: blur(14px) saturate(1.08); /* ✅ vidrio más nítido */
+          background: rgba(0, 0, 0, 0.14);
+          backdrop-filter: blur(14px) saturate(1.08);
           -webkit-backdrop-filter: blur(14px) saturate(1.08);
         }
 
-        /* capa de “tinte” (más presente, no cegador) */
         .cItem::before {
           content: "";
           position: absolute;
           inset: -2px;
           border-radius: inherit;
           pointer-events: none;
-          opacity: 0.78; /* ✅ más color, sin exagerar */
+          opacity: 0.78;
           filter: blur(0px);
         }
 
-        /* glow suave (más controlado) */
         .cItem::after {
           content: "";
           position: absolute;
           inset: -18px;
           border-radius: inherit;
           pointer-events: none;
-          opacity: 0.32; /* ✅ menos “neón” */
+          opacity: 0.32;
           filter: blur(18px);
         }
 
-        /* ✅ WhatsApp (verde) */
-        .contactRow .cItem:nth-child(1) {
-          border-color: rgba(0, 255, 153, 0.32);
-        }
         .contactRow .cItem:nth-child(1)::before {
           background: radial-gradient(520px 210px at 18% 30%, rgba(0, 255, 153, 0.24), rgba(0, 0, 0, 0) 64%),
             linear-gradient(135deg, rgba(0, 255, 153, 0.14), rgba(0, 0, 0, 0.26) 64%);
@@ -1220,10 +1316,6 @@ export default function WebPublicCoachingPersonal() {
           background: radial-gradient(680px 300px at 22% 40%, rgba(0, 255, 153, 0.16), rgba(0, 0, 0, 0) 72%);
         }
 
-        /* ✅ Mail (azul) */
-        .contactRow .cItem:nth-child(2) {
-          border-color: rgba(64, 140, 255, 0.32);
-        }
         .contactRow .cItem:nth-child(2)::before {
           background: radial-gradient(520px 210px at 18% 30%, rgba(64, 140, 255, 0.24), rgba(0, 0, 0, 0) 64%),
             linear-gradient(135deg, rgba(64, 140, 255, 0.14), rgba(0, 0, 0, 0.26) 64%);
@@ -1232,10 +1324,6 @@ export default function WebPublicCoachingPersonal() {
           background: radial-gradient(680px 300px at 22% 40%, rgba(64, 140, 255, 0.16), rgba(0, 0, 0, 0) 72%);
         }
 
-        /* ✅ Web (violeta) */
-        .contactRow .cItem:nth-child(3) {
-          border-color: rgba(176, 120, 255, 0.32);
-        }
         .contactRow .cItem:nth-child(3)::before {
           background: radial-gradient(520px 210px at 18% 30%, rgba(176, 120, 255, 0.24), rgba(0, 0, 0, 0) 64%),
             linear-gradient(135deg, rgba(176, 120, 255, 0.14), rgba(0, 0, 0, 0.26) 64%);
@@ -1267,12 +1355,13 @@ export default function WebPublicCoachingPersonal() {
         }
 
         .cLabel {
-          font-size: 13px; /* ✅ antes 12px */
+          font-size: 13px;
           letter-spacing: 0.25px;
           opacity: 0.95;
-          font-weight: 760; /* ✅ un toque más de jerarquía */
+          font-weight: 760;
           color: rgba(245, 241, 232, 0.99);
-          text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22));
+          /* ✅ FIX TÉCNICO: paréntesis extra eliminado */
+          text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
         }
 
         .cBottom {
@@ -1289,15 +1378,15 @@ export default function WebPublicCoachingPersonal() {
         }
 
         .cText {
-          font-size: 15px; /* ✅ antes 13px */
+          font-size: 15px;
           line-height: 1.25;
           color: rgba(245, 241, 232, 0.98);
-          font-weight: 700; /* ✅ más legible */
+          font-weight: 700;
           text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          max-width: 44ch; /* ✅ antes 34ch */
+          max-width: 44ch;
         }
 
         .cQrIco {
@@ -1320,7 +1409,6 @@ export default function WebPublicCoachingPersonal() {
           object-fit: cover;
         }
 
-        /* ✅ microtexto: queda dentro de CONTACTO, no toca dots */
         .microText {
           grid-column: 1 / -1;
           margin-top: 2px;
@@ -1334,7 +1422,6 @@ export default function WebPublicCoachingPersonal() {
           border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        /* ✅ responsivo */
         @media (max-width: 1100px) {
           .sumGrid4 {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1364,6 +1451,11 @@ export default function WebPublicCoachingPersonal() {
             transition: none !important;
           }
           .card {
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          .portada {
             transition: none !important;
             opacity: 1 !important;
             transform: none !important;
