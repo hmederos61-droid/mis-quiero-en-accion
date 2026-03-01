@@ -52,6 +52,54 @@ function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
+/**
+ * ✅ LOGO GLOBAL PARAMETRIZABLE (fuera de la card)
+ * - fijo al viewport
+ * - arriba-derecha
+ * - NO clickeable
+ * - NO visible en Pantalla 0
+ *
+ * 👉 Acá ajustás TODO sin tocar lógica.
+ */
+const LOGO_CFG = {
+  enabled: true,
+  src: "/logo.png",
+  alt: "Hugo Mederos",
+  hideOnScreens: [0 as ScreenKey],
+
+  // Posición (desktop)
+  top: "30px",
+  right: "40px",
+
+  // Tamaño discreto (responsive)
+  width: "clamp(90px, 9vw, 120px)",
+  opacity: 0.95,
+  zIndex: 90,
+
+  // Backplate ultra sutil (discreto, premium)
+  plate: {
+    enabled: true,
+    padding: "10px 12px",
+    radius: "16px",
+    bg: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(255,255,255,0.22)",
+    blur: "10px",
+    shadow: "0 10px 26px rgba(0,0,0,0.18)",
+  },
+
+  // Sombra del logo (separación del fondo)
+  logoShadow: "0 6px 18px rgba(0,0,0,0.22)",
+
+  // Mobile (override fino)
+  mobile: {
+    top: "18px",
+    right: "18px",
+    width: "clamp(78px, 22vw, 100px)",
+    padding: "8px 10px",
+    radius: "14px",
+  },
+} as const;
+
 function QrIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -340,8 +388,14 @@ export default function WebPublicCoachingPersonal() {
   // ✅ Tamaño QR (solo se usa para el QR local de WhatsApp)
   const qrSize = 56;
 
+  const showLogo = useMemo(() => {
+    if (!LOGO_CFG.enabled) return false;
+    return !LOGO_CFG.hideOnScreens.includes(screen);
+  }, [screen]);
+
   return (
     <main className="page" data-screen={screen}>
+      {/* ✅ Background global (se mantiene para pantallas 1..7) */}
       <div
         className="bg"
         aria-hidden="true"
@@ -370,6 +424,15 @@ export default function WebPublicCoachingPersonal() {
           `,
         }}
       />
+
+      {/* ✅ Logo global (fuera de la card, fijo al viewport) */}
+      {showLogo && (
+        <div className={`brandFixed ${mounted ? "in" : ""}`} aria-hidden="true">
+          <div className="brandPlate">
+            <img className="brandImg" src={LOGO_CFG.src} alt={LOGO_CFG.alt} draggable={false} />
+          </div>
+        </div>
+      )}
 
       {/* ✅ Órbita ahora es pantalla 2 (antes 1) */}
       {screen === 2 && (
@@ -403,13 +466,16 @@ export default function WebPublicCoachingPersonal() {
 
             return (
               <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
-                {/* ✅ PANTALLA 0: solo CTA "Iniciar recorrido" */}
+                {/* ✅ PANTALLA 0: portada fidelidad total (sin zoom) */}
                 {isPortada ? (
-                  <div className={`portada ${mounted ? "in" : ""}`}>
-                    <button className="cta" onClick={next} aria-label="Iniciar recorrido">
-                      Iniciar recorrido
-                    </button>
-                    <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                  <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
+                    <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
+                    <div className="portadaCTA">
+                      <button className="cta" onClick={next} aria-label="Iniciar recorrido">
+                        Iniciar recorrido
+                      </button>
+                      <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                    </div>
                   </div>
                 ) : (
                   <div
@@ -421,9 +487,6 @@ export default function WebPublicCoachingPersonal() {
                       ["--cardDim" as any]: cardDim,
                     }}
                   >
-                    {/* ✅ LOGO: en todas excepto pantalla 0 */}
-                    <img className="brandLogo" src="/logo.png" alt="Hugo Mederos" />
-
                     {isHero ? (
                       <div className="s1">
                         <div className="s1Title">{s.title}</div>
@@ -664,12 +727,7 @@ export default function WebPublicCoachingPersonal() {
 
       <div className="edgeDots" aria-label="Paginación">
         {([0, 1, 2, 3, 4, 5, 6, 7] as ScreenKey[]).map((i) => (
-          <button
-            key={i}
-            className={`dot ${screen === i ? "on" : ""}`}
-            onClick={() => go(i)}
-            aria-label={`Ir a pantalla ${i + 1}`}
-          />
+          <button key={i} className={`dot ${screen === i ? "on" : ""}`} onClick={() => go(i)} aria-label={`Ir a pantalla ${i + 1}`} />
         ))}
       </div>
 
@@ -733,21 +791,49 @@ export default function WebPublicCoachingPersonal() {
           padding-top: 7.5vh;
         }
 
-        /* ✅ Pantalla 0 (Portada) */
-        .portada {
+        /* ✅ PANTALLA 0 — Stage con fidelidad total (contain, sin zoom) */
+        .portadaStage {
+          position: relative;
           width: 100%;
           height: 100%;
-          display: grid;
-          place-items: center;
-          gap: 12px;
+          overflow: hidden;
           opacity: 0;
           transform: translateY(10px);
+          display: grid;
+          place-items: center;
+          background: radial-gradient(900px 420px at 70% 20%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0) 60%),
+            rgba(10, 12, 18, 0.55);
         }
-        .portada.in {
+        .portadaStage.in {
           opacity: 1;
           transform: translateY(0);
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
+        .portadaImg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: contain; /* ✅ clave: sin zoom */
+          object-position: center center;
+          user-select: none;
+          pointer-events: none;
+          filter: saturate(1.02) contrast(1.02);
+        }
+        .portadaCTA {
+          position: absolute;
+          left: 50%;
+          top: 20%;
+          transform: translateX(-50%);
+          z-index: 6;
+          display: grid;
+          gap: 10px;
+          place-items: center;
+          text-align: center;
+          padding: 0 14px;
+        }
+
+        /* CTA (se mantiene tu estética) */
         .cta {
           border: 1px solid rgba(255, 255, 255, 0.22);
           background: rgba(0, 0, 0, 0.18);
@@ -774,6 +860,41 @@ export default function WebPublicCoachingPersonal() {
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
           padding: 0 16px;
           text-align: center;
+        }
+
+        /* ✅ Logo fijo global (parametrizable) */
+        .brandFixed {
+          position: fixed;
+          top: ${LOGO_CFG.top};
+          right: ${LOGO_CFG.right};
+          z-index: ${LOGO_CFG.zIndex};
+          opacity: 0;
+          transform: translateY(-6px);
+          pointer-events: none; /* NO clickeable */
+          user-select: none;
+        }
+        .brandFixed.in {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 520ms ease 120ms, transform 520ms ease 120ms;
+        }
+        .brandPlate {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: ${LOGO_CFG.plate.enabled ? LOGO_CFG.plate.padding : "0"};
+          border-radius: ${LOGO_CFG.plate.enabled ? LOGO_CFG.plate.radius : "0"};
+          background: ${LOGO_CFG.plate.enabled ? LOGO_CFG.plate.bg : "transparent"};
+          border: ${LOGO_CFG.plate.enabled ? LOGO_CFG.plate.border : "none"};
+          box-shadow: ${LOGO_CFG.plate.enabled ? LOGO_CFG.plate.shadow : "none"};
+          backdrop-filter: ${LOGO_CFG.plate.enabled ? `blur(${LOGO_CFG.plate.blur})` : "none"};
+          -webkit-backdrop-filter: ${LOGO_CFG.plate.enabled ? `blur(${LOGO_CFG.plate.blur})` : "none"};
+        }
+        .brandImg {
+          width: ${LOGO_CFG.width};
+          height: auto;
+          opacity: ${LOGO_CFG.opacity};
+          filter: drop-shadow(${LOGO_CFG.logoShadow});
         }
 
         .card {
@@ -807,19 +928,6 @@ export default function WebPublicCoachingPersonal() {
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
 
-        /* ✅ LOGO (pantallas 1..7) */
-        .brandLogo {
-          position: absolute;
-          top: 16px;
-          left: 16px;
-          width: clamp(120px, 14vw, 190px);
-          height: auto;
-          opacity: 0.98;
-          filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.26));
-          pointer-events: none;
-          user-select: none;
-        }
-
         /* ✅ scroll interno SOLO en la card de Pantalla 7 */
         .card7 {
           max-height: calc(100vh - 18px - 22px - 7.5vh);
@@ -840,10 +948,18 @@ export default function WebPublicCoachingPersonal() {
           .card7 {
             max-height: calc(100vh - 18px - 22px - 5.5vh);
           }
-          .brandLogo {
-            top: 12px;
-            left: 12px;
-            width: 140px;
+
+          /* logo mobile override */
+          .brandFixed {
+            top: ${LOGO_CFG.mobile.top};
+            right: ${LOGO_CFG.mobile.right};
+          }
+          .brandPlate {
+            padding: ${LOGO_CFG.mobile.padding};
+            border-radius: ${LOGO_CFG.mobile.radius};
+          }
+          .brandImg {
+            width: ${LOGO_CFG.mobile.width};
           }
         }
 
@@ -1070,11 +1186,7 @@ export default function WebPublicCoachingPersonal() {
           inset: -1px;
           border-radius: inherit;
           pointer-events: none;
-          background: radial-gradient(
-            54px 54px at 30% 25%,
-            rgba(255, 255, 255, 0.62),
-            rgba(255, 255, 255, 0) 62%
-          );
+          background: radial-gradient(54px 54px at 30% 25%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 62%);
           opacity: 0.95;
         }
         .edgeNav:hover {
@@ -1455,7 +1567,7 @@ export default function WebPublicCoachingPersonal() {
             opacity: 1 !important;
             transform: none !important;
           }
-          .portada {
+          .portadaStage {
             transition: none !important;
             opacity: 1 !important;
             transform: none !important;
@@ -1464,6 +1576,11 @@ export default function WebPublicCoachingPersonal() {
             animation: none !important;
             opacity: 1 !important;
             transform: translate(-50%, -50%) !important;
+          }
+          .brandFixed.in {
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
           }
         }
       `}</style>
