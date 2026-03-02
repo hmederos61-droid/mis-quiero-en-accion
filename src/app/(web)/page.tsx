@@ -472,7 +472,11 @@ export default function WebPublicCoachingPersonal() {
             const isQBlock = s.k >= 3 && s.k <= 7;
 
             return (
-              <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
+              <article
+                key={s.k}
+                className={`screen ${s.k === 7 ? "screen7" : ""}`}
+                aria-label={`Pantalla ${s.k + 1}`}
+              >
                 {/* ✅ PANTALLA 0: SOLO portada.png full-screen (sin fondos extra) */}
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
@@ -662,7 +666,7 @@ export default function WebPublicCoachingPersonal() {
                                 </span>
                               </div>
                             </div>
-                            {/* ⚠️ Si en producción no aparece, revisá mayúsculas/minúsculas del archivo en /public */}
+                            {/* ✅ QR local en /public */}
                             <img className="qr" src="/whatsapp.jpeg" alt="QR WhatsApp" />
                           </div>
 
@@ -1393,7 +1397,12 @@ export default function WebPublicCoachingPersonal() {
           margin-top: 2px;
         }
 
-        /* Contacto */
+        /* =========================
+           ✅ CONTACTO — BLOQUES CON COLOR REAL (tipo botón)
+           - el gradiente principal va en .cItem:nth-child(n)
+           - ::before y ::after son brillo/glow
+        ========================= */
+
         .cItem {
           position: relative;
           overflow: hidden;
@@ -1403,87 +1412,62 @@ export default function WebPublicCoachingPersonal() {
           gap: 12px;
           padding: 20px 20px;
           border-radius: 22px;
-          border: none;
+
+          /* ✅ base neutra: el color fuerte lo define cada nth-child */
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+
           min-height: 110px;
           box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
-          background: rgba(0, 0, 0, 0.14);
           backdrop-filter: blur(14px) saturate(1.08);
           -webkit-backdrop-filter: blur(14px) saturate(1.08);
         }
 
+        /* brillo suave encima del color (abajo del texto) */
         .cItem::before {
           content: "";
           position: absolute;
-          inset: -2px;
+          inset: 0;
           border-radius: inherit;
           pointer-events: none;
-          opacity: 0.78;
-          filter: blur(0px);
+          background: radial-gradient(800px 260px at 25% 20%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%);
+          opacity: 0.85;
         }
 
+        /* glow exterior difuso */
         .cItem::after {
           content: "";
           position: absolute;
-          inset: -18px;
+          inset: -22px;
           border-radius: inherit;
           pointer-events: none;
-          opacity: 0.32;
           filter: blur(18px);
+          opacity: 0.55;
         }
 
-/* WhatsApp — verde tipo botón */
-.cItem:nth-child(1)::before {
-  background: linear-gradient(
-    135deg,
-    rgba(78, 190, 125, 0.85),
-    rgba(120, 170, 70, 0.75)
-  );
-  opacity: 0.95;
-}
-.cItem:nth-child(1)::after {
-  background: radial-gradient(
-    700px 260px at 20% 45%,
-    rgba(78, 190, 125, 0.35),
-    rgba(0, 0, 0, 0) 70%
-  );
-  opacity: 0.55;
-}
+        /* WhatsApp — verde tipo botón */
+        .cItem:nth-child(1) {
+          background: linear-gradient(135deg, rgba(78, 190, 125, 0.88), rgba(120, 170, 70, 0.78));
+        }
+        .cItem:nth-child(1)::after {
+          background: radial-gradient(700px 260px at 20% 45%, rgba(78, 190, 125, 0.45), rgba(0, 0, 0, 0) 70%);
+        }
 
-/* Mail — azul violáceo */
-.cItem:nth-child(2)::before {
-  background: linear-gradient(
-    135deg,
-    rgba(90, 120, 190, 0.85),
-    rgba(150, 120, 210, 0.75)
-  );
-  opacity: 0.95;
-}
-.cItem:nth-child(2)::after {
-  background: radial-gradient(
-    700px 260px at 20% 45%,
-    rgba(120, 140, 255, 0.35),
-    rgba(0, 0, 0, 0) 70%
-  );
-  opacity: 0.55;
-}
+        /* Mail — azul violáceo */
+        .cItem:nth-child(2) {
+          background: linear-gradient(135deg, rgba(90, 120, 190, 0.88), rgba(150, 120, 210, 0.78));
+        }
+        .cItem:nth-child(2)::after {
+          background: radial-gradient(700px 260px at 20% 45%, rgba(120, 140, 255, 0.45), rgba(0, 0, 0, 0) 70%);
+        }
 
-/* Aplicación — dorado cálido */
-.cItem:nth-child(3)::before {
-  background: linear-gradient(
-    135deg,
-    rgba(205, 150, 60, 0.90),
-    rgba(230, 180, 95, 0.80)
-  );
-  opacity: 0.95;
-}
-.cItem:nth-child(3)::after {
-  background: radial-gradient(
-    700px 260px at 20% 45%,
-    rgba(230, 180, 95, 0.35),
-    rgba(0, 0, 0, 0) 70%
-  );
-  opacity: 0.55;
-}
+        /* Aplicación — dorado cálido */
+        .cItem:nth-child(3) {
+          background: linear-gradient(135deg, rgba(205, 150, 60, 0.92), rgba(230, 180, 95, 0.82));
+        }
+        .cItem:nth-child(3)::after {
+          background: radial-gradient(700px 260px at 20% 45%, rgba(230, 180, 95, 0.45), rgba(0, 0, 0, 0) 70%);
+        }
 
         .cMain {
           position: relative;
@@ -1510,10 +1494,10 @@ export default function WebPublicCoachingPersonal() {
         .cLabel {
           font-size: 13px;
           letter-spacing: 0.25px;
-          opacity: 0.95;
+          opacity: 0.98;
           font-weight: 760;
-          color: rgba(245, 241, 232, 0.99);
-          text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+          color: rgba(245, 241, 232, 1);
+          text-shadow: 0 12px 26px rgba(0, 0, 0, 0.3);
         }
 
         .cBottom {
@@ -1532,9 +1516,9 @@ export default function WebPublicCoachingPersonal() {
         .cText {
           font-size: 15px;
           line-height: 1.25;
-          color: rgba(245, 241, 232, 0.98);
+          color: rgba(245, 241, 232, 1);
           font-weight: 700;
-          text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+          text-shadow: 0 12px 26px rgba(0, 0, 0, 0.3);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
