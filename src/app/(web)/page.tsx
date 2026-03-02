@@ -36,16 +36,16 @@ const SCREEN_STEPS: ReadonlyArray<{
   cardDim: number;
 }> = [
   // 0 (Portada) — más clara, sin card protagonista
-  { img: "/portada.png", overlay: 0.00, blur: 0.00, dim: 0.00, cardDim: 0.12 }, // 0
+  { img: "/portada.png", overlay: 0.0, blur: 0.0, dim: 0.0, cardDim: 0.12 }, // 0
 
   // 1..7 (Web) — degradé: de más contraste a más luminoso
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.22, dim: 0.22, cardDim: 0.56 }, // 1
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 2
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 3
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 4
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 5
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 6
-  { img: "/webwelcome.png", overlay: 0.10, blur: 0.20, dim: 0.22, cardDim: 0.56 }, // 7
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.22, dim: 0.22, cardDim: 0.56 }, // 1
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 2
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 3
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 4
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 5
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 6
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 7
 ];
 
 function clamp01(n: number) {
@@ -97,6 +97,25 @@ const LOGO_CFG = {
     width: "clamp(78px, 22vw, 100px)",
     padding: "8px 10px",
     radius: "14px",
+  },
+} as const;
+
+/**
+ * ✅ PORTADA CTA (Pantalla 0) — Ajuste fino
+ * Objetivo:
+ * - La imagen NO se recorta ni se “zoomea”
+ * - El botón y el texto SIEMPRE se leen (placa glass)
+ */
+const PORTADA_CTA_CFG = {
+  topDesktop: "18%", // antes 20% -> un poco más abajo para evitar el sol
+  topMobile: "16%",
+  plate: {
+    padding: "14px 16px",
+    radius: "22px",
+    bg: "rgba(0,0,0,0.28)",
+    border: "1px solid rgba(255,255,255,0.18)",
+    blur: "14px",
+    shadow: "0 26px 80px rgba(0,0,0,0.36)",
   },
 } as const;
 
@@ -422,7 +441,7 @@ export default function WebPublicCoachingPersonal() {
                 linear-gradient(180deg,
                   rgba(255,255,255,${Math.min(0.14, overlayLevel * 0.52)}),
                   rgba(255,255,255,0.02) 58%,
-                  rgba(0,0,0,${Math.max(0, overlayLevel * 0.50)}) ),
+                  rgba(0,0,0,${Math.max(0, overlayLevel * 0.5)}) ),
                 linear-gradient(180deg,
                   rgba(0,0,0,${Math.max(0, dimLevel)}),
                   rgba(0,0,0,${Math.max(0, dimLevel)}) )
@@ -472,20 +491,18 @@ export default function WebPublicCoachingPersonal() {
             const isQBlock = s.k >= 3 && s.k <= 7;
 
             return (
-              <article
-                key={s.k}
-                className={`screen ${s.k === 7 ? "screen7" : ""}`}
-                aria-label={`Pantalla ${s.k + 1}`}
-              >
+              <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
                 {/* ✅ PANTALLA 0: SOLO portada.png full-screen (sin fondos extra) */}
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
                     <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
                     <div className="portadaCTA">
-                      <button className="cta" onClick={next} aria-label="Iniciar recorrido">
-                        Iniciar recorrido
-                      </button>
-                      <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                      <div className="portadaPlate">
+                        <button className="cta" onClick={next} aria-label="Iniciar recorrido">
+                          Iniciar recorrido
+                        </button>
+                        <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -738,12 +755,7 @@ export default function WebPublicCoachingPersonal() {
 
       <div className="edgeDots" aria-label="Paginación">
         {([0, 1, 2, 3, 4, 5, 6, 7] as ScreenKey[]).map((i) => (
-          <button
-            key={i}
-            className={`dot ${screen === i ? "on" : ""}`}
-            onClick={() => go(i)}
-            aria-label={`Ir a pantalla ${i + 1}`}
-          />
+          <button key={i} className={`dot ${screen === i ? "on" : ""}`} onClick={() => go(i)} aria-label={`Ir a pantalla ${i + 1}`} />
         ))}
       </div>
 
@@ -817,28 +829,35 @@ export default function WebPublicCoachingPersonal() {
           transform: translateY(10px);
           display: grid;
           place-items: center;
-          background: transparent; /* ✅ clave: sin stage oscuro */
+          background: #000; /* ✅ base neutra para letterbox cuando usamos contain */
         }
         .portadaStage.in {
           opacity: 1;
           transform: translateY(0);
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
+
+        /* ✅ CLAVE: NO recorta / NO zoom / NO “cover”
+           - contain respeta la imagen original
+           - centrada, completa, sin deformar
+        */
         .portadaImg {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover; /* ✅ clave: ocupa TODA la pantalla (sin bandas) */
+          object-fit: contain; /* ✅ antes: cover (recortaba y zoomeaba) */
           object-position: center center;
           user-select: none;
           pointer-events: none;
           filter: none; /* ✅ sin filtros extra */
+          background: #000;
         }
+
         .portadaCTA {
           position: absolute;
           left: 50%;
-          top: 20%;
+          top: ${PORTADA_CTA_CFG.topDesktop};
           transform: translateX(-50%);
           z-index: 6;
           display: grid;
@@ -848,32 +867,45 @@ export default function WebPublicCoachingPersonal() {
           padding: 0 14px;
         }
 
+        /* ✅ PLACA glass para que se LEA siempre */
+        .portadaPlate {
+          display: grid;
+          gap: 10px;
+          place-items: center;
+          padding: ${PORTADA_CTA_CFG.plate.padding};
+          border-radius: ${PORTADA_CTA_CFG.plate.radius};
+          background: ${PORTADA_CTA_CFG.plate.bg};
+          border: ${PORTADA_CTA_CFG.plate.border};
+          box-shadow: ${PORTADA_CTA_CFG.plate.shadow};
+          backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.08);
+          -webkit-backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.08);
+        }
+
         /* CTA (se mantiene tu estética) */
         .cta {
-          border: 1px solid rgba(255, 255, 255, 0.22);
-          background: rgba(0, 0, 0, 0.18);
-          color: rgba(245, 241, 232, 0.98);
-          padding: 16px 22px;
+          border: 1px solid rgba(255, 255, 255, 0.26);
+          background: rgba(0, 0, 0, 0.26);
+          color: rgba(245, 241, 232, 0.99);
+          padding: 14px 22px;
           border-radius: 999px;
           font-size: 18px;
           font-weight: 760;
           letter-spacing: 0.2px;
           cursor: pointer;
-          backdrop-filter: blur(14px) saturate(1.08);
-          -webkit-backdrop-filter: blur(14px) saturate(1.08);
-          box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
-          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
+          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
         }
         .cta:hover {
           transform: scale(1.02);
-          border-color: rgba(255, 255, 255, 0.32);
-          background: rgba(0, 0, 0, 0.16);
+          border-color: rgba(255, 255, 255, 0.34);
+          background: rgba(0, 0, 0, 0.22);
         }
         .ctaHint {
-          color: rgba(245, 241, 232, 0.9);
-          font-weight: 560;
-          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-          padding: 0 16px;
+          color: rgba(245, 241, 232, 0.94);
+          font-weight: 620;
+          font-size: 16px;
+          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+          padding: 0 10px;
           text-align: center;
         }
 
@@ -962,6 +994,10 @@ export default function WebPublicCoachingPersonal() {
           }
           .card7 {
             max-height: calc(100vh - 18px - 22px - 5.5vh);
+          }
+
+          .portadaCTA {
+            top: ${PORTADA_CTA_CFG.topMobile};
           }
 
           /* logo mobile override */
