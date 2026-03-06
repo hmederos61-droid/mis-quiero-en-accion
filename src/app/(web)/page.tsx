@@ -533,7 +533,7 @@ export default function WebPublicCoachingPersonal() {
                         </div>
 
                         <div className="s1Lead2">
-                          {""El foco está en observar\ncómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir nuevas posibilidades."
+                          {"El foco está en observar\ncómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir nuevas posibilidades."
 
                             .split("\n")
                             .map((line, idx) => (
