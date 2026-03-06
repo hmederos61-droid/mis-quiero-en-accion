@@ -289,7 +289,7 @@ export default function WebPublicCoachingPersonal() {
         eyebrow: "COACHING PERSONAL",
         title: "Coaching ontológico individual",
         lead:
-          "Un espacio profesional de escucha \npara observar cómo estás interpretando tu realidad\ny brindarte las herramientas para tus nuevas posibilidades de acción.",
+         "Un espacio profesional que te brinde las herramientas necesarias\npara que puedas descubrir tus propias posibilidades de cambio.",
         hint: "Si algo de esto resuena en vos,\nte invito a seguir el recorrido.",
       },
 
@@ -533,7 +533,7 @@ export default function WebPublicCoachingPersonal() {
                         </div>
 
                         <div className="s1Lead2">
-                          {"El foco está en observar\ncómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir nuevas posibilidades."
+                          {"El foco está puesto en que puedas observar cómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir tus nuevas posibilidades."
 
                             .split("\n")
                             .map((line, idx) => (
