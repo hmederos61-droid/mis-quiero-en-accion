@@ -287,10 +287,10 @@ export default function WebPublicCoachingPersonal() {
       {
         k: 1 as ScreenKey,
         eyebrow: "COACHING PERSONAL",
-        title: "Coaching Ontológico Individual",
+        title: "Coaching ontológico individual",
         lead:
-          "Un espacio profesional de conversación\npara observar cómo estás interpretando tu realidad\ny descubrir nuevas posibilidades de acción.",
-        hint: "Si algo de esto resuena con vos,\nseguí el recorrido.",
+          "Un espacio profesional de escucha \npara observar cómo estás interpretando tu realidad\ny brindarte las herramientas para tus nuevas posibilidades de acción.",
+        hint: "Si algo de esto resuena en vos,\nte invito a seguir el recorrido.",
       },
 
       // ✅ Pantalla 2 (antes 1)
@@ -533,7 +533,8 @@ export default function WebPublicCoachingPersonal() {
                         </div>
 
                         <div className="s1Lead2">
-                          {"No se trata de convencerte.\nSe trata de mirarte con precisión\ny desde ahí elegir mejor."
+                          {""El foco está en observar\ncómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir nuevas posibilidades."
+
                             .split("\n")
                             .map((line, idx) => (
                               <React.Fragment key={idx}>
