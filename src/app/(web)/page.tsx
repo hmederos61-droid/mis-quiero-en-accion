@@ -491,7 +491,11 @@ export default function WebPublicCoachingPersonal() {
             const isQBlock = s.k >= 3 && s.k <= 7;
 
             return (
-              <article key={s.k} className={`screen ${s.k === 7 ? "screen7" : ""}`} aria-label={`Pantalla ${s.k + 1}`}>
+              <article
+               key={s.k}
+               className={`screen ${isPortada ? "screenPortada" : ""} ${s.k === 7 ? "screen7" : ""}`}
+               aria-label={`Pantalla ${s.k + 1}`}
+              >
                 {/* ✅ PANTALLA 0: SOLO portada.png full-screen (sin fondos extra) */}
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
@@ -804,12 +808,16 @@ export default function WebPublicCoachingPersonal() {
           transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
         }
         .screen {
-          width: 100vw;
-          height: 100vh;
-          flex: 0 0 100vw;
-          display: grid;
-          place-items: center;
-          padding: 18px 18px 22px;
+         width: 100vw;
+         height: 100vh;
+         flex: 0 0 100vw;
+         display: grid;
+         place-items: center;
+         padding: 18px 18px 22px;
+        }
+
+        .screenPortada {
+         padding: 0;
         }
 
         /* Pantalla 7 (antes 6) */
@@ -829,7 +837,6 @@ export default function WebPublicCoachingPersonal() {
           transform: translateY(10px);
           display: grid;
           place-items: center;
-          background: #000; /* ✅ base neutra para letterbox cuando usamos contain */
         }
         .portadaStage.in {
           opacity: 1;
@@ -846,12 +853,11 @@ export default function WebPublicCoachingPersonal() {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: contain; /* ✅ antes: cover (recortaba y zoomeaba) */
+          object-fit: cover; /* ✅ antes: cover (recortaba y zoomeaba) */
           object-position: center center;
           user-select: none;
           pointer-events: none;
           filter: none; /* ✅ sin filtros extra */
-          background: #000;
         }
 
         .portadaCTA {
