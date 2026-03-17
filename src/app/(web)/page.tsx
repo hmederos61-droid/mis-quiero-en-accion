@@ -226,7 +226,7 @@ export default function WebPublicCoachingPersonal() {
       },
       {
         id: "echeverria",
-        text: "“El observador que somos define las acciones que podemos realizar.”,
+        text: "“El observador que somos define las acciones que podemos realizar.",
         author: "Rafael Echeverria",
         x: "20%",
         y: "62%",
