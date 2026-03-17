@@ -225,9 +225,9 @@ export default function WebPublicCoachingPersonal() {
         d: "0.34s",
       },
       {
-        id: "echeverria",
-        text: "“El observador que somos define las acciones que podemos realizar.",
-        author: "Rafael Echeverria",
+        id: "echeverria-2",
+        text: "El observador que somos define las acciones que podemos realizar.",
+        author: "Rafael Echeverría",
         x: "20%",
         y: "62%",
         d: "0.52s",
@@ -251,7 +251,7 @@ export default function WebPublicCoachingPersonal() {
       {
         id: "realidad-accion",
         text: "Realidad y acción para el cambio.",
-        author: "Mis quiero en accion",
+        author: "Mis quiero en acción",
         emphasis: true,
         x: "68%",
         y: "83%",
@@ -374,7 +374,7 @@ export default function WebPublicCoachingPersonal() {
   const cardWidth = screen === 1 ? "75vw" : screen === 7 ? "82vw" : "45vw";
   const cardHeight = screen === 1 ? "75vh" : "auto";
 
-  const qrSize = 56;
+  const qrSize = 92;
 
   const showLogo = useMemo(() => {
     if (!LOGO_CFG.enabled) return false;
@@ -638,7 +638,13 @@ descubrir nuevas posibilidades para ponerte en acción.`
                         </div>
 
                         <div className="contactRow" aria-label="Contacto">
-                          <div className="cItem">
+                          <a
+                            className="cItem cItemLink cItemWhatsapp"
+                            href="https://wa.me/5491144125789"
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Abrir WhatsApp"
+                          >
                             <div className="cMain">
                               <div className="cTop">
                                 <span className="cIco">
@@ -653,8 +659,10 @@ descubrir nuevas posibilidades para ponerte en acción.`
                                 </span>
                               </div>
                             </div>
-                            <img className="qr" src="/whatsapp.jpeg" alt="QR WhatsApp" />
-                          </div>
+                            <div className="qrWrap">
+                              <img className="qr" src="/whatsapp.png" alt="QR WhatsApp" />
+                            </div>
+                          </a>
 
                           <div className="cItem">
                             <div className="cMain">
@@ -1467,6 +1475,18 @@ descubrir nuevas posibilidades para ponerte en acción.`
           -webkit-backdrop-filter: blur(14px) saturate(1.08);
         }
 
+        .cItemLink {
+          text-decoration: none;
+          color: inherit;
+          transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+
+        .cItemLink:hover {
+          transform: translateY(-1px);
+          border-color: rgba(255, 255, 255, 0.22);
+          box-shadow: 0 30px 88px rgba(0, 0, 0, 0.38);
+        }
+
         .cItem::before {
           content: "";
           position: absolute;
@@ -1517,6 +1537,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           display: grid;
           gap: 6px;
           min-width: 0;
+          flex: 1 1 auto;
         }
 
         .cTop {
@@ -1574,17 +1595,28 @@ descubrir nuevas posibilidades para ponerte en acción.`
           opacity: 0.9;
         }
 
-        .qr {
+        .qrWrap {
           position: relative;
           z-index: 1;
+          flex: 0 0 auto;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.98);
+          box-shadow: 0 14px 44px rgba(0, 0, 0, 0.26);
+        }
+
+        .qr {
+          display: block;
           width: ${qrSize}px;
           height: ${qrSize}px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.94);
-          padding: 6px;
-          box-shadow: 0 14px 44px rgba(0, 0, 0, 0.26);
-          flex: 0 0 auto;
-          object-fit: cover;
+          border-radius: 8px;
+          background: #ffffff;
+          object-fit: contain;
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
         }
 
         .microText {
@@ -1625,6 +1657,15 @@ descubrir nuevas posibilidades para ponerte en acción.`
         @media (max-width: 900px) {
           .orbit {
             display: none;
+          }
+
+          .qr {
+            width: 84px;
+            height: 84px;
+          }
+
+          .qrWrap {
+            padding: 7px;
           }
         }
 
