@@ -10,24 +10,11 @@ type Quote = {
   text: string;
   author: string;
   emphasis?: boolean;
-  x: string; // CSS length/percent
-  y: string; // CSS length/percent
-  d: string; // animation delay (s)
+  x: string;
+  y: string;
+  d: string;
 };
 
-/**
- * ✅ TABLA CANÓNICA EDITABLE — 8 pantallas (0..7)
- * ÚNICO lugar donde se ajusta:
- * - img: imagen de fondo por pantalla
- * - blur: blur del fondo global (pantalla completa)
- * - overlay: película blanca sutil
- * - dim: oscurecimiento global de pantalla (0..1)
- * - cardDim: oscurecimiento interno de card (0..1) ✅ (por pantalla)
- *
- * ✅ NUEVO:
- * - Pantalla 0 usa /portada.png (solo CTA "Iniciar recorrido")
- * - Pantallas 1..7: más nítidas y menos oscuras, en degradé luminoso hacia la 7
- */
 const SCREEN_STEPS: ReadonlyArray<{
   img: string;
   overlay: number;
@@ -35,30 +22,20 @@ const SCREEN_STEPS: ReadonlyArray<{
   dim: number;
   cardDim: number;
 }> = [
-  // 0 (Portada)
-  { img: "/portada.png", overlay: 0.0, blur: 0.0, dim: 0.0, cardDim: 0.12 }, // 0
-
-  // 1..7 (Web)
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.22, dim: 0.22, cardDim: 0.56 }, // 1
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 2
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 3
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 4
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 5
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 6
-  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 7
+  { img: "/portada.png", overlay: 0.0, blur: 0.0, dim: 0.0, cardDim: 0.12 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.22, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
+  { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 },
 ];
 
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
-/**
- * ✅ LOGO GLOBAL PARAMETRIZABLE (fuera de la card)
- * - fijo al viewport
- * - arriba-derecha
- * - NO clickeable
- * - NO visible en Pantalla 0
- */
 const LOGO_CFG = {
   enabled: true,
   src: "/logo.png",
@@ -85,17 +62,14 @@ const LOGO_CFG = {
   logoShadow: "0 6px 18px rgba(0,0,0,0.22)",
 
   mobile: {
-    top: "18px",
-    right: "18px",
-    width: "clamp(78px, 22vw, 100px)",
-    padding: "8px 10px",
-    radius: "14px",
+    top: "14px",
+    right: "14px",
+    width: "clamp(72px, 22vw, 92px)",
+    padding: "7px 9px",
+    radius: "12px",
   },
 } as const;
 
-/**
- * ✅ PORTADA CTA (Pantalla 0)
- */
 const PORTADA_CTA_CFG = {
   topDesktop: "18%",
   topMobile: "16%",
@@ -263,13 +237,7 @@ export default function WebPublicCoachingPersonal() {
 
   const screens = useMemo(
     () => [
-      {
-        k: 0 as ScreenKey,
-        eyebrow: "",
-        title: "",
-        lead: "",
-        hint: "",
-      },
+      { k: 0 as ScreenKey, eyebrow: "", title: "", lead: "", hint: "" },
       {
         k: 1 as ScreenKey,
         eyebrow: "COACHING PERSONAL",
@@ -334,9 +302,11 @@ export default function WebPublicCoachingPersonal() {
   function next() {
     setScreen((s) => clampScreen(s + 1));
   }
+
   function prev() {
     setScreen((s) => clampScreen(s - 1));
   }
+
   function go(i: ScreenKey) {
     setScreen(i);
   }
@@ -355,7 +325,6 @@ export default function WebPublicCoachingPersonal() {
 
   const canGoNext = useMemo(() => {
     const t = (v: string) => v.trim().length >= 3;
-
     if (screen === 3) return t(a1);
     if (screen === 4) return t(a2);
     if (screen === 5) return t(a3);
@@ -659,6 +628,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
                                 </span>
                               </div>
                             </div>
+
                             <div className="qrWrap">
                               <img className="qr" src="/whatsapp.png" alt="QR WhatsApp" />
                             </div>
@@ -962,40 +932,6 @@ descubrir nuevas posibilidades para ponerte en acción.`
           padding-bottom: 18px;
         }
 
-        @media (max-width: 900px) {
-          .card {
-            width: min(92vw, 980px) !important;
-            max-width: 980px !important;
-            padding: 22px 18px;
-          }
-
-          .screen7 {
-            padding-top: 5.5vh;
-          }
-
-          .card7 {
-            max-height: calc(100vh - 18px - 22px - 5.5vh);
-          }
-
-          .portadaCTA {
-            top: ${PORTADA_CTA_CFG.topMobile};
-          }
-
-          .brandFixed {
-            top: ${LOGO_CFG.mobile.top};
-            right: ${LOGO_CFG.mobile.right};
-          }
-
-          .brandPlate {
-            padding: ${LOGO_CFG.mobile.padding};
-            border-radius: ${LOGO_CFG.mobile.radius};
-          }
-
-          .brandImg {
-            width: ${LOGO_CFG.mobile.width};
-          }
-        }
-
         .eyebrow {
           font-size: 12px;
           letter-spacing: 0.6px;
@@ -1112,28 +1048,6 @@ descubrir nuevas posibilidades para ponerte en acción.`
           text-wrap: balance;
           font-weight: 500;
           margin-top: 0;
-        }
-
-        @media (max-width: 900px) {
-          .card.screen1 {
-            padding: 32px 22px;
-          }
-
-          .s1 {
-            padding-top: 2vh;
-            padding-bottom: 2vh;
-            gap: 14px;
-          }
-
-          .s1Body {
-            gap: 22px;
-          }
-
-          .s1Lead,
-          .s1Lead2,
-          .s1Hint {
-            max-width: 92%;
-          }
         }
 
         .s2Center {
@@ -1655,17 +1569,263 @@ descubrir nuevas posibilidades para ponerte en acción.`
         }
 
         @media (max-width: 900px) {
-          .orbit {
-            display: none;
+          .card {
+            width: min(94vw, 980px) !important;
+            max-width: 980px !important;
+            padding: 20px 15px;
+            border-radius: 26px;
           }
 
-          .qr {
-            width: 84px;
-            height: 84px;
+          .screen {
+            padding: 14px 12px 88px;
+          }
+
+          .screen7 {
+            padding-top: 3.5vh;
+          }
+
+          .card7 {
+            max-height: calc(100vh - 14px - 88px - 3.5vh);
+            padding-bottom: 14px;
+          }
+
+          .portadaCTA {
+            top: ${PORTADA_CTA_CFG.topMobile};
+          }
+
+          .brandFixed {
+            top: ${LOGO_CFG.mobile.top};
+            right: ${LOGO_CFG.mobile.right};
+          }
+
+          .brandPlate {
+            padding: ${LOGO_CFG.mobile.padding};
+            border-radius: ${LOGO_CFG.mobile.radius};
+          }
+
+          .brandImg {
+            width: ${LOGO_CFG.mobile.width};
+          }
+
+          .card.screen1 {
+            padding: 28px 18px;
+          }
+
+          .s1 {
+            padding-top: 1.5vh;
+            padding-bottom: 1.5vh;
+            gap: 14px;
+          }
+
+          .s1Body {
+            gap: 18px;
+          }
+
+          .s1Title {
+            font-size: clamp(30px, 8vw, 42px);
+            max-width: 100%;
+          }
+
+          .s1Lead {
+            font-size: clamp(17px, 4.8vw, 21px);
+            line-height: 1.5;
+            max-width: 96%;
+          }
+
+          .s1Lead2 {
+            font-size: clamp(16px, 4.5vw, 20px);
+            line-height: 1.5;
+            max-width: 96%;
+          }
+
+          .s1Hint {
+            font-size: clamp(16px, 4.4vw, 20px);
+            line-height: 1.45;
+            max-width: 96%;
+          }
+
+          .h1 {
+            font-size: clamp(24px, 7vw, 34px);
+          }
+
+          .lead {
+            font-size: 15px;
+            line-height: 1.5;
+          }
+
+          .hint {
+            font-size: 13px;
+          }
+
+          .qa {
+            gap: 10px;
+            margin-top: 14px;
+          }
+
+          .prev,
+          .sumItem {
+            border-radius: 16px;
+            padding: 11px 12px;
+          }
+
+          .ta {
+            min-height: 150px;
+            padding: 13px 14px;
+            font-size: 14px;
+            border-radius: 16px;
+          }
+
+          .finalLine {
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 10px 10px;
+          }
+
+          .contactRow {
+            gap: 12px;
+          }
+
+          .cItem {
+            min-height: unset;
+            padding: 16px 14px;
+            border-radius: 18px;
+            gap: 12px;
+          }
+
+          .cItemWhatsapp {
+            align-items: stretch;
+          }
+
+          .cLabel {
+            font-size: 13px;
+          }
+
+          .cText {
+            font-size: 14px;
+            line-height: 1.35;
+            max-width: none;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: unset;
+          }
+
+          .cBottom {
+            align-items: flex-start;
+          }
+
+          .cBottom2 {
+            gap: 6px;
           }
 
           .qrWrap {
-            padding: 7px;
+            align-self: center;
+            padding: 8px;
+            border-radius: 15px;
+          }
+
+          .qr {
+            width: 102px;
+            height: 102px;
+          }
+
+          .microText {
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 10px 10px;
+          }
+
+          .edgeNav {
+            top: auto;
+            bottom: 82px;
+            transform: none;
+            width: 46px;
+            height: 46px;
+          }
+
+          .edgeNav:hover {
+            transform: scale(1.03);
+          }
+
+          .edgeNav.left {
+            left: 10px;
+          }
+
+          .edgeNav.right {
+            right: 10px;
+          }
+
+          .edgeDots {
+            bottom: 18px;
+            gap: 8px;
+            padding: 8px 12px;
+          }
+
+          .dot {
+            width: 8px;
+            height: 8px;
+          }
+
+          .orbit {
+            display: none;
+          }
+        }
+
+        @media (max-width: 700px) {
+          .sumGrid4 {
+            grid-template-columns: 1fr;
+          }
+
+          .screen7 {
+            padding-top: 2.5vh;
+          }
+
+          .card7 {
+            max-height: calc(100vh - 14px - 88px - 2.5vh);
+          }
+
+          .card {
+            padding: 18px 13px;
+          }
+
+          .h1 {
+            font-size: clamp(22px, 7.6vw, 30px);
+          }
+
+          .lead {
+            font-size: 14px;
+          }
+
+          .sumK,
+          .prevTitle {
+            font-size: 11.5px;
+          }
+
+          .sumV,
+          .prevText {
+            font-size: 13.5px;
+          }
+
+          .cItem {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .cMain {
+            width: 100%;
+          }
+
+          .qrWrap {
+            align-self: center;
+            margin-top: 2px;
+          }
+
+          .qr {
+            width: 112px;
+            height: 112px;
+          }
+
+          .microText {
+            margin-top: 0;
           }
         }
 
