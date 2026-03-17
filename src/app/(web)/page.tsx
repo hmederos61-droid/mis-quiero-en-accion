@@ -318,7 +318,7 @@ export default function WebPublicCoachingPersonal() {
         eyebrow: "",
         title: "Esto es lo que estás viendo hoy",
         lead:
-          "Si lo que escribiste tiene sentido para vos, quizá sea momento de conversarlo.\n\nUna primera charla breve, clara, sin presión. Con intención.",
+          "Si lo que escribiste tiene sentido para vos, quizá sea momento de conversarlo.\n\nUna primera charla breve, clara, sin presión, con intención.",
         hint: "",
       },
     ],
@@ -634,7 +634,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
                         </div>
 
                         <div className="finalLine">
-                          Esto puede quedar como un ejercicio personal. O puede convertirse en una conversación.
+                          Esto puede quedar como un ejercicio personal, o puede convertirse en el inicio de nuevas posibilidades.
                         </div>
 
                         <div className="contactRow" aria-label="Contacto">
