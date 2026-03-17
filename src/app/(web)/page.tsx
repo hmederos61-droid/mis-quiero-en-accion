@@ -1078,7 +1078,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           opacity: 0.94;
           color: rgba(245, 241, 232, 0.92);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-          max-width: min(920px, 72%);
+          max-width: min(1100px, 82%);
           text-wrap: balance;
           font-weight: 500;
         }
