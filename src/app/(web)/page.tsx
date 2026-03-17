@@ -275,7 +275,7 @@ export default function WebPublicCoachingPersonal() {
         eyebrow: "COACHING PERSONAL",
         title: "Coaching ontológico individual",
         lead:
-          "Un espacio profesional que te brinde las herramientas necesarias\npara que puedas descubrir tus propias posibilidades de cambio.",
+          "Un espacio profesional\nque te brinde las herramientas necesarias\npara que puedas descubrir\ntus propias posibilidades de cambio.",
         hint: "Si algo de esto resuena en vos,\nte invito a seguir el recorrido.",
       },
       {
@@ -487,25 +487,29 @@ export default function WebPublicCoachingPersonal() {
                       <div className="s1">
                         <div className="s1Title">{s.title}</div>
 
-                        <div className="s1Lead">
-                          {s.lead.split("\n").map((line, idx) => (
-                            <React.Fragment key={idx}>
-                              {line}
-                              <br />
-                            </React.Fragment>
-                          ))}
-                        </div>
-
-                        <div className="s1Lead2">
-                          {`El foco está puesto en que puedas observar cómo estás interpretando lo que hoy te pasa
-y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
-                            .split("\n")
-                            .map((line, idx) => (
+                        <div className="s1Body">
+                          <div className="s1Lead">
+                            {s.lead.split("\n").map((line, idx) => (
                               <React.Fragment key={idx}>
                                 {line}
                                 <br />
                               </React.Fragment>
                             ))}
+                          </div>
+
+                          <div className="s1Lead2">
+                            {`El foco está puesto en que puedas observar
+cómo estás interpretando lo que hoy te pasa
+y desde ahí descubrir nuevas posibilidades
+para ponerte en acción.`
+                              .split("\n")
+                              .map((line, idx) => (
+                                <React.Fragment key={idx}>
+                                  {line}
+                                  <br />
+                                </React.Fragment>
+                              ))}
+                          </div>
                         </div>
 
                         <div className="s1Hint">
@@ -1029,7 +1033,7 @@ y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
         }
 
         .card.screen1 {
-          padding: 46px 70px;
+          padding: 42px 70px;
           display: flex;
           align-items: stretch;
           justify-content: center;
@@ -1042,9 +1046,10 @@ y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-start;
-          padding-top: 5vh;
-          gap: 22px;
+          justify-content: space-between;
+          padding-top: 2.5vh;
+          padding-bottom: 2.5vh;
+          gap: 18px;
         }
 
         .s1Title {
@@ -1055,41 +1060,51 @@ y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
           color: rgba(245, 241, 232, 0.98);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
           text-wrap: balance;
+          max-width: min(1120px, 92%);
+        }
+
+        .s1Body {
+          flex: 1;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 34px;
         }
 
         .s1Lead {
           font-size: clamp(22px, 2.05vw, 28px);
-          line-height: 1.62;
+          line-height: 1.56;
           opacity: 0.94;
           color: rgba(245, 241, 232, 0.92);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-          max-width: min(920px, 74%);
+          max-width: min(920px, 72%);
           text-wrap: balance;
           font-weight: 500;
         }
 
         .s1Lead2 {
           font-size: clamp(21px, 1.95vw, 27px);
-          line-height: 1.62;
+          line-height: 1.56;
           opacity: 0.92;
           color: rgba(245, 241, 232, 0.9);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-          max-width: min(880px, 70%);
+          max-width: min(900px, 72%);
           text-wrap: balance;
           font-weight: 500;
         }
 
         .s1Hint {
-          margin-top: auto;
-          padding-bottom: 4.5vh;
           font-size: clamp(21px, 1.9vw, 26px);
-          line-height: 1.5;
+          line-height: 1.48;
           opacity: 0.95;
           color: rgba(245, 241, 232, 0.94);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
           max-width: min(820px, 68%);
           text-wrap: balance;
           font-weight: 500;
+          margin-top: 0;
         }
 
         @media (max-width: 900px) {
@@ -1098,8 +1113,13 @@ y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
           }
 
           .s1 {
-            padding-top: 3.5vh;
-            gap: 16px;
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            gap: 14px;
+          }
+
+          .s1Body {
+            gap: 22px;
           }
 
           .s1Lead,
