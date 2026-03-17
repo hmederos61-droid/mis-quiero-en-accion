@@ -24,9 +24,10 @@ type Quote = {
  * - dim: oscurecimiento global de pantalla (0..1)
  * - cardDim: oscurecimiento interno de card (0..1) ✅ (por pantalla)
  *
- * ✅ NUEVO:
- * - Pantalla 0 usa /portada.png (solo CTA "Iniciar recorrido")
- * - Pantallas 1..7: más nítidas y menos oscuras, en degradé luminoso hacia la 7
+ * ✅ AJUSTE:
+ * - Pantalla 0 mantiene /portada.png pero ahora con tratamiento fotográfico:
+ *   más clara, menos saturada, con velo suave y card protagonista
+ * - Pantallas 1..7: se conservan en lógica glass
  */
 const SCREEN_STEPS: ReadonlyArray<{
   img: string;
@@ -35,10 +36,7 @@ const SCREEN_STEPS: ReadonlyArray<{
   dim: number;
   cardDim: number;
 }> = [
-  // 0 (Portada) — más clara, sin card protagonista
-  { img: "/portada.png", overlay: 0.0, blur: 0.0, dim: 0.0, cardDim: 0.12 }, // 0
-
-  // 1..7 (Web) — degradé: de más contraste a más luminoso
+  { img: "/portada.png", overlay: 0.3, blur: 0.7, dim: 0.06, cardDim: 0.16 }, // 0
   { img: "/webwelcome.png", overlay: 0.1, blur: 0.22, dim: 0.22, cardDim: 0.56 }, // 1
   { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 2
   { img: "/webwelcome.png", overlay: 0.1, blur: 0.2, dim: 0.22, cardDim: 0.56 }, // 3
@@ -58,8 +56,6 @@ function clamp01(n: number) {
  * - arriba-derecha
  * - NO clickeable
  * - NO visible en Pantalla 0
- *
- * 👉 Acá ajustás TODO sin tocar lógica.
  */
 const LOGO_CFG = {
   enabled: true,
@@ -67,55 +63,54 @@ const LOGO_CFG = {
   alt: "Hugo Mederos",
   hideOnScreens: [0 as ScreenKey],
 
-  // Posición (desktop)
   top: "30px",
   right: "40px",
 
-  // Tamaño discreto (responsive)
-  width: "clamp(90px, 9vw, 120px)",
-  opacity: 0.95,
+  width: "clamp(88px, 8vw, 112px)",
+  opacity: 0.92,
   zIndex: 90,
 
-  // Backplate ultra sutil (discreto, premium)
   plate: {
     enabled: true,
     padding: "10px 12px",
     radius: "16px",
-    bg: "rgba(255,255,255,0.14)",
-    border: "1px solid rgba(255,255,255,0.22)",
+    bg: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.18)",
     blur: "10px",
-    shadow: "0 10px 26px rgba(0,0,0,0.18)",
+    shadow: "0 10px 26px rgba(0,0,0,0.16)",
   },
 
-  // Sombra del logo (separación del fondo)
-  logoShadow: "0 6px 18px rgba(0,0,0,0.22)",
+  logoShadow: "0 6px 18px rgba(0,0,0,0.18)",
 
-  // Mobile (override fino)
   mobile: {
     top: "18px",
     right: "18px",
-    width: "clamp(78px, 22vw, 100px)",
+    width: "clamp(74px, 22vw, 94px)",
     padding: "8px 10px",
     radius: "14px",
   },
 } as const;
 
 /**
- * ✅ PORTADA CTA (Pantalla 0) — Ajuste fino
+ * ✅ PORTADA — AJUSTE FINO
  * Objetivo:
- * - La imagen NO se recorta ni se “zoomea”
- * - El botón y el texto SIEMPRE se leen (placa glass)
+ * - conservar la imagen fotográfica
+ * - aclararla y suavizarla
+ * - ordenar la lectura con una card central protagonista
  */
 const PORTADA_CTA_CFG = {
-  topDesktop: "18%", // antes 20% -> un poco más abajo para evitar el sol
-  topMobile: "16%",
+  widthDesktop: "min(76vw, 980px)",
+  widthMobile: "min(92vw, 980px)",
+  minHeightDesktop: "min(66vh, 720px)",
+  minHeightMobile: "auto",
   plate: {
-    padding: "14px 16px",
-    radius: "22px",
-    bg: "rgba(0,0,0,0.28)",
-    border: "1px solid rgba(255,255,255,0.18)",
-    blur: "14px",
-    shadow: "0 26px 80px rgba(0,0,0,0.36)",
+    paddingDesktop: "44px 52px 40px",
+    paddingMobile: "28px 20px 24px",
+    radius: "34px",
+    bg: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.26)",
+    blur: "26px",
+    shadow: "0 34px 110px rgba(0,0,0,0.24)",
   },
 } as const;
 
@@ -187,7 +182,6 @@ export default function WebPublicCoachingPersonal() {
   const [mounted, setMounted] = useState(false);
   const [screen, setScreen] = useState<ScreenKey>(0);
 
-  // respuestas (se acumulan y se muestran en pantallas siguientes)
   const [a1, setA1] = useState("");
   const [a2, setA2] = useState("");
   const [a3, setA3] = useState("");
@@ -274,7 +268,6 @@ export default function WebPublicCoachingPersonal() {
 
   const screens = useMemo(
     () => [
-      // ✅ NUEVA Pantalla 0 (Portada + CTA)
       {
         k: 0 as ScreenKey,
         eyebrow: "",
@@ -282,18 +275,14 @@ export default function WebPublicCoachingPersonal() {
         lead: "",
         hint: "",
       },
-
-      // ✅ Pantalla 1 (antes 0)
       {
         k: 1 as ScreenKey,
         eyebrow: "COACHING PERSONAL",
         title: "Coaching ontológico individual",
         lead:
-         "Un espacio profesional que te brinde las herramientas necesarias\npara que puedas descubrir tus propias posibilidades de cambio.",
+          "Un espacio profesional que te brinda las herramientas necesarias\npara que puedas descubrir tus propias posibilidades de cambio.",
         hint: "Si algo de esto resuena en vos,\nte invito a seguir el recorrido.",
       },
-
-      // ✅ Pantalla 2 (antes 1)
       {
         k: 2 as ScreenKey,
         eyebrow: "",
@@ -301,8 +290,6 @@ export default function WebPublicCoachingPersonal() {
         lead: "El coaching ontológico se nutre de diversas corrientes del pensamiento humano.",
         hint: "",
       },
-
-      // ✅ Pantalla 3 (antes 2)
       {
         k: 3 as ScreenKey,
         eyebrow: "",
@@ -310,8 +297,6 @@ export default function WebPublicCoachingPersonal() {
         lead: "Primera parada del viaje",
         hint: "",
       },
-
-      // ✅ Pantalla 4 (antes 3)
       {
         k: 4 as ScreenKey,
         eyebrow: "",
@@ -319,8 +304,6 @@ export default function WebPublicCoachingPersonal() {
         lead: "Imaginando posibilidades",
         hint: "",
       },
-
-      // ✅ Pantalla 5 (antes 4)
       {
         k: 5 as ScreenKey,
         eyebrow: "",
@@ -328,8 +311,6 @@ export default function WebPublicCoachingPersonal() {
         lead: "Espacio de decisión",
         hint: "",
       },
-
-      // ✅ Pantalla 6 (antes 5)
       {
         k: 6 as ScreenKey,
         eyebrow: "",
@@ -337,8 +318,6 @@ export default function WebPublicCoachingPersonal() {
         lead: "Momento de elección",
         hint: "",
       },
-
-      // ✅ Pantalla 7 (antes 6)
       {
         k: 7 as ScreenKey,
         eyebrow: "",
@@ -382,7 +361,6 @@ export default function WebPublicCoachingPersonal() {
   const canGoNext = useMemo(() => {
     const t = (v: string) => v.trim().length >= 3;
 
-    // ✅ preguntas ahora son 3..6 (antes 2..5)
     if (screen === 3) return t(a1);
     if (screen === 4) return t(a2);
     if (screen === 5) return t(a3);
@@ -398,13 +376,9 @@ export default function WebPublicCoachingPersonal() {
   const showLeft = screen > 0;
   const showRight = screen < 7;
 
-  // ✅ ancho card por pantalla
-  // - Pantalla 1 (antes 0): 75% ancho y alto
-  // - Pantalla 7 (antes 6): expandida
   const cardWidth = screen === 1 ? "75vw" : screen === 7 ? "82vw" : "45vw";
   const cardHeight = screen === 1 ? "75vh" : "auto";
 
-  // ✅ Tamaño QR (solo se usa para el QR local de WhatsApp)
   const qrSize = 56;
 
   const showLogo = useMemo(() => {
@@ -412,12 +386,10 @@ export default function WebPublicCoachingPersonal() {
     return !LOGO_CFG.hideOnScreens.includes(screen);
   }, [screen]);
 
-  // ✅ Regla clave: Pantalla 0 SOLO portada.png (sin bg / sin overlay)
   const isPortadaGlobal = screen === 0;
 
   return (
     <main className="page" data-screen={screen}>
-      {/* ✅ Background + overlay SOLO en pantallas 1..7 */}
       {!isPortadaGlobal && (
         <>
           <div
@@ -425,7 +397,7 @@ export default function WebPublicCoachingPersonal() {
             aria-hidden="true"
             style={{
               backgroundImage: `url("${step.img}")`,
-              filter: `saturate(1.06) contrast(1.02) brightness(1.06) blur(${blurLevel}px)`,
+              filter: `saturate(1.04) contrast(1.01) brightness(1.06) blur(${blurLevel}px)`,
               transform: "scale(1.06)",
             }}
           />
@@ -451,7 +423,6 @@ export default function WebPublicCoachingPersonal() {
         </>
       )}
 
-      {/* ✅ Logo global (fuera de la card, fijo al viewport) */}
       {showLogo && (
         <div className={`brandFixed ${mounted ? "in" : ""}`} aria-hidden="true">
           <div className="brandPlate">
@@ -460,7 +431,6 @@ export default function WebPublicCoachingPersonal() {
         </div>
       )}
 
-      {/* ✅ Órbita ahora es pantalla 2 (antes 1) */}
       {screen === 2 && (
         <section className="orbit" aria-label="Voces orbitales">
           <div className="orbitInner" aria-hidden="true">
@@ -486,26 +456,44 @@ export default function WebPublicCoachingPersonal() {
         <div className="track" style={trackStyle}>
           {screens.map((s) => {
             const isPortada = s.k === 0;
-            const isHero = s.k === 1; // antes pantalla 0
-            const isOne = s.k === 2; // antes pantalla 1
+            const isHero = s.k === 1;
+            const isOne = s.k === 2;
             const isQBlock = s.k >= 3 && s.k <= 7;
 
             return (
               <article
-               key={s.k}
-               className={`screen ${isPortada ? "screenPortada" : ""} ${s.k === 7 ? "screen7" : ""}`}
-               aria-label={`Pantalla ${s.k + 1}`}
+                key={s.k}
+                className={`screen ${isPortada ? "screenPortada" : ""} ${s.k === 7 ? "screen7" : ""}`}
+                aria-label={`Pantalla ${s.k + 1}`}
               >
-                {/* ✅ PANTALLA 0: SOLO portada.png full-screen (sin fondos extra) */}
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
                     <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
+                    <div className="portadaFx" aria-hidden="true" />
+
                     <div className="portadaCTA">
                       <div className="portadaPlate">
+                        <div className="portadaEyebrow">COACHING ONTOLÓGICO PERSONAL</div>
+
+                        <h1 className="portadaTitle">
+                          Una nueva mirada
+                          <br />
+                          puede abrir un nuevo camino
+                        </h1>
+
+                        <div className="portadaLead">
+                          Un espacio profesional para revisar cómo estás interpretando lo que te ocurre
+                          <br />
+                          y descubrir nuevas posibilidades de acción.
+                        </div>
+
+                        <div className="portadaHint">
+                          A veces, un proceso de cambio empieza con detenerse, mirar distinto y dar un primer paso.
+                        </div>
+
                         <button className="cta" onClick={next} aria-label="Iniciar recorrido">
                           Iniciar recorrido
                         </button>
-                        <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
                       </div>
                     </div>
                   </div>
@@ -533,8 +521,8 @@ export default function WebPublicCoachingPersonal() {
                         </div>
 
                         <div className="s1Lead2">
-                          {"El foco está puesto en que puedas observar cómo estás interpretando lo que hoy te pasa\ny desde ahí descubrir tus nuevas posibilidades."
-
+                          {`El foco está puesto en que puedas observar cómo estás interpretando lo que hoy te pasa
+y desde ahí descubrir nuevas posibilidades para ponerte en acción.`
                             .split("\n")
                             .map((line, idx) => (
                               <React.Fragment key={idx}>
@@ -576,7 +564,6 @@ export default function WebPublicCoachingPersonal() {
                       </>
                     )}
 
-                    {/* ✅ Preguntas (ahora 3..6) */}
                     {s.k === 3 && (
                       <div className="qa">
                         <textarea
@@ -646,7 +633,6 @@ export default function WebPublicCoachingPersonal() {
                       </div>
                     )}
 
-                    {/* ✅ Resumen (ahora pantalla 7) */}
                     {s.k === 7 && (
                       <div className="summary">
                         <div className="sumGrid sumGrid4">
@@ -688,7 +674,6 @@ export default function WebPublicCoachingPersonal() {
                                 </span>
                               </div>
                             </div>
-                            {/* ✅ QR local en /public */}
                             <img className="qr" src="/whatsapp.jpeg" alt="QR WhatsApp" />
                           </div>
 
@@ -774,7 +759,6 @@ export default function WebPublicCoachingPersonal() {
           font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         }
 
-        /* ✅ BLINDAJE GLOBAL: fuerza quiebre de texto aun sin espacios (todas las pantallas) */
         .page,
         .page * {
           overflow-wrap: anywhere;
@@ -802,33 +786,37 @@ export default function WebPublicCoachingPersonal() {
           overflow: hidden;
           z-index: 20;
         }
+
         .track {
           height: 100%;
           width: 800vw;
           display: flex;
           transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
         }
+
         .screen {
-         width: 100vw;
-         height: 100vh;
-         flex: 0 0 100vw;
-         display: grid;
-         place-items: center;
-         padding: 18px 18px 22px;
+          width: 100vw;
+          height: 100vh;
+          flex: 0 0 100vw;
+          display: grid;
+          place-items: center;
+          padding: 18px 18px 22px;
         }
 
         .screenPortada {
-         padding: 0;
+          padding: 0;
         }
 
-        /* Pantalla 7 (antes 6) */
         .screen7 {
           align-items: start;
           justify-items: center;
           padding-top: 7.5vh;
         }
 
-        /* ✅ PANTALLA 0 — SOLO imagen full-screen (sin fondo extra) */
+        /* =========================
+           PORTADA / PANTALLA 0
+        ========================= */
+
         .portadaStage {
           position: relative;
           width: 100%;
@@ -838,85 +826,150 @@ export default function WebPublicCoachingPersonal() {
           transform: translateY(10px);
           display: grid;
           place-items: center;
+          background: #101010;
         }
+
         .portadaStage.in {
           opacity: 1;
           transform: translateY(0);
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
 
-        /* ✅ CLAVE: NO recorta / NO zoom / NO “cover”
-           - contain respeta la imagen original
-           - centrada, completa, sin deformar
-        */
         .portadaImg {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover; /* ✅ antes: cover (recortaba y zoomeaba) */
+          object-fit: cover;
           object-position: center center;
           user-select: none;
           pointer-events: none;
-          filter: none; /* ✅ sin filtros extra */
+          filter: saturate(0.82) contrast(0.9) brightness(1.05) blur(0.4px);
+          transform: scale(1.015);
+        }
+
+        .portadaFx {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background:
+            radial-gradient(1200px 560px at 55% 26%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 62%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.18) 56%, rgba(255, 255, 255, 0.26) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.08));
         }
 
         .portadaCTA {
-          position: absolute;
-          left: 50%;
-          top: ${PORTADA_CTA_CFG.topDesktop};
-          transform: translateX(-50%);
+          position: relative;
           z-index: 6;
+          width: 100%;
+          height: 100%;
           display: grid;
-          gap: 10px;
           place-items: center;
-          text-align: center;
-          padding: 0 14px;
+          padding: 32px 22px 40px;
         }
 
-        /* ✅ PLACA glass para que se LEA siempre */
         .portadaPlate {
-          display: grid;
-          gap: 10px;
-          place-items: center;
-          padding: ${PORTADA_CTA_CFG.plate.padding};
+          width: ${PORTADA_CTA_CFG.widthDesktop};
+          min-height: ${PORTADA_CTA_CFG.minHeightDesktop};
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 22px;
+          text-align: center;
+          padding: ${PORTADA_CTA_CFG.plate.paddingDesktop};
           border-radius: ${PORTADA_CTA_CFG.plate.radius};
           background: ${PORTADA_CTA_CFG.plate.bg};
           border: ${PORTADA_CTA_CFG.plate.border};
           box-shadow: ${PORTADA_CTA_CFG.plate.shadow};
-          backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.08);
-          -webkit-backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.08);
+          backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.04);
+          -webkit-backdrop-filter: blur(${PORTADA_CTA_CFG.plate.blur}) saturate(1.04);
+          position: relative;
+          overflow: hidden;
         }
 
-        /* CTA (se mantiene tu estética) */
+        .portadaPlate::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background:
+            radial-gradient(800px 240px at 25% 18%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 60%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.12));
+          pointer-events: none;
+        }
+
+        .portadaPlate > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .portadaEyebrow {
+          font-size: clamp(12px, 0.95vw, 14px);
+          letter-spacing: 0.9px;
+          font-weight: 700;
+          color: rgba(245, 241, 232, 0.88);
+          text-transform: uppercase;
+        }
+
+        .portadaTitle {
+          margin: 0;
+          font-size: clamp(34px, 4.7vw, 68px);
+          line-height: 1.04;
+          font-weight: 540;
+          color: rgba(245, 241, 232, 0.98);
+          text-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+          text-wrap: balance;
+          max-width: 11ch;
+        }
+
+        .portadaLead {
+          font-size: clamp(18px, 1.8vw, 27px);
+          line-height: 1.58;
+          font-weight: 500;
+          color: rgba(245, 241, 232, 0.92);
+          text-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+          max-width: min(900px, 86%);
+          text-wrap: balance;
+        }
+
+        .portadaHint {
+          font-size: clamp(16px, 1.35vw, 21px);
+          line-height: 1.55;
+          font-weight: 500;
+          color: rgba(245, 241, 232, 0.84);
+          text-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+          max-width: min(760px, 82%);
+          text-wrap: balance;
+        }
+
         .cta {
-          border: 1px solid rgba(255, 255, 255, 0.26);
-          background: rgba(0, 0, 0, 0.26);
+          border: 1px solid rgba(255, 255, 255, 0.28);
+          background: rgba(255, 255, 255, 0.12);
           color: rgba(245, 241, 232, 0.99);
-          padding: 14px 22px;
+          padding: 15px 26px;
           border-radius: 999px;
           font-size: 18px;
           font-weight: 760;
           letter-spacing: 0.2px;
           cursor: pointer;
-          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
-          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
-        }
-        .cta:hover {
-          transform: scale(1.02);
-          border-color: rgba(255, 255, 255, 0.34);
-          background: rgba(0, 0, 0, 0.22);
-        }
-        .ctaHint {
-          color: rgba(245, 241, 232, 0.94);
-          font-weight: 620;
-          font-size: 16px;
-          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-          padding: 0 10px;
-          text-align: center;
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+          transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+          margin-top: 4px;
         }
 
-        /* ✅ Logo fijo global (parametrizable) */
+        .cta:hover {
+          transform: scale(1.02);
+          border-color: rgba(255, 255, 255, 0.4);
+          background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* =========================
+           LOGO FIJO
+        ========================= */
+
         .brandFixed {
           position: fixed;
           top: ${LOGO_CFG.top};
@@ -924,14 +977,16 @@ export default function WebPublicCoachingPersonal() {
           z-index: ${LOGO_CFG.zIndex};
           opacity: 0;
           transform: translateY(-6px);
-          pointer-events: none; /* NO clickeable */
+          pointer-events: none;
           user-select: none;
         }
+
         .brandFixed.in {
           opacity: 1;
           transform: translateY(0);
           transition: opacity 520ms ease 120ms, transform 520ms ease 120ms;
         }
+
         .brandPlate {
           display: inline-flex;
           align-items: center;
@@ -944,12 +999,17 @@ export default function WebPublicCoachingPersonal() {
           backdrop-filter: ${LOGO_CFG.plate.enabled ? `blur(${LOGO_CFG.plate.blur})` : "none"};
           -webkit-backdrop-filter: ${LOGO_CFG.plate.enabled ? `blur(${LOGO_CFG.plate.blur})` : "none"};
         }
+
         .brandImg {
           width: ${LOGO_CFG.width};
           height: auto;
           opacity: ${LOGO_CFG.opacity};
           filter: drop-shadow(${LOGO_CFG.logoShadow});
         }
+
+        /* =========================
+           CARD GENERAL
+        ========================= */
 
         .card {
           border-radius: 34px;
@@ -964,6 +1024,7 @@ export default function WebPublicCoachingPersonal() {
           opacity: 0;
           transform: translateY(10px);
         }
+
         .card::before {
           content: "";
           position: absolute;
@@ -972,53 +1033,23 @@ export default function WebPublicCoachingPersonal() {
           background: rgba(0, 0, 0, var(--cardDim, 0.26));
           pointer-events: none;
         }
+
         .card > * {
           position: relative;
           z-index: 1;
         }
+
         .card.in {
           opacity: 1;
           transform: translateY(0);
           transition: opacity 750ms ease 120ms, transform 750ms ease 120ms;
         }
 
-        /* ✅ scroll interno SOLO en la card de Pantalla 7 */
         .card7 {
           max-height: calc(100vh - 18px - 22px - 7.5vh);
           overflow-y: auto;
           overscroll-behavior: contain;
           padding-bottom: 18px;
-        }
-
-        @media (max-width: 900px) {
-          .card {
-            width: min(92vw, 980px) !important;
-            max-width: 980px !important;
-            padding: 22px 18px;
-          }
-          .screen7 {
-            padding-top: 5.5vh;
-          }
-          .card7 {
-            max-height: calc(100vh - 18px - 22px - 5.5vh);
-          }
-
-          .portadaCTA {
-            top: ${PORTADA_CTA_CFG.topMobile};
-          }
-
-          /* logo mobile override */
-          .brandFixed {
-            top: ${LOGO_CFG.mobile.top};
-            right: ${LOGO_CFG.mobile.right};
-          }
-          .brandPlate {
-            padding: ${LOGO_CFG.mobile.padding};
-            border-radius: ${LOGO_CFG.mobile.radius};
-          }
-          .brandImg {
-            width: ${LOGO_CFG.mobile.width};
-          }
         }
 
         .eyebrow {
@@ -1029,6 +1060,7 @@ export default function WebPublicCoachingPersonal() {
           margin-bottom: 10px;
           font-weight: 500;
         }
+
         .h1 {
           margin: 0;
           font-size: clamp(28px, 3.1vw, 46px);
@@ -1037,6 +1069,7 @@ export default function WebPublicCoachingPersonal() {
           color: rgba(245, 241, 232, 0.96);
           text-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
         }
+
         .h1Center {
           text-align: center;
           width: 100%;
@@ -1052,6 +1085,7 @@ export default function WebPublicCoachingPersonal() {
           color: rgba(245, 241, 232, 0.88);
           font-weight: 500;
         }
+
         .hint {
           margin: 12px 0 0;
           font-size: 14px;
@@ -1069,6 +1103,7 @@ export default function WebPublicCoachingPersonal() {
           justify-content: center;
           text-align: center;
         }
+
         .s1 {
           width: 100%;
           height: 100%;
@@ -1079,6 +1114,7 @@ export default function WebPublicCoachingPersonal() {
           padding-top: 5vh;
           gap: 22px;
         }
+
         .s1Title {
           font-size: clamp(44px, 4vw, 64px);
           line-height: 1.05;
@@ -1088,6 +1124,7 @@ export default function WebPublicCoachingPersonal() {
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
           text-wrap: balance;
         }
+
         .s1Lead {
           font-size: clamp(22px, 2.05vw, 28px);
           line-height: 1.62;
@@ -1098,6 +1135,7 @@ export default function WebPublicCoachingPersonal() {
           text-wrap: balance;
           font-weight: 500;
         }
+
         .s1Lead2 {
           font-size: clamp(21px, 1.95vw, 27px);
           line-height: 1.62;
@@ -1108,6 +1146,7 @@ export default function WebPublicCoachingPersonal() {
           text-wrap: balance;
           font-weight: 500;
         }
+
         .s1Hint {
           margin-top: auto;
           padding-bottom: 4.5vh;
@@ -1121,21 +1160,6 @@ export default function WebPublicCoachingPersonal() {
           font-weight: 500;
         }
 
-        @media (max-width: 900px) {
-          .card.screen1 {
-            padding: 32px 22px;
-          }
-          .s1 {
-            padding-top: 3.5vh;
-            gap: 16px;
-          }
-          .s1Lead,
-          .s1Lead2,
-          .s1Hint {
-            max-width: 92%;
-          }
-        }
-
         /* Pantalla 2 */
         .s2Center {
           width: 100%;
@@ -1146,9 +1170,11 @@ export default function WebPublicCoachingPersonal() {
           gap: 10px;
           padding: 4px 6px;
         }
+
         .s2Title {
           text-wrap: balance;
         }
+
         .s2Lead {
           margin-top: 0;
           max-width: 36ch;
@@ -1162,10 +1188,12 @@ export default function WebPublicCoachingPersonal() {
           z-index: 24;
           pointer-events: none;
         }
+
         .orbitInner {
           position: absolute;
           inset: 0;
         }
+
         .orbCard {
           position: absolute;
           transform: translate(-50%, -50%);
@@ -1178,13 +1206,16 @@ export default function WebPublicCoachingPersonal() {
           opacity: 0;
           filter: blur(0px);
         }
+
         .orbCard.em {
           background: rgba(255, 246, 236, 0.94);
         }
+
         .orbCard.in {
           animation: orbIn 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
           animation-delay: var(--d, 0.25s);
         }
+
         @keyframes orbIn {
           from {
             opacity: 0;
@@ -1195,6 +1226,7 @@ export default function WebPublicCoachingPersonal() {
             transform: translate(-50%, -50%);
           }
         }
+
         .orbText {
           margin: 0;
           font-family: ui-serif, Georgia, "Times New Roman", serif;
@@ -1203,6 +1235,7 @@ export default function WebPublicCoachingPersonal() {
           color: rgba(18, 16, 12, 0.9);
           font-weight: 500;
         }
+
         .orbAuth {
           margin-top: 8px;
           font-size: 13px;
@@ -1230,6 +1263,7 @@ export default function WebPublicCoachingPersonal() {
           user-select: none;
           box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22);
         }
+
         .edgeNav::before {
           content: "";
           position: absolute;
@@ -1238,6 +1272,7 @@ export default function WebPublicCoachingPersonal() {
           background: rgba(0, 0, 0, var(--edgeDim, 0.34));
           pointer-events: none;
         }
+
         .edgeNav::after {
           content: "";
           position: absolute;
@@ -1247,21 +1282,26 @@ export default function WebPublicCoachingPersonal() {
           background: radial-gradient(54px 54px at 30% 25%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 62%);
           opacity: 0.95;
         }
+
         .edgeNav:hover {
           transform: translateY(-50%) scale(1.04);
           border-color: rgba(255, 255, 255, 0.82);
           background: rgba(255, 255, 255, 0.14);
         }
+
         .edgeNav:disabled {
           opacity: 0.45;
           cursor: not-allowed;
         }
+
         .edgeNav.left {
           left: 24px;
         }
+
         .edgeNav.right {
           right: 24px;
         }
+
         .chev {
           position: relative;
           z-index: 1;
@@ -1291,6 +1331,7 @@ export default function WebPublicCoachingPersonal() {
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
         }
+
         .dot {
           width: 10px;
           height: 10px;
@@ -1300,6 +1341,7 @@ export default function WebPublicCoachingPersonal() {
           background: rgba(245, 241, 232, 0.35);
           box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
         }
+
         .dot.on {
           background: rgba(245, 241, 232, 0.92);
         }
@@ -1310,7 +1352,6 @@ export default function WebPublicCoachingPersonal() {
           gap: 12px;
         }
 
-        /* Contraste interno */
         .prev {
           padding: 12px 14px;
           border-radius: 18px;
@@ -1319,6 +1360,7 @@ export default function WebPublicCoachingPersonal() {
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
+
         .prevTitle {
           font-size: 12px;
           text-transform: none;
@@ -1327,6 +1369,7 @@ export default function WebPublicCoachingPersonal() {
           color: rgba(245, 241, 232, 0.9);
           font-weight: 520;
         }
+
         .prevText {
           margin-top: 6px;
           font-size: 14px;
@@ -1337,6 +1380,7 @@ export default function WebPublicCoachingPersonal() {
           font-weight: 560;
           text-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
         }
+
         .prevSpacer {
           height: 10px;
         }
@@ -1358,11 +1402,13 @@ export default function WebPublicCoachingPersonal() {
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
+
         .ta::placeholder {
           color: rgba(245, 241, 232, 0.62);
           text-shadow: none;
           opacity: 0.95;
         }
+
         .ta:focus {
           border-color: rgba(255, 255, 255, 0.38);
           background: rgba(0, 0, 0, 0.18);
@@ -1379,7 +1425,6 @@ export default function WebPublicCoachingPersonal() {
           gap: 10px;
         }
 
-        /* Pantalla 7: 4 columnas 1 fila */
         .sumGrid4 {
           grid-template-columns: repeat(4, minmax(0, 1fr));
         }
@@ -1395,6 +1440,7 @@ export default function WebPublicCoachingPersonal() {
           display: flex;
           flex-direction: column;
         }
+
         .sumK {
           font-size: 12px;
           text-transform: none;
@@ -1440,12 +1486,6 @@ export default function WebPublicCoachingPersonal() {
           margin-top: 2px;
         }
 
-        /* =========================
-           ✅ CONTACTO — BLOQUES CON COLOR REAL (tipo botón)
-           - el gradiente principal va en .cItem:nth-child(n)
-           - ::before y ::after son brillo/glow
-        ========================= */
-
         .cItem {
           position: relative;
           overflow: hidden;
@@ -1455,18 +1495,14 @@ export default function WebPublicCoachingPersonal() {
           gap: 12px;
           padding: 20px 20px;
           border-radius: 22px;
-
-          /* ✅ base neutra: el color fuerte lo define cada nth-child */
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.14);
-
           min-height: 110px;
           box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
           backdrop-filter: blur(14px) saturate(1.08);
           -webkit-backdrop-filter: blur(14px) saturate(1.08);
         }
 
-        /* brillo suave encima del color (abajo del texto) */
         .cItem::before {
           content: "";
           position: absolute;
@@ -1477,7 +1513,6 @@ export default function WebPublicCoachingPersonal() {
           opacity: 0.85;
         }
 
-        /* glow exterior difuso */
         .cItem::after {
           content: "";
           position: absolute;
@@ -1488,26 +1523,26 @@ export default function WebPublicCoachingPersonal() {
           opacity: 0.55;
         }
 
-        /* WhatsApp — verde tipo botón */
         .cItem:nth-child(1) {
           background: linear-gradient(135deg, rgba(78, 190, 125, 0.88), rgba(120, 170, 70, 0.78));
         }
+
         .cItem:nth-child(1)::after {
           background: radial-gradient(700px 260px at 20% 45%, rgba(78, 190, 125, 0.45), rgba(0, 0, 0, 0) 70%);
         }
 
-        /* Mail — azul violáceo */
         .cItem:nth-child(2) {
           background: linear-gradient(135deg, rgba(90, 120, 190, 0.88), rgba(150, 120, 210, 0.78));
         }
+
         .cItem:nth-child(2)::after {
           background: radial-gradient(700px 260px at 20% 45%, rgba(120, 140, 255, 0.45), rgba(0, 0, 0, 0) 70%);
         }
 
-        /* Aplicación — dorado cálido */
         .cItem:nth-child(3) {
           background: linear-gradient(135deg, rgba(205, 150, 60, 0.92), rgba(230, 180, 95, 0.82));
         }
+
         .cItem:nth-child(3)::after {
           background: radial-gradient(700px 260px at 20% 45%, rgba(230, 180, 95, 0.45), rgba(0, 0, 0, 0) 70%);
         }
@@ -1605,23 +1640,90 @@ export default function WebPublicCoachingPersonal() {
           .sumGrid4 {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
+
           .finalLine {
             white-space: normal;
           }
+
           .contactRow {
             grid-template-columns: 1fr;
           }
+
           .cText {
             max-width: 46ch;
           }
+
           .sumV {
             max-height: 170px;
           }
         }
 
         @media (max-width: 900px) {
+          .card {
+            width: min(92vw, 980px) !important;
+            max-width: 980px !important;
+            padding: 22px 18px;
+          }
+
+          .screen7 {
+            padding-top: 5.5vh;
+          }
+
+          .card7 {
+            max-height: calc(100vh - 18px - 22px - 5.5vh);
+          }
+
+          .portadaCTA {
+            padding: 20px 14px 30px;
+          }
+
+          .portadaPlate {
+            width: ${PORTADA_CTA_CFG.widthMobile};
+            min-height: ${PORTADA_CTA_CFG.minHeightMobile};
+            padding: ${PORTADA_CTA_CFG.plate.paddingMobile};
+            gap: 16px;
+          }
+
+          .portadaTitle {
+            max-width: 12ch;
+          }
+
+          .portadaLead,
+          .portadaHint {
+            max-width: 96%;
+          }
+
+          .card.screen1 {
+            padding: 32px 22px;
+          }
+
+          .s1 {
+            padding-top: 3.5vh;
+            gap: 16px;
+          }
+
+          .s1Lead,
+          .s1Lead2,
+          .s1Hint {
+            max-width: 92%;
+          }
+
           .orbit {
             display: none;
+          }
+
+          .brandFixed {
+            top: ${LOGO_CFG.mobile.top};
+            right: ${LOGO_CFG.mobile.right};
+          }
+
+          .brandPlate {
+            padding: ${LOGO_CFG.mobile.padding};
+            border-radius: ${LOGO_CFG.mobile.radius};
+          }
+
+          .brandImg {
+            width: ${LOGO_CFG.mobile.width};
           }
         }
 
@@ -1629,21 +1731,25 @@ export default function WebPublicCoachingPersonal() {
           .track {
             transition: none !important;
           }
+
           .card {
             transition: none !important;
             opacity: 1 !important;
             transform: none !important;
           }
+
           .portadaStage {
             transition: none !important;
             opacity: 1 !important;
             transform: none !important;
           }
+
           .orbCard.in {
             animation: none !important;
             opacity: 1 !important;
             transform: translate(-50%, -50%) !important;
           }
+
           .brandFixed.in {
             transition: none !important;
             opacity: 1 !important;
