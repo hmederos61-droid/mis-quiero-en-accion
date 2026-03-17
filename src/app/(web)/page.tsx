@@ -62,11 +62,11 @@ const LOGO_CFG = {
   logoShadow: "0 6px 18px rgba(0,0,0,0.22)",
 
   mobile: {
-    top: "14px",
-    right: "14px",
-    width: "clamp(72px, 22vw, 92px)",
-    padding: "7px 9px",
-    radius: "12px",
+    top: "10px",
+    right: "10px",
+    width: "clamp(64px, 18vw, 82px)",
+    padding: "6px 8px",
+    radius: "11px",
   },
 } as const;
 
@@ -444,7 +444,9 @@ export default function WebPublicCoachingPersonal() {
                   </div>
                 ) : (
                   <div
-                    className={`card ${isHero ? "screen1" : ""} ${s.k === 7 ? "card7" : ""} ${mounted ? "in" : ""}`}
+                    className={`card ${isHero ? "screen1" : ""} ${s.k === 7 ? "card7" : ""} ${mounted ? "in" : ""} ${
+                      s.k === 2 ? "screen2Card" : ""
+                    }`}
                     style={{
                       width: cardWidth,
                       height: cardHeight,
@@ -493,6 +495,15 @@ descubrir nuevas posibilidades para ponerte en acción.`
                       <div className="s2Center">
                         <h1 className="h1 s2Title">{s.title}</h1>
                         <p className="lead s2Lead">{s.lead}</p>
+
+                        <div className="orbitMobile" aria-label="Frases de autores">
+                          {orbitQuotes.map((q) => (
+                            <figure key={`${q.id}-mobile`} className={`orbitMobileCard ${q.emphasis ? "em" : ""}`}>
+                              <blockquote className="orbitMobileText">“{q.text}”</blockquote>
+                              <figcaption className="orbitMobileAuth">— {q.author}</figcaption>
+                            </figure>
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -810,12 +821,14 @@ descubrir nuevas posibilidades para ponerte en acción.`
           place-items: center;
           text-align: center;
           padding: 0 14px;
+          width: min(520px, 88vw);
         }
 
         .portadaPlate {
           display: grid;
-          gap: 10px;
+          gap: 12px;
           place-items: center;
+          width: 100%;
           padding: ${PORTADA_CTA_CFG.plate.padding};
           border-radius: ${PORTADA_CTA_CFG.plate.radius};
           background: ${PORTADA_CTA_CFG.plate.bg};
@@ -837,6 +850,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           cursor: pointer;
           box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+          width: auto;
         }
 
         .cta:hover {
@@ -849,9 +863,11 @@ descubrir nuevas posibilidades para ponerte en acción.`
           color: rgba(245, 241, 232, 0.94);
           font-weight: 620;
           font-size: 16px;
+          line-height: 1.4;
           text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
           padding: 0 10px;
           text-align: center;
+          max-width: 34ch;
         }
 
         .brandFixed {
@@ -1070,6 +1086,10 @@ descubrir nuevas posibilidades para ponerte en acción.`
           opacity: 0.9;
         }
 
+        .screen2Card {
+          overflow-y: auto;
+        }
+
         .orbit {
           position: absolute;
           inset: 0;
@@ -1130,6 +1150,40 @@ descubrir nuevas posibilidades para ponerte en acción.`
           opacity: 0.78;
           color: rgba(18, 16, 12, 0.78);
           font-weight: 500;
+        }
+
+        .orbitMobile {
+          display: none;
+        }
+
+        .orbitMobileCard {
+          text-align: left;
+          width: 100%;
+          padding: 14px 14px;
+          border-radius: 16px;
+          background: rgba(255, 248, 241, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.56);
+          box-shadow: 0 16px 44px rgba(0, 0, 0, 0.14);
+        }
+
+        .orbitMobileCard.em {
+          background: rgba(255, 246, 236, 0.94);
+        }
+
+        .orbitMobileText {
+          margin: 0;
+          font-family: ui-serif, Georgia, "Times New Roman", serif;
+          font-style: italic;
+          line-height: 1.4;
+          color: rgba(18, 16, 12, 0.9);
+          font-weight: 500;
+        }
+
+        .orbitMobileAuth {
+          margin-top: 8px;
+          font-size: 12.5px;
+          color: rgba(18, 16, 12, 0.8);
+          font-weight: 600;
         }
 
         .edgeNav {
@@ -1591,6 +1645,27 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .portadaCTA {
             top: ${PORTADA_CTA_CFG.topMobile};
+            width: min(340px, 86vw);
+          }
+
+          .portadaPlate {
+            gap: 12px;
+            padding: 18px 16px 16px;
+            border-radius: 28px;
+          }
+
+          .cta {
+            width: min(220px, 64vw);
+            padding: 16px 18px;
+            font-size: 18px;
+            line-height: 1.2;
+            white-space: normal;
+          }
+
+          .ctaHint {
+            font-size: 15px;
+            line-height: 1.42;
+            max-width: 18ch;
           }
 
           .brandFixed {
@@ -1608,40 +1683,59 @@ descubrir nuevas posibilidades para ponerte en acción.`
           }
 
           .card.screen1 {
-            padding: 28px 18px;
+            padding: 24px 18px;
+            min-height: auto !important;
+            height: auto !important;
           }
 
           .s1 {
-            padding-top: 1.5vh;
-            padding-bottom: 1.5vh;
-            gap: 14px;
+            justify-content: flex-start;
+            padding-top: 1vh;
+            padding-bottom: 1vh;
+            gap: 12px;
           }
 
           .s1Body {
-            gap: 18px;
+            gap: 16px;
           }
 
           .s1Title {
-            font-size: clamp(30px, 8vw, 42px);
+            font-size: clamp(28px, 8vw, 40px);
             max-width: 100%;
           }
 
           .s1Lead {
-            font-size: clamp(17px, 4.8vw, 21px);
-            line-height: 1.5;
+            font-size: clamp(16px, 4.7vw, 20px);
+            line-height: 1.48;
             max-width: 96%;
           }
 
           .s1Lead2 {
-            font-size: clamp(16px, 4.5vw, 20px);
-            line-height: 1.5;
+            font-size: clamp(15px, 4.4vw, 19px);
+            line-height: 1.48;
             max-width: 96%;
           }
 
           .s1Hint {
-            font-size: clamp(16px, 4.4vw, 20px);
-            line-height: 1.45;
+            font-size: clamp(15px, 4.2vw, 18px);
+            line-height: 1.42;
             max-width: 96%;
+          }
+
+          .screen2Card {
+            max-height: calc(100vh - 120px);
+            padding-bottom: 18px;
+          }
+
+          .orbit {
+            display: none;
+          }
+
+          .orbitMobile {
+            width: 100%;
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
           }
 
           .h1 {
@@ -1736,7 +1830,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .edgeNav {
             top: auto;
-            bottom: 82px;
+            bottom: 96px;
             transform: none;
             width: 46px;
             height: 46px;
@@ -1764,10 +1858,6 @@ descubrir nuevas posibilidades para ponerte en acción.`
             width: 8px;
             height: 8px;
           }
-
-          .orbit {
-            display: none;
-          }
         }
 
         @media (max-width: 700px) {
@@ -1785,6 +1875,26 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .card {
             padding: 18px 13px;
+          }
+
+          .portadaCTA {
+            width: min(320px, 84vw);
+          }
+
+          .portadaPlate {
+            padding: 18px 14px 15px;
+            border-radius: 26px;
+          }
+
+          .cta {
+            width: min(210px, 62vw);
+            padding: 16px 16px;
+            font-size: 17px;
+          }
+
+          .ctaHint {
+            font-size: 14px;
+            max-width: 16ch;
           }
 
           .h1 {
@@ -1826,6 +1936,59 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .microText {
             margin-top: 0;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .screen {
+            padding: 12px 10px 86px;
+          }
+
+          .portadaCTA {
+            width: min(300px, 82vw);
+            top: 18%;
+          }
+
+          .portadaPlate {
+            padding: 16px 12px 14px;
+            border-radius: 24px;
+          }
+
+          .cta {
+            width: min(196px, 58vw);
+            font-size: 16px;
+            padding: 15px 14px;
+          }
+
+          .ctaHint {
+            font-size: 13.5px;
+            line-height: 1.38;
+          }
+
+          .brandImg {
+            width: clamp(58px, 16vw, 74px);
+          }
+
+          .screen2Card {
+            max-height: calc(100vh - 112px);
+          }
+
+          .orbitMobileCard {
+            padding: 12px 12px;
+          }
+
+          .orbitMobileText {
+            font-size: 14px;
+          }
+
+          .orbitMobileAuth {
+            font-size: 12px;
+          }
+
+          .edgeNav {
+            bottom: 94px;
+            width: 44px;
+            height: 44px;
           }
         }
 
