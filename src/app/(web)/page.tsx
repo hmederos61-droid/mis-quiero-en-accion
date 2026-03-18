@@ -165,7 +165,22 @@ export default function WebPublicCoachingPersonal() {
 
   useEffect(() => {
     if (screen === 7 && screen7CardRef.current) {
-      screen7CardRef.current.scrollTop = 0;
+      const node = screen7CardRef.current;
+      const reset = () => {
+        node.scrollTop = 0;
+        node.scrollTo?.({ top: 0, behavior: "auto" });
+      };
+
+      reset();
+      const raf1 = window.requestAnimationFrame(() => {
+        reset();
+        const raf2 = window.requestAnimationFrame(() => {
+          reset();
+        });
+        return () => window.cancelAnimationFrame(raf2);
+      });
+
+      return () => window.cancelAnimationFrame(raf1);
     }
   }, [screen]);
 
@@ -440,7 +455,19 @@ export default function WebPublicCoachingPersonal() {
               >
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
-                    <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
+                    <img
+                      className="portadaImg portadaImgDesktop"
+                      src="/portada.png"
+                      alt="Portada Hugo Mederos"
+                      draggable={false}
+                    />
+
+                    <img
+                      className="portadaImg portadaImgMobile"
+                      src="/portadamobile.png"
+                      alt="Portada mobile Hugo Mederos"
+                      draggable={false}
+                    />
 
                     <div className="portadaCTA">
                       <div className="portadaPlate">
@@ -452,7 +479,12 @@ export default function WebPublicCoachingPersonal() {
 
                     <div className="portadaCenterBrand" aria-hidden="true">
                       <div className="portadaCenterPlate">
-                        <img className="portadaCenterLogo" src="/logo.png" alt="Hugo Mederos" draggable={false} />
+                        <img
+                          className="portadaCenterLogo"
+                          src="/logomobile.png"
+                          alt="Logo Hugo Mederos"
+                          draggable={false}
+                        />
                         <div className="portadaCenterName">Hugo Mederos</div>
                         <div className="portadaCenterSub">Coaching ontológico individual</div>
                       </div>
@@ -821,10 +853,19 @@ descubrir nuevas posibilidades para ponerte en acción.`
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: center center;
           user-select: none;
           pointer-events: none;
           filter: none;
+        }
+
+        .portadaImgDesktop {
+          display: block;
+          object-position: center center;
+        }
+
+        .portadaImgMobile {
+          display: none;
+          object-position: center center;
         }
 
         .portadaCTA {
@@ -895,17 +936,17 @@ descubrir nuevas posibilidades para ponerte en acción.`
           place-items: center;
           padding: 18px 22px;
           border-radius: 28px;
-          background: rgba(0, 0, 0, 0.22);
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          backdrop-filter: blur(10px) saturate(1.05);
-          -webkit-backdrop-filter: blur(10px) saturate(1.05);
+          background: rgba(255, 255, 255, 0.16);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          backdrop-filter: blur(12px) saturate(1.05);
+          -webkit-backdrop-filter: blur(12px) saturate(1.05);
           box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24);
         }
 
         .portadaCenterLogo {
           width: clamp(108px, 14vw, 148px);
           height: auto;
-          filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.3));
+          filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.22));
         }
 
         .portadaCenterName {
@@ -1004,6 +1045,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           overscroll-behavior: contain;
           padding-bottom: 18px;
           scroll-behavior: smooth;
+          scroll-padding-top: 0;
         }
 
         .eyebrow {
@@ -1702,8 +1744,17 @@ descubrir nuevas posibilidades para ponerte en acción.`
             padding-bottom: 14px;
           }
 
+          .portadaImgDesktop {
+            display: none;
+          }
+
+          .portadaImgMobile {
+            display: block;
+            object-position: center center;
+          }
+
           .portadaCTA {
-            top: 7.5%;
+            top: ${PORTADA_CTA_CFG.topMobile};
             width: min(340px, 88vw);
           }
 
@@ -1711,7 +1762,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
             gap: 10px;
             padding: 12px 12px;
             border-radius: 22px;
-            background: rgba(0, 0, 0, 0.42);
+            background: rgba(76, 54, 11, 0.38);
           }
 
           .cta {
@@ -1730,25 +1781,30 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .portadaCenterPlate {
             gap: 10px;
-            padding: 10px 14px;
-            border-radius: 22px;
-            background: rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 14px 16px 16px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(14px) saturate(1.04);
+            -webkit-backdrop-filter: blur(14px) saturate(1.04);
+            box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24);
           }
 
           .portadaCenterLogo {
-            width: clamp(82px, 24vw, 110px);
+            width: clamp(88px, 23vw, 118px);
           }
 
           .portadaCenterName {
             font-size: clamp(30px, 9vw, 46px);
             line-height: 0.98;
+            color: rgba(23, 17, 10, 0.92);
           }
 
           .portadaCenterSub {
             font-size: clamp(11px, 3vw, 15px);
             line-height: 1.16;
             letter-spacing: 0.16em;
+            color: rgba(23, 17, 10, 0.82);
           }
 
           .brandFixed {
@@ -2042,7 +2098,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           }
 
           .portadaCenterBrand {
-            top: 50%;
+            top: 50.5%;
             width: min(300px, 84vw);
           }
 
