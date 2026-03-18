@@ -7,6 +7,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
+   Assets de fondo
+========================= */
+const DESKTOP_BG = "/welcome.png";
+const MOBILE_VERTICAL_BG = "/login-mobile.jpg";
+
+/* =========================
    Estética glass — LOGIN
 ========================= */
 const glassCard: React.CSSProperties = {
@@ -107,16 +113,30 @@ function clearInviteEmail() {
 ========================================================= */
 function useViewport() {
   const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
 
   useEffect(() => {
-    const update = () => setWidth(window.innerWidth);
+    const update = () => {
+      setWidth(window.innerWidth);
+      setHeight(window.innerHeight);
+    };
+
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
   }, []);
 
   const isMobile = width > 0 && width <= 900;
-  return { width, isMobile };
+  const isVertical = height > width;
+  const isMobileVertical = isMobile && isVertical;
+  const isMobileHorizontal = isMobile && !isVertical;
+
+  return { width, height, isMobile, isVertical, isMobileVertical, isMobileHorizontal };
 }
 
 /* =========================================================
@@ -126,7 +146,7 @@ function LoginInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isMobile } = useViewport();
+  const { isMobile, isMobileVertical } = useViewport();
 
   const token = searchParams.get("token")?.trim() || "";
   const emailFromLink = searchParams.get("email")?.trim() || "";
@@ -260,73 +280,101 @@ function LoginInner() {
     setMsg("Para cambiar el email, contactá al administrador.");
   }
 
+  const backgroundImage = isMobileVertical ? MOBILE_VERTICAL_BG : DESKTOP_BG;
+
+  const mainStyle: React.CSSProperties = {
+    minHeight: "100vh",
+    position: "relative",
+    backgroundImage: `url(${backgroundImage})`,
+    backgroundSize: isMobileVertical ? "cover" : "cover",
+    backgroundPosition: isMobileVertical ? "center center" : "center center",
+    backgroundRepeat: "no-repeat",
+    overflow: "hidden",
+  };
+
+  const overlayStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    background: isMobileVertical
+      ? "linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0.16) 100%)"
+      : "linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.08) 100%)",
+    pointerEvents: "none",
+  };
+
+  const contentWrapStyle: React.CSSProperties = {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: isMobile ? "20px 14px" : 24,
+    position: "relative",
+    zIndex: 1,
+  };
+
+  const sectionStyle: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 1180,
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gap: isMobile ? 0 : 96,
+    alignItems: isMobile ? "center" : "stretch",
+    position: "relative",
+  };
+
+  const leftColStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: isMobile ? "center" : "stretch",
+    alignItems: "stretch",
+  };
+
   const leftCardStyle: React.CSSProperties = {
     ...glassCard,
     width: "100%",
-    maxWidth: isMobile ? 420 : "none",
+    maxWidth: isMobile ? 560 : "none",
+    minHeight: isMobile ? "auto" : 520,
     padding: isMobile ? 22 : 34,
     position: "relative",
     zIndex: 2,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
   };
 
   const rightCardDesktopStyle: React.CSSProperties = {
     ...glassCard,
+    width: "100%",
     minHeight: 520,
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
+    alignSelf: "stretch",
+  };
+
+  const mobileGhostCardStyle: React.CSSProperties = {
+    ...glassCard,
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: "100%",
+    maxWidth: 560,
+    minHeight: 520,
+    transform: "translate(-50%, -50%)",
+    opacity: 0.22,
+    filter: "blur(1.4px)",
+    pointerEvents: "none",
+    zIndex: 1,
+    padding: 22,
   };
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative" }}>
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: isMobile ? "16px 14px" : 24,
-        }}
-      >
-        <section
-          style={{
-            width: "100%",
-            maxWidth: 1180,
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-            gap: isMobile ? 0 : 96,
-            alignItems: "center",
-            position: "relative",
-          }}
-        >
-          {isMobile && (
-            <div
-              style={{
-                ...glassCard,
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                width: "100%",
-                maxWidth: 420,
-                minHeight: 520,
-                transform: "translate(calc(-50% + 34px), -50%)",
-                opacity: 0.26,
-                filter: "blur(1.5px)",
-                pointerEvents: "none",
-                zIndex: 1,
-                padding: 22,
-              }}
-            >
-              <div />
-            </div>
-          )}
+    <main style={mainStyle}>
+      <div style={overlayStyle} />
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: isMobile ? "center" : "stretch",
-            }}
-          >
+      <div style={contentWrapStyle}>
+        <section style={sectionStyle}>
+          {isMobile && <div style={mobileGhostCardStyle}><div /></div>}
+
+          <div style={leftColStyle}>
             <div style={leftCardStyle}>
               <h1
                 style={{
@@ -459,8 +507,15 @@ function LoginInner() {
           </div>
 
           {!isMobile && (
-            <div style={rightCardDesktopStyle}>
-              <div />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "stretch",
+              }}
+            >
+              <div style={rightCardDesktopStyle}>
+                <div />
+              </div>
             </div>
           )}
         </section>
