@@ -177,6 +177,7 @@ export default function WebPublicCoachingPersonal() {
         const raf2 = window.requestAnimationFrame(() => {
           reset();
         });
+        window.setTimeout(reset, 0);
         return () => window.cancelAnimationFrame(raf2);
       });
 
@@ -827,7 +828,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
         .screen7 {
           align-items: start;
           justify-items: center;
-          padding-top: 7.5vh;
+          padding-top: 0;
         }
 
         .portadaStage {
@@ -1040,7 +1041,9 @@ descubrir nuevas posibilidades para ponerte en acción.`
         }
 
         .card7 {
-          max-height: calc(100vh - 18px - 22px - 7.5vh);
+          margin-top: 0;
+          align-self: start;
+          max-height: calc(100vh - 18px - 22px);
           overflow-y: auto;
           overscroll-behavior: contain;
           padding-bottom: 18px;
@@ -1736,11 +1739,11 @@ descubrir nuevas posibilidades para ponerte en acción.`
           }
 
           .screen7 {
-            padding-top: 3.5vh;
+            padding-top: 0;
           }
 
           .card7 {
-            max-height: calc(100vh - 14px - 88px - 3.5vh);
+            max-height: calc(100vh - 14px - 88px);
             padding-bottom: 14px;
           }
 
@@ -2005,11 +2008,11 @@ descubrir nuevas posibilidades para ponerte en acción.`
           }
 
           .screen7 {
-            padding-top: 2.5vh;
+            padding-top: 0;
           }
 
           .card7 {
-            max-height: calc(100vh - 14px - 88px - 2.5vh);
+            max-height: calc(100vh - 14px - 88px);
           }
 
           .card {
