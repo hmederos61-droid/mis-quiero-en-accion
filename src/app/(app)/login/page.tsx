@@ -103,12 +103,32 @@ function clearInviteEmail() {
 }
 
 /* =========================================================
+   Hook simple para responsive sin tocar la lógica funcional
+========================================================= */
+function useIsMobile(breakpoint = 900) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      setIsMobile(window.innerWidth <= breakpoint);
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
+/* =========================================================
    Inner: usa useSearchParams -> DEBE estar dentro de Suspense
 ========================================================= */
 function LoginInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
 
   const token = searchParams.get("token")?.trim() || "";
   const emailFromLink = searchParams.get("email")?.trim() || "";
@@ -202,7 +222,6 @@ function LoginInner() {
       const hasAdmin = unique.includes("admin");
       const hasCoach = unique.includes("coach");
 
-      // 🔴 CAMBIO CANÓNICO ÚNICO
       if (hasAdmin || hasCoach) {
         router.replace("/menu1");
       } else {
@@ -226,13 +245,11 @@ function LoginInner() {
 
     setLoading(true);
 
-    // ✅ CANÓNICO: recovery propio (token propio) – NO usar resetPasswordForEmail
     const { error: fnErr } = await supabase.functions.invoke(
       "send-password-reset",
       { body: { email: eMail } }
     );
 
-    // Mensaje neutro SIEMPRE (no revelar si existe o no)
     if (fnErr) {
       setMsg(
         "Si el email es correcto, recibirás un correo con instrucciones para cambiar tu clave."
@@ -251,6 +268,21 @@ function LoginInner() {
     setMsg("Para cambiar el email, contactá al administrador.");
   }
 
+  const mainCardStyle: React.CSSProperties = {
+    ...glassCard,
+    width: "100%",
+    maxWidth: isMobile ? 420 : "none",
+    padding: isMobile ? 22 : 34,
+  };
+
+  const secondaryCardStyle: React.CSSProperties = {
+    ...glassCard,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    minHeight: isMobile ? 0 : undefined,
+  };
+
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
       <div
@@ -259,35 +291,72 @@ function LoginInner() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 24,
+          padding: isMobile ? "16px 14px" : 24,
         }}
       >
         <section
           style={{
-            width: "min(1180px, 100%)",
+            width: "100%",
+            maxWidth: 1180,
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 96,
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gap: isMobile ? 18 : 96,
             alignItems: "stretch",
           }}
         >
-          <div style={glassCard}>
-            <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
+          <div style={mainCardStyle}>
+            <h1
+              style={{
+                fontSize: isMobile ? 28 : 42,
+                lineHeight: isMobile ? 1.15 : 1.1,
+                margin: 0,
+                wordBreak: "break-word",
+              }}
+            >
+              Mis Quiero en Acción
+            </h1>
 
-            <p style={{ fontSize: 20, marginTop: 10 }}>
+            <p
+              style={{
+                fontSize: isMobile ? 17 : 20,
+                marginTop: 10,
+                marginBottom: 0,
+              }}
+            >
               Ingreso con mail y clave.
             </p>
 
-            {msg && <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>}
+            {msg && (
+              <div
+                style={{
+                  fontSize: isMobile ? 15 : 16,
+                  marginTop: 12,
+                  lineHeight: 1.4,
+                }}
+              >
+                {msg}
+              </div>
+            )}
 
             <form
-              style={{ display: "grid", gap: 14, marginTop: 18 }}
+              style={{ display: "grid", gap: isMobile ? 12 : 14, marginTop: 18 }}
               onSubmit={onIngresar}
             >
               <div>
-                <div style={labelStyle}>Email</div>
+                <div
+                  style={{
+                    ...labelStyle,
+                    fontSize: isMobile ? 16 : 18,
+                  }}
+                >
+                  Email
+                </div>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    fontSize: isMobile ? 16 : 17,
+                    padding: isMobile ? "13px 14px" : "14px 16px",
+                  }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
@@ -297,9 +366,20 @@ function LoginInner() {
               </div>
 
               <div>
-                <div style={labelStyle}>Clave</div>
+                <div
+                  style={{
+                    ...labelStyle,
+                    fontSize: isMobile ? 16 : 18,
+                  }}
+                >
+                  Clave
+                </div>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    fontSize: isMobile ? 16 : 17,
+                    padding: isMobile ? "13px 14px" : "14px 16px",
+                  }}
                   type="password"
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
@@ -308,14 +388,26 @@ function LoginInner() {
                 />
               </div>
 
-              <button type="submit" style={btnIngresar} disabled={loading}>
+              <button
+                type="submit"
+                style={{
+                  ...btnIngresar,
+                  fontSize: isMobile ? 16 : 17,
+                  padding: isMobile ? "13px 14px" : "14px 16px",
+                }}
+                disabled={loading}
+              >
                 Ingresar
               </button>
 
               <div style={{ display: "grid", gap: 10 }}>
                 <button
                   type="button"
-                  style={btnOlvide}
+                  style={{
+                    ...btnOlvide,
+                    fontSize: isMobile ? 16 : 17,
+                    padding: isMobile ? "13px 14px" : "14px 16px",
+                  }}
                   disabled={loading}
                   onClick={onOlvideClave}
                 >
@@ -324,7 +416,11 @@ function LoginInner() {
 
                 <button
                   type="button"
-                  style={btnCambiarMail}
+                  style={{
+                    ...btnCambiarMail,
+                    fontSize: isMobile ? 16 : 17,
+                    padding: isMobile ? "13px 14px" : "14px 16px",
+                  }}
                   disabled={loading}
                   onClick={onCambiarMail}
                 >
@@ -334,16 +430,11 @@ function LoginInner() {
             </form>
           </div>
 
-          <div
-            style={{
-              ...glassCard,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <div />
-          </div>
+          {!isMobile && (
+            <div style={secondaryCardStyle}>
+              <div />
+            </div>
+          )}
         </section>
       </div>
     </main>
