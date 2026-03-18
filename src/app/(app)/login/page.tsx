@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
-   Estética glass — LOGIN (criterio correcto)
+   Estética glass — LOGIN
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
@@ -103,32 +103,30 @@ function clearInviteEmail() {
 }
 
 /* =========================================================
-   Hook simple para responsive sin tocar la lógica funcional
+   Hook responsive
 ========================================================= */
-function useIsMobile(breakpoint = 900) {
-  const [isMobile, setIsMobile] = useState(false);
+function useViewport() {
+  const [width, setWidth] = useState<number>(0);
 
   useEffect(() => {
-    const update = () => {
-      setIsMobile(window.innerWidth <= breakpoint);
-    };
-
+    const update = () => setWidth(window.innerWidth);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [breakpoint]);
+  }, []);
 
-  return isMobile;
+  const isMobile = width > 0 && width <= 900;
+  return { width, isMobile };
 }
 
 /* =========================================================
-   Inner: usa useSearchParams -> DEBE estar dentro de Suspense
+   Inner
 ========================================================= */
 function LoginInner() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewport();
 
   const token = searchParams.get("token")?.trim() || "";
   const emailFromLink = searchParams.get("email")?.trim() || "";
@@ -250,25 +248,19 @@ function LoginInner() {
       { body: { email: eMail } }
     );
 
-    if (fnErr) {
-      setMsg(
-        "Si el email es correcto, recibirás un correo con instrucciones para cambiar tu clave."
-      );
-      setLoading(false);
-      return;
-    }
-
     setMsg(
       "Si el email es correcto, recibirás un correo con instrucciones para cambiar tu clave."
     );
     setLoading(false);
+
+    if (fnErr) return;
   }
 
   function onCambiarMail() {
     setMsg("Para cambiar el email, contactá al administrador.");
   }
 
-  const mainCardStyle: React.CSSProperties = {
+  const leftCardStyle: React.CSSProperties = {
     ...glassCard,
     width: "100%",
     maxWidth: isMobile ? 420 : "none",
@@ -277,8 +269,9 @@ function LoginInner() {
     zIndex: 2,
   };
 
-  const secondaryCardStyle: React.CSSProperties = {
+  const rightCardDesktopStyle: React.CSSProperties = {
     ...glassCard,
+    minHeight: 520,
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -301,7 +294,7 @@ function LoginInner() {
             maxWidth: 1180,
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-            gap: isMobile ? 18 : 96,
+            gap: isMobile ? 0 : 96,
             alignItems: "center",
             position: "relative",
           }}
@@ -309,156 +302,164 @@ function LoginInner() {
           {isMobile && (
             <div
               style={{
-                ...secondaryCardStyle,
+                ...glassCard,
                 position: "absolute",
-                inset: 0,
+                top: "50%",
+                left: "50%",
                 width: "100%",
                 maxWidth: 420,
-                margin: "0 auto",
                 minHeight: 520,
-                opacity: 0.34,
-                filter: "blur(2px)",
+                transform: "translate(calc(-50% + 34px), -50%)",
+                opacity: 0.26,
+                filter: "blur(1.5px)",
                 pointerEvents: "none",
                 zIndex: 1,
-                transform: "translate(26px, 10px)",
+                padding: 22,
               }}
             >
               <div />
             </div>
           )}
 
-          <div style={mainCardStyle}>
-            <h1
-              style={{
-                fontSize: isMobile ? 28 : 42,
-                lineHeight: isMobile ? 1.15 : 1.1,
-                margin: 0,
-                wordBreak: "break-word",
-              }}
-            >
-              Mis Quiero en Acción
-            </h1>
-
-            <p
-              style={{
-                fontSize: isMobile ? 17 : 20,
-                marginTop: 10,
-                marginBottom: 0,
-              }}
-            >
-              Ingreso con mail y clave.
-            </p>
-
-            {msg && (
-              <div
+          <div
+            style={{
+              display: "flex",
+              justifyContent: isMobile ? "center" : "stretch",
+            }}
+          >
+            <div style={leftCardStyle}>
+              <h1
                 style={{
-                  fontSize: isMobile ? 15 : 16,
-                  marginTop: 12,
-                  lineHeight: 1.4,
+                  fontSize: isMobile ? 28 : 42,
+                  lineHeight: isMobile ? 1.15 : 1.1,
+                  margin: 0,
+                  wordBreak: "break-word",
                 }}
               >
-                {msg}
-              </div>
-            )}
+                Mis Quiero en Acción
+              </h1>
 
-            <form
-              style={{
-                display: "grid",
-                gap: isMobile ? 12 : 14,
-                marginTop: 18,
-              }}
-              onSubmit={onIngresar}
-            >
-              <div>
-                <div
-                  style={{
-                    ...labelStyle,
-                    fontSize: isMobile ? 16 : 18,
-                  }}
-                >
-                  Email
-                </div>
-                <input
-                  style={{
-                    ...inputStyle,
-                    fontSize: isMobile ? 16 : 17,
-                    padding: isMobile ? "13px 14px" : "14px 16px",
-                  }}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  autoComplete="email"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    ...labelStyle,
-                    fontSize: isMobile ? 16 : 18,
-                  }}
-                >
-                  Clave
-                </div>
-                <input
-                  style={{
-                    ...inputStyle,
-                    fontSize: isMobile ? 16 : 17,
-                    padding: isMobile ? "13px 14px" : "14px 16px",
-                  }}
-                  type="password"
-                  value={clave}
-                  onChange={(e) => setClave(e.target.value)}
-                  autoComplete="current-password"
-                  disabled={loading}
-                />
-              </div>
-
-              <button
-                type="submit"
+              <p
                 style={{
-                  ...btnIngresar,
-                  fontSize: isMobile ? 16 : 17,
-                  padding: isMobile ? "13px 14px" : "14px 16px",
+                  fontSize: isMobile ? 17 : 20,
+                  marginTop: 10,
+                  marginBottom: 0,
                 }}
-                disabled={loading}
               >
-                Ingresar
-              </button>
+                Ingreso con mail y clave.
+              </p>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                <button
-                  type="button"
+              {msg && (
+                <div
                   style={{
-                    ...btnOlvide,
+                    fontSize: isMobile ? 15 : 16,
+                    marginTop: 12,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {msg}
+                </div>
+              )}
+
+              <form
+                style={{
+                  display: "grid",
+                  gap: isMobile ? 12 : 14,
+                  marginTop: 18,
+                }}
+                onSubmit={onIngresar}
+              >
+                <div>
+                  <div
+                    style={{
+                      ...labelStyle,
+                      fontSize: isMobile ? 16 : 18,
+                    }}
+                  >
+                    Email
+                  </div>
+                  <input
+                    style={{
+                      ...inputStyle,
+                      fontSize: isMobile ? 16 : 17,
+                      padding: isMobile ? "13px 14px" : "14px 16px",
+                    }}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    autoComplete="email"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      ...labelStyle,
+                      fontSize: isMobile ? 16 : 18,
+                    }}
+                  >
+                    Clave
+                  </div>
+                  <input
+                    style={{
+                      ...inputStyle,
+                      fontSize: isMobile ? 16 : 17,
+                      padding: isMobile ? "13px 14px" : "14px 16px",
+                    }}
+                    type="password"
+                    value={clave}
+                    onChange={(e) => setClave(e.target.value)}
+                    autoComplete="current-password"
+                    disabled={loading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    ...btnIngresar,
                     fontSize: isMobile ? 16 : 17,
                     padding: isMobile ? "13px 14px" : "14px 16px",
                   }}
                   disabled={loading}
-                  onClick={onOlvideClave}
                 >
-                  Olvidé mi clave
+                  Ingresar
                 </button>
 
-                <button
-                  type="button"
-                  style={{
-                    ...btnCambiarMail,
-                    fontSize: isMobile ? 16 : 17,
-                    padding: isMobile ? "13px 14px" : "14px 16px",
-                  }}
-                  disabled={loading}
-                  onClick={onCambiarMail}
-                >
-                  Cambiar mi email
-                </button>
-              </div>
-            </form>
+                <div style={{ display: "grid", gap: 10 }}>
+                  <button
+                    type="button"
+                    style={{
+                      ...btnOlvide,
+                      fontSize: isMobile ? 16 : 17,
+                      padding: isMobile ? "13px 14px" : "14px 16px",
+                    }}
+                    disabled={loading}
+                    onClick={onOlvideClave}
+                  >
+                    Olvidé mi clave
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      ...btnCambiarMail,
+                      fontSize: isMobile ? 16 : 17,
+                      padding: isMobile ? "13px 14px" : "14px 16px",
+                    }}
+                    disabled={loading}
+                    onClick={onCambiarMail}
+                  >
+                    Cambiar mi email
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
 
           {!isMobile && (
-            <div style={secondaryCardStyle}>
+            <div style={rightCardDesktopStyle}>
               <div />
             </div>
           )}
