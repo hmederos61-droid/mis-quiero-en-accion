@@ -136,7 +136,14 @@ function useViewport() {
   const isMobileVertical = isMobile && isVertical;
   const isMobileHorizontal = isMobile && !isVertical;
 
-  return { width, height, isMobile, isVertical, isMobileVertical, isMobileHorizontal };
+  return {
+    width,
+    height,
+    isMobile,
+    isVertical,
+    isMobileVertical,
+    isMobileHorizontal,
+  };
 }
 
 /* =========================================================
@@ -286,8 +293,8 @@ function LoginInner() {
     minHeight: "100vh",
     position: "relative",
     backgroundImage: `url(${backgroundImage})`,
-    backgroundSize: isMobileVertical ? "cover" : "cover",
-    backgroundPosition: isMobileVertical ? "center center" : "center center",
+    backgroundSize: "cover",
+    backgroundPosition: "center center",
     backgroundRepeat: "no-repeat",
     overflow: "hidden",
   };
@@ -325,6 +332,7 @@ function LoginInner() {
     display: "flex",
     justifyContent: isMobile ? "center" : "stretch",
     alignItems: "stretch",
+    height: "100%",
   };
 
   const leftCardStyle: React.CSSProperties = {
@@ -344,6 +352,7 @@ function LoginInner() {
     ...glassCard,
     width: "100%",
     minHeight: 520,
+    height: "100%",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -372,7 +381,11 @@ function LoginInner() {
 
       <div style={contentWrapStyle}>
         <section style={sectionStyle}>
-          {isMobile && <div style={mobileGhostCardStyle}><div /></div>}
+          {isMobile && (
+            <div style={mobileGhostCardStyle}>
+              <div />
+            </div>
+          )}
 
           <div style={leftColStyle}>
             <div style={leftCardStyle}>
@@ -511,6 +524,7 @@ function LoginInner() {
               style={{
                 display: "flex",
                 alignItems: "stretch",
+                height: "100%",
               }}
             >
               <div style={rightCardDesktopStyle}>
