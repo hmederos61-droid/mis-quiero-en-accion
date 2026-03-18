@@ -71,12 +71,12 @@ const LOGO_CFG = {
 } as const;
 
 const PORTADA_CTA_CFG = {
-  topDesktop: "18%",
-  topMobile: "16%",
+  topDesktop: "10%",
+  topMobile: "8%",
   plate: {
-    padding: "14px 16px",
+    padding: "12px 14px",
     radius: "22px",
-    bg: "rgba(0,0,0,0.28)",
+    bg: "rgba(0,0,0,0.34)",
     border: "1px solid rgba(255,255,255,0.18)",
     blur: "14px",
     shadow: "0 26px 80px rgba(0,0,0,0.36)",
@@ -433,12 +433,20 @@ export default function WebPublicCoachingPersonal() {
                 {isPortada ? (
                   <div className={`portadaStage ${mounted ? "in" : ""}`} aria-label="Portada">
                     <img className="portadaImg" src="/portada.png" alt="Portada Hugo Mederos" draggable={false} />
+
                     <div className="portadaCTA">
                       <div className="portadaPlate">
                         <button className="cta" onClick={next} aria-label="Iniciar recorrido">
                           Iniciar recorrido
                         </button>
-                        <div className="ctaHint">Una conversación puede empezar con un paso simple.</div>
+                      </div>
+                    </div>
+
+                    <div className="portadaCenterBrand" aria-hidden="true">
+                      <div className="portadaCenterPlate">
+                        <img className="portadaCenterLogo" src="/logo.png" alt="Hugo Mederos" draggable={false} />
+                        <div className="portadaCenterName">Hugo Mederos</div>
+                        <div className="portadaCenterSub">Coaching ontológico individual</div>
                       </div>
                     </div>
                   </div>
@@ -815,7 +823,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           left: 50%;
           top: ${PORTADA_CTA_CFG.topDesktop};
           transform: translateX(-50%);
-          z-index: 6;
+          z-index: 8;
           display: grid;
           gap: 10px;
           place-items: center;
@@ -859,15 +867,55 @@ descubrir nuevas posibilidades para ponerte en acción.`
           background: rgba(0, 0, 0, 0.22);
         }
 
-        .ctaHint {
-          color: rgba(245, 241, 232, 0.94);
-          font-weight: 620;
-          font-size: 16px;
-          line-height: 1.4;
-          text-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-          padding: 0 10px;
+        .portadaCenterBrand {
+          position: absolute;
+          left: 50%;
+          top: 52%;
+          transform: translate(-50%, -50%);
+          z-index: 7;
+          width: min(760px, 86vw);
+          display: grid;
+          place-items: center;
           text-align: center;
-          max-width: 34ch;
+          pointer-events: none;
+        }
+
+        .portadaCenterPlate {
+          display: grid;
+          gap: 14px;
+          place-items: center;
+          padding: 18px 22px;
+          border-radius: 28px;
+          background: rgba(0, 0, 0, 0.22);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          backdrop-filter: blur(10px) saturate(1.05);
+          -webkit-backdrop-filter: blur(10px) saturate(1.05);
+          box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24);
+        }
+
+        .portadaCenterLogo {
+          width: clamp(108px, 14vw, 148px);
+          height: auto;
+          filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.3));
+        }
+
+        .portadaCenterName {
+          font-size: clamp(48px, 7vw, 82px);
+          line-height: 0.98;
+          font-weight: 420;
+          color: rgba(22, 17, 10, 0.9);
+          text-shadow: 0 10px 24px rgba(255, 255, 255, 0.16);
+          letter-spacing: 0.2px;
+        }
+
+        .portadaCenterSub {
+          font-size: clamp(18px, 2vw, 28px);
+          line-height: 1.2;
+          font-weight: 380;
+          letter-spacing: 0.34em;
+          text-transform: uppercase;
+          color: rgba(22, 17, 10, 0.82);
+          text-shadow: 0 10px 24px rgba(255, 255, 255, 0.14);
         }
 
         .brandFixed {
@@ -946,6 +994,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           overflow-y: auto;
           overscroll-behavior: contain;
           padding-bottom: 18px;
+          scroll-behavior: smooth;
         }
 
         .eyebrow {
@@ -1073,7 +1122,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
           place-items: center;
           text-align: center;
           gap: 10px;
-          padding: 4px 6px;
+          padding: 10px 6px 4px;
         }
 
         .s2Title {
@@ -1476,7 +1525,8 @@ descubrir nuevas posibilidades para ponerte en acción.`
         }
 
         .cItem:nth-child(1) {
-          background: linear-gradient(135deg, rgba(78, 190, 125, 0.88), rgba(120, 170, 70, 0.78));
+          background: linear-gradient(135deg, rgba(78, 190, 125, 0.9), rgba(120, 170, 70, 0.8));
+          transform: scale(1.01);
         }
 
         .cItem:nth-child(1)::after {
@@ -1650,22 +1700,44 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .portadaPlate {
             gap: 12px;
-            padding: 18px 16px 16px;
-            border-radius: 28px;
+            padding: 14px 14px;
+            border-radius: 24px;
+            background: rgba(0, 0, 0, 0.42);
           }
 
           .cta {
-            width: min(220px, 64vw);
-            padding: 16px 18px;
+            width: min(230px, 66vw);
+            padding: 15px 18px;
             font-size: 18px;
             line-height: 1.2;
             white-space: normal;
           }
 
-          .ctaHint {
-            font-size: 15px;
-            line-height: 1.42;
-            max-width: 18ch;
+          .portadaCenterBrand {
+            top: 50%;
+            width: min(350px, 88vw);
+          }
+
+          .portadaCenterPlate {
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 24px;
+            background: rgba(0, 0, 0, 0.12);
+          }
+
+          .portadaCenterLogo {
+            width: clamp(82px, 24vw, 110px);
+          }
+
+          .portadaCenterName {
+            font-size: clamp(32px, 10.2vw, 52px);
+            line-height: 0.98;
+          }
+
+          .portadaCenterSub {
+            font-size: clamp(12px, 3.2vw, 16px);
+            line-height: 1.18;
+            letter-spacing: 0.18em;
           }
 
           .brandFixed {
@@ -1724,7 +1796,7 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .screen2Card {
             max-height: calc(100vh - 120px);
-            padding-bottom: 18px;
+            padding-bottom: 22px;
           }
 
           .orbit {
@@ -1734,8 +1806,8 @@ descubrir nuevas posibilidades para ponerte en acción.`
           .orbitMobile {
             width: 100%;
             display: grid;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 14px;
+            margin-top: 14px;
           }
 
           .h1 {
@@ -1881,20 +1953,23 @@ descubrir nuevas posibilidades para ponerte en acción.`
             width: min(320px, 84vw);
           }
 
-          .portadaPlate {
-            padding: 18px 14px 15px;
-            border-radius: 26px;
-          }
-
           .cta {
-            width: min(210px, 62vw);
-            padding: 16px 16px;
+            width: min(214px, 62vw);
+            padding: 15px 16px;
             font-size: 17px;
           }
 
-          .ctaHint {
-            font-size: 14px;
-            max-width: 16ch;
+          .portadaCenterBrand {
+            width: min(320px, 86vw);
+          }
+
+          .portadaCenterName {
+            font-size: clamp(28px, 9vw, 44px);
+          }
+
+          .portadaCenterSub {
+            font-size: clamp(11px, 3vw, 14px);
+            letter-spacing: 0.16em;
           }
 
           .h1 {
@@ -1946,23 +2021,31 @@ descubrir nuevas posibilidades para ponerte en acción.`
 
           .portadaCTA {
             width: min(300px, 82vw);
-            top: 18%;
-          }
-
-          .portadaPlate {
-            padding: 16px 12px 14px;
-            border-radius: 24px;
+            top: 7.5%;
           }
 
           .cta {
-            width: min(196px, 58vw);
+            width: min(202px, 60vw);
             font-size: 16px;
-            padding: 15px 14px;
+            padding: 14px 14px;
           }
 
-          .ctaHint {
-            font-size: 13.5px;
-            line-height: 1.38;
+          .portadaCenterBrand {
+            top: 49%;
+            width: min(300px, 84vw);
+          }
+
+          .portadaCenterLogo {
+            width: clamp(74px, 22vw, 96px);
+          }
+
+          .portadaCenterName {
+            font-size: clamp(26px, 8.8vw, 40px);
+          }
+
+          .portadaCenterSub {
+            font-size: clamp(10px, 2.9vw, 13px);
+            letter-spacing: 0.14em;
           }
 
           .brandImg {
