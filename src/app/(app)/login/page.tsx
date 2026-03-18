@@ -273,6 +273,8 @@ function LoginInner() {
     width: "100%",
     maxWidth: isMobile ? 420 : "none",
     padding: isMobile ? 22 : 34,
+    position: "relative",
+    zIndex: 2,
   };
 
   const secondaryCardStyle: React.CSSProperties = {
@@ -280,7 +282,6 @@ function LoginInner() {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: isMobile ? 0 : undefined,
   };
 
   return (
@@ -301,9 +302,31 @@ function LoginInner() {
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
             gap: isMobile ? 18 : 96,
-            alignItems: "stretch",
+            alignItems: "center",
+            position: "relative",
           }}
         >
+          {isMobile && (
+            <div
+              style={{
+                ...secondaryCardStyle,
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                maxWidth: 420,
+                margin: "0 auto",
+                minHeight: 520,
+                opacity: 0.34,
+                filter: "blur(2px)",
+                pointerEvents: "none",
+                zIndex: 1,
+                transform: "translate(26px, 10px)",
+              }}
+            >
+              <div />
+            </div>
+          )}
+
           <div style={mainCardStyle}>
             <h1
               style={{
@@ -339,7 +362,11 @@ function LoginInner() {
             )}
 
             <form
-              style={{ display: "grid", gap: isMobile ? 12 : 14, marginTop: 18 }}
+              style={{
+                display: "grid",
+                gap: isMobile ? 12 : 14,
+                marginTop: 18,
+              }}
               onSubmit={onIngresar}
             >
               <div>
