@@ -8,7 +8,7 @@
   --foreground: #171717;
 
   /* Glass tokens */
-  --glass-bg: rgba(255, 255, 255, 0.10);
+  --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.22);
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
   --glass-blur: 14px;
@@ -43,19 +43,23 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  min-height: 100%;
+  width: 100%;
 }
 
-/* =========================
-   Reglas de layout base
-========================= */
 body {
   color: var(--foreground);
   background: transparent;
   position: relative;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 /* =========================
-   FONDO GLOBAL ÚNICO — MQA (BASELINE 1920×1080)
+   FONDO GLOBAL WEB
 ========================= */
 .app-bg {
   position: fixed;
@@ -66,21 +70,16 @@ body {
   background-image: url("/welcome.png");
   background-repeat: no-repeat;
   background-position: center center;
-
-  /* Baseline fijo: NO crece por arriba de 1920×1080 */
   background-size: 1920px 1080px;
-
   background-color: #000;
 }
 
-/* En pantallas menores, recién ahí escala hacia abajo */
 @media (max-width: 1920px) {
   .app-bg {
     background-size: 100vw auto;
   }
 }
 
-/* Contenido */
 .app-content {
   position: relative;
   min-height: 100vh;
@@ -88,7 +87,7 @@ body {
 }
 
 /* =========================
-   Componentes reutilizables (sin inline)
+   Componentes reutilizables
 ========================= */
 @layer components {
   .glass-panel {
@@ -112,12 +111,15 @@ body {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
-    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    transition:
+      transform 120ms ease,
+      background 120ms ease,
+      box-shadow 120ms ease;
     user-select: none;
   }
 
   .glass-button:hover {
-    background: rgba(255, 255, 255, 0.20);
+    background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
     transform: translateY(-1px);
   }
@@ -129,7 +131,9 @@ body {
 
   .glass-button:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 14px 26px rgba(0, 0, 0, 0.18);
+    box-shadow:
+      0 0 0 3px rgba(255, 255, 255, 0.35),
+      0 14px 26px rgba(0, 0, 0, 0.18);
   }
 
   .glass-button[disabled] {
@@ -143,12 +147,15 @@ body {
     padding: 0.65rem 0.85rem;
     border-radius: 14px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.1);
     color: var(--foreground);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10);
-    transition: background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+    transition:
+      background 120ms ease,
+      box-shadow 120ms ease,
+      border-color 120ms ease;
   }
 
   .glass-input::placeholder {
@@ -159,7 +166,9 @@ body {
     outline: none;
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(255, 255, 255, 0.35);
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), 0 10px 22px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 0 0 3px rgba(255, 255, 255, 0.25),
+      0 10px 22px rgba(0, 0, 0, 0.12);
   }
 
   .glass-label {

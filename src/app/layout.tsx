@@ -41,10 +41,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        {/* Fondo fijo global */}
         <div className="app-bg" />
-
-        {/* Contenido */}
         <div className="app-content">{children}</div>
       </body>
     </html>
