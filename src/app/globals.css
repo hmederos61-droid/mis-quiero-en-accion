@@ -74,9 +74,18 @@ body {
   background-color: #000;
 }
 
+/* Desktop / pantallas grandes */
 @media (max-width: 1920px) {
   .app-bg {
     background-size: 100vw auto;
+  }
+}
+
+/* Mobile (SOLUCIÓN A BANDAS NEGRAS) */
+@media (max-width: 768px) {
+  .app-bg {
+    background-size: cover;
+    background-position: center center;
   }
 }
 
