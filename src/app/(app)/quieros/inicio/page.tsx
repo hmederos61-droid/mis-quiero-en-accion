@@ -13,14 +13,12 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
    - BLINDAJE: si no hay sesión -> /login (sin ?next)
 ========================= */
 
-const pageWrap: React.CSSProperties = {
+const pageWrapBase: React.CSSProperties = {
   minHeight: "100%",
   width: "100%",
   display: "flex",
-  flexDirection: "column",
   alignItems: "center",
-  justifyContent: "flex-start",
-  padding: "28px 20px 36px",
+  justifyContent: "center",
   boxSizing: "border-box",
 };
 
@@ -218,7 +216,9 @@ export default function QuierosInicioPage() {
     >
       <div
         style={{
-          ...pageWrap,
+          ...pageWrapBase,
+          flexDirection: "column",
+          justifyContent: isMobile ? "flex-start" : "center",
           padding: isMobile ? "18px 14px 28px" : "28px 20px 36px",
         }}
       >
