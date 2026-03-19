@@ -14,11 +14,13 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 ========================= */
 
 const pageWrap: React.CSSProperties = {
-  minHeight: "100vh",
+  minHeight: "100%",
+  width: "100%",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   padding: 28,
+  boxSizing: "border-box",
 };
 
 /* =========================
@@ -35,6 +37,7 @@ const glassCard: React.CSSProperties = {
   color: "rgba(255,255,255,0.94)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
   width: "min(980px, 100%)",
+  boxSizing: "border-box",
 };
 
 /* =========================
@@ -100,6 +103,7 @@ const rowBase: React.CSSProperties = {
   color: "rgba(255,255,255,0.98)",
   border: "1px solid rgba(255,255,255,0.16)",
   boxShadow: "0 12px 30px rgba(0,0,0,0.20)",
+  boxSizing: "border-box",
 };
 
 const iconBox: React.CSSProperties = {
@@ -111,6 +115,7 @@ const iconBox: React.CSSProperties = {
   justifyContent: "center",
   background: "rgba(0,0,0,0.18)",
   border: "1px solid rgba(255,255,255,0.12)",
+  flexShrink: 0,
 };
 
 const rowTitle: React.CSSProperties = {
@@ -144,7 +149,7 @@ function ActionRow({
   return (
     <Link href={href} style={{ ...rowBase, background }}>
       <div style={iconBox}>{icon}</div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={rowTitle}>{title}</div>
         <div style={rowHint}>{hint}</div>
       </div>
@@ -157,7 +162,6 @@ export default function QuierosInicioPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
 
-  // Blindaje: hasta chequear sesión no mostramos nada (evita exposición).
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
@@ -190,7 +194,7 @@ export default function QuierosInicioPage() {
   if (!authChecked) return <div />;
 
   return (
-    <main>
+    <main style={{ minHeight: "100%", width: "100%" }}>
       <div style={pageWrap}>
         <section style={glassCard}>
           <div
