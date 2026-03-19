@@ -17,9 +17,10 @@ const pageWrap: React.CSSProperties = {
   minHeight: "100%",
   width: "100%",
   display: "flex",
+  flexDirection: "column",
   alignItems: "center",
-  justifyContent: "center",
-  padding: 28,
+  justifyContent: "flex-start",
+  padding: "28px 20px 36px",
   boxSizing: "border-box",
 };
 
@@ -163,6 +164,20 @@ export default function QuierosInicioPage() {
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", updateIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     let cancel = false;
@@ -194,9 +209,26 @@ export default function QuierosInicioPage() {
   if (!authChecked) return <div />;
 
   return (
-    <main style={{ minHeight: "100%", width: "100%" }}>
-      <div style={pageWrap}>
-        <section style={glassCard}>
+    <main
+      style={{
+        minHeight: "100%",
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        style={{
+          ...pageWrap,
+          padding: isMobile ? "18px 14px 28px" : "28px 20px 36px",
+        }}
+      >
+        <section
+          style={{
+            ...glassCard,
+            padding: isMobile ? 22 : 34,
+            borderRadius: isMobile ? 18 : 22,
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -206,9 +238,21 @@ export default function QuierosInicioPage() {
               flexWrap: "wrap",
             }}
           >
-            <div style={{ minWidth: 260 }}>
-              <h1 style={titleStyle}>Mis Quieros</h1>
-              <p style={subtitleStyle}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h1
+                style={{
+                  ...titleStyle,
+                  fontSize: isMobile ? 30 : 36,
+                }}
+              >
+                Mis Quieros
+              </h1>
+              <p
+                style={{
+                  ...subtitleStyle,
+                  fontSize: isMobile ? 16 : 18,
+                }}
+              >
                 Elegí con cuál seguir hoy. Este listado es tu punto de retorno.
               </p>
             </div>
