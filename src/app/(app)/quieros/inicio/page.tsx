@@ -14,12 +14,13 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 ========================= */
 
 const pageWrapBase: React.CSSProperties = {
-  minHeight: "100%",
   width: "100%",
+  minHeight: "100%",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   boxSizing: "border-box",
+  flex: 1,
 };
 
 /* =========================
@@ -209,8 +210,11 @@ export default function QuierosInicioPage() {
   return (
     <main
       style={{
-        minHeight: "100%",
         width: "100%",
+        minHeight: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         boxSizing: "border-box",
       }}
     >
