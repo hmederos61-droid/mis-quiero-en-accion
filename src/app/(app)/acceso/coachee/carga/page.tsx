@@ -127,13 +127,13 @@ const btnEnviar: React.CSSProperties = {
     "linear-gradient(135deg, rgba(120,160,255,0.95), rgba(160,120,255,0.95))",
 };
 
-const btnModificar: React.CSSProperties = {
+const btnVolver: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(255,170,90,0.95), rgba(255,130,90,0.95))",
 };
 
-const btnVolver: React.CSSProperties = {
+const btnSalir: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(110,140,180,0.90), rgba(90,110,150,0.90))",
@@ -692,7 +692,6 @@ export default function AccesoCoacheeCargaPage() {
     return coachRow.id as string;
   }
 
-  // ✅ CANÓNICO (post-migración): usar first_name si existe, luego full_name
   async function resolveCoachNameOrDefault(coach_id: string): Promise<string> {
     try {
       const { data, error } = await supabase
@@ -790,12 +789,6 @@ export default function AccesoCoacheeCargaPage() {
       const dniDigits = onlyDigits(draft.nroDocumento);
       const cuitDigits = onlyDigits(draft.cuitCuil);
 
-      // =========================================================
-      // ✅ CAMBIO CANÓNICO (NÚCLEO): al GUARDAR se crea identidad coachee
-      // - Crear Auth user + app_users + role='coachee' vía Edge Function
-      // - Luego persistir auth_user_id en public.coachees.auth_user_id
-      // - Si falla: NO se guarda nada en coachees, NO se marca savedOnce
-      // =========================================================
       const normalizedEmail = clean(draft.email).toLowerCase();
       const { data: idData, error: idFnErr } = await supabase.functions.invoke(
         "create-coachee-auth-and-role",
@@ -973,11 +966,14 @@ export default function AccesoCoacheeCargaPage() {
     }
   }
 
-  function handleModificar() {
-    setError(null);
-    setEditing(true);
-    setSubmitAttempted(false);
-    setInvalidKeys(new Set());
+  async function handleSalir() {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // silencio
+    } finally {
+      router.replace("/login");
+    }
   }
 
   return (
@@ -1008,7 +1004,7 @@ export default function AccesoCoacheeCargaPage() {
             <div style={helperStyle}>
               {editing
                 ? "Completá los datos y guardá."
-                : "Datos guardados en BBDD. Podés enviar el mail o modificar."}
+                : "Datos guardados en BBDD. Podés enviar el mail o ingresar un nuevo cliente."}
             </div>
           </div>
 
@@ -1312,7 +1308,7 @@ export default function AccesoCoacheeCargaPage() {
               style={{ ...btnGuardar, ...(loading ? btnDisabled : {}) }}
               onClick={handleGuardar}
               disabled={loading || (!editing && savedOnce)}
-              title={!editing && savedOnce ? "Usá Modificar para editar" : ""}
+              title={!editing && savedOnce ? "El registro ya fue guardado" : ""}
             >
               Guardar
             </button>
@@ -1347,20 +1343,19 @@ export default function AccesoCoacheeCargaPage() {
             </button>
 
             <button
-              style={{ ...btnModificar, ...(loading || editing ? btnDisabled : {}) }}
-              onClick={handleModificar}
-              disabled={loading || editing}
-              title={editing ? "Ya estás editando" : ""}
-            >
-              Modificar
-            </button>
-
-            <button
               style={{ ...btnVolver, ...(loading ? btnDisabled : {}) }}
-              onClick={() => router.replace("/login")}
+              onClick={() => router.replace("/coach")}
               disabled={loading}
             >
               Volver
+            </button>
+
+            <button
+              style={{ ...btnSalir, ...(loading ? btnDisabled : {}) }}
+              onClick={handleSalir}
+              disabled={loading}
+            >
+              Salir
             </button>
           </div>
         </div>
