@@ -139,6 +139,12 @@ const btnVolver: React.CSSProperties = {
     "linear-gradient(135deg, rgba(110,140,180,0.90), rgba(90,110,150,0.90))",
 };
 
+const btnNuevoCliente: React.CSSProperties = {
+  ...btnBase,
+  background:
+    "linear-gradient(135deg, rgba(120,190,235,0.92), rgba(80,150,215,0.92))",
+};
+
 const btnDisabled: React.CSSProperties = {
   opacity: 0.55,
   cursor: "default",
@@ -519,7 +525,11 @@ export default function AccesoCoacheeCargaPage() {
       });
     }
     if (!isValidEmail(email)) {
-      issues.push({ key: "email", label: "Email", detail: "ingresá un email válido" });
+      issues.push({
+        key: "email",
+        label: "Email",
+        detail: "ingresá un email válido",
+      });
     }
     if (!isValidDateMask(fechaNacimiento)) {
       issues.push({
@@ -529,10 +539,18 @@ export default function AccesoCoacheeCargaPage() {
       });
     }
     if (clean(calle).length <= 1) {
-      issues.push({ key: "calle", label: "Calle", detail: "completá este campo" });
+      issues.push({
+        key: "calle",
+        label: "Calle",
+        detail: "completá este campo",
+      });
     }
     if (clean(numero).length <= 0) {
-      issues.push({ key: "numero", label: "Número", detail: "completá este campo" });
+      issues.push({
+        key: "numero",
+        label: "Número",
+        detail: "completá este campo",
+      });
     }
     if (clean(codigoPostal).length <= 1) {
       issues.push({
@@ -542,7 +560,11 @@ export default function AccesoCoacheeCargaPage() {
       });
     }
     if (clean(pais).length <= 1) {
-      issues.push({ key: "pais", label: "País", detail: "completá este campo" });
+      issues.push({
+        key: "pais",
+        label: "País",
+        detail: "completá este campo",
+      });
     }
 
     const nro = onlyDigits(nroDocumento);
@@ -693,6 +715,44 @@ export default function AccesoCoacheeCargaPage() {
     }
   }
 
+  function resetFormForNewCliente() {
+    setCoacheeId(null);
+
+    setNombre("");
+    setApellido("");
+    setWhatsapp("");
+    setEmail("");
+    setFechaNacimiento("");
+
+    setCalle("");
+    setNumero("");
+    setPiso("");
+    setDpto("");
+    setCodigoPostal("");
+
+    setDireccionAclaracion("");
+    setCiudad("");
+    setPais("");
+
+    setTipoDocumento("DNI");
+    setNroDocumento("");
+    setCuitCuil("");
+    setEmiteFactura("NO");
+
+    setEditing(true);
+    setSavedOnce(false);
+    setSubmitAttempted(false);
+    setInvalidKeys(new Set());
+    setError(null);
+    setLoading(false);
+
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch {
+      // silencio
+    }
+  }
+
   async function handleGuardar() {
     setError(null);
     setSubmitAttempted(true);
@@ -744,7 +804,7 @@ export default function AccesoCoacheeCargaPage() {
 
       if (idFnErr) {
         const detail = await extractFunctionErrorDetail(idFnErr);
-        setError(`No fue posible crear la identidad del coachee (Auth/Rol).\n${detail}`);
+        setError(`No fue posible crear la identidad del cliente (Auth/Rol).\n${detail}`);
         return;
       }
 
@@ -753,7 +813,7 @@ export default function AccesoCoacheeCargaPage() {
 
       if (ok !== true || !auth_user_id || typeof auth_user_id !== "string") {
         setError(
-          `No fue posible crear la identidad del coachee (respuesta inválida).\nbody: ${JSON.stringify(
+          `No fue posible crear la identidad del cliente (respuesta inválida).\nbody: ${JSON.stringify(
             idData || {}
           )}`
         );
@@ -770,7 +830,7 @@ export default function AccesoCoacheeCargaPage() {
         postal_code: draft.codigoPostal,
         birth_date: birthIso,
         status: "pending",
-        auth_user_id, // ✅ NUEVO: vínculo canónico
+        auth_user_id,
       };
 
       let finalCoacheeId: string | null = null;
@@ -836,18 +896,17 @@ export default function AccesoCoacheeCargaPage() {
         return;
       }
 
-      // 🔒 RESOLVER coach_id EN EL MOMENTO DE ENVIAR (NO DEPENDER DE LS)
       const resolvedCoachId = coachId || (await resolveCoachIdOrFail());
       if (!resolvedCoachId) {
         setError("No se pudo resolver coach_id al enviar. Volvé a iniciar sesión e intentá nuevamente.");
         return;
       }
       if (!coacheeId) {
-        setError("No se detectó coachee_id. Volvé a Guardar y luego enviá.");
+        setError("No se detectó cliente_id. Volvé a Guardar y luego enviá.");
         return;
       }
 
-      const coacheeNombre = clean(`${nombre} ${apellido}`) || "Coachee";
+      const coacheeNombre = clean(`${nombre} ${apellido}`) || "Cliente";
       const coachNombre = await resolveCoachNameOrDefault(resolvedCoachId);
 
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -868,17 +927,20 @@ export default function AccesoCoacheeCargaPage() {
         body: {
           token,
           to_email: toEmail,
-          email: toEmail, // compat (por si queda algo del otro lado)
-          coach_id: resolvedCoachId, // ✅ CRÍTICO
+          email: toEmail,
+          coach_id: resolvedCoachId,
           coachee_nombre: coacheeNombre,
-          coach_nombre: coachNombre, // ✅ ahora será "Hugo"
-          login_url, // por si alguna versión lo usa (no rompe)
+          coach_nombre: coachNombre,
+          login_url,
         },
       });
 
       if (fnErr) {
         try {
-          await supabase.from("coachee_invitations").update({ status: "revoked" }).eq("id", invitation_id);
+          await supabase
+            .from("coachee_invitations")
+            .update({ status: "revoked" })
+            .eq("id", invitation_id);
         } catch {
           // silencio
         }
@@ -891,7 +953,10 @@ export default function AccesoCoacheeCargaPage() {
       const ok = (data as any)?.ok;
       if (ok !== true) {
         try {
-          await supabase.from("coachee_invitations").update({ status: "revoked" }).eq("id", invitation_id);
+          await supabase
+            .from("coachee_invitations")
+            .update({ status: "revoked" })
+            .eq("id", invitation_id);
         } catch {
           // silencio
         }
@@ -939,9 +1004,11 @@ export default function AccesoCoacheeCargaPage() {
       >
         <div style={glassCard}>
           <div style={headerRow}>
-            <div style={titleStyle}>Datos del Coachee</div>
+            <div style={titleStyle}>Datos del Cliente</div>
             <div style={helperStyle}>
-              {editing ? "Completá los datos y guardá." : "Datos guardados en BBDD. Podés enviar el mail o modificar."}
+              {editing
+                ? "Completá los datos y guardá."
+                : "Datos guardados en BBDD. Podés enviar el mail o modificar."}
             </div>
           </div>
 
@@ -949,7 +1016,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Nombre</div>
               <input
-                style={submitAttempted && invalidKeys.has("nombre") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("nombre")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 disabled={disabled}
@@ -960,7 +1031,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Apellido</div>
               <input
-                style={submitAttempted && invalidKeys.has("apellido") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("apellido")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={apellido}
                 onChange={(e) => setApellido(e.target.value)}
                 disabled={disabled}
@@ -975,7 +1050,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>WhatsApp</div>
               <input
-                style={submitAttempted && invalidKeys.has("whatsapp") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("whatsapp")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 disabled={disabled}
@@ -986,7 +1065,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Email</div>
               <input
-                style={submitAttempted && invalidKeys.has("email") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("email")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={disabled}
@@ -1018,7 +1101,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Calle</div>
               <input
-                style={submitAttempted && invalidKeys.has("calle") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("calle")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={calle}
                 onChange={(e) => setCalle(e.target.value)}
                 disabled={disabled}
@@ -1029,7 +1116,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Nro</div>
               <input
-                style={submitAttempted && invalidKeys.has("numero") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("numero")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={numero}
                 onChange={(e) => setNumero(onlyDigits(e.target.value).slice(0, 6))}
                 disabled={disabled}
@@ -1105,7 +1196,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>País</div>
               <input
-                style={submitAttempted && invalidKeys.has("pais") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("pais")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={pais}
                 onChange={(e) => setPais(e.target.value.slice(0, 60))}
                 disabled={disabled}
@@ -1155,7 +1250,11 @@ export default function AccesoCoacheeCargaPage() {
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>CUIT/CUIL (opcional)</div>
               <input
-                style={submitAttempted && invalidKeys.has("cuitCuil") ? { ...inputStyle, ...inputInvalidStyle } : inputStyle}
+                style={
+                  submitAttempted && invalidKeys.has("cuitCuil")
+                    ? { ...inputStyle, ...inputInvalidStyle }
+                    : inputStyle
+                }
                 value={cuitCuil}
                 onChange={(e) => setCuitCuil(formatCuitMask(e.target.value))}
                 disabled={disabled}
@@ -1201,7 +1300,14 @@ export default function AccesoCoacheeCargaPage() {
             </div>
           )}
 
-          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div
+            style={{
+              marginTop: 14,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+            }}
+          >
             <button
               style={{ ...btnGuardar, ...(loading ? btnDisabled : {}) }}
               onClick={handleGuardar}
@@ -1212,12 +1318,32 @@ export default function AccesoCoacheeCargaPage() {
             </button>
 
             <button
-              style={{ ...btnEnviar, ...(loading || !savedOnce || editing ? btnDisabled : {}) }}
+              style={{
+                ...btnEnviar,
+                ...(loading || !savedOnce || editing ? btnDisabled : {}),
+              }}
               onClick={handleEnviarMail}
               disabled={loading || !savedOnce || editing}
               title={!savedOnce ? "Primero guardá los datos" : editing ? "Guardá antes de enviar" : ""}
             >
               Enviar mail
+            </button>
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 12,
+            }}
+          >
+            <button
+              style={{ ...btnNuevoCliente, ...(loading ? btnDisabled : {}) }}
+              onClick={resetFormForNewCliente}
+              disabled={loading}
+            >
+              Ingresar nuevo Cliente
             </button>
 
             <button
