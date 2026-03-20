@@ -208,7 +208,22 @@ function LoginPrimerIngresoInner() {
   const [gate, setGate] = useState<TokenGate>("checking");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
   const PROD_LOGIN_URL = "https://misquieroenaccion.com/login";
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    onResize();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (emailFromLink) setEmail(emailFromLink);
@@ -460,6 +475,32 @@ function LoginPrimerIngresoInner() {
   // ✅ Ajuste: después de crear cuenta, grisamos clave + deshabilitamos ojo
   const disableInputs = showBlocked || loading || passwordCreated;
 
+  const outerPadding = isMobile ? 16 : 24;
+  const sectionGap = isMobile ? 22 : 96;
+  const sectionColumns = isMobile ? "1fr" : "1fr 1fr";
+  const cardPadding = isMobile ? 24 : 34;
+
+  const leftCardStyle: React.CSSProperties = {
+    ...glassCard,
+    padding: cardPadding,
+    width: "100%",
+    maxWidth: isMobile ? 560 : undefined,
+    margin: isMobile ? "0 auto" : undefined,
+  };
+
+  const rightCardStyle: React.CSSProperties = {
+    ...glassCard,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+    padding: cardPadding,
+    width: "100%",
+    maxWidth: isMobile ? 560 : undefined,
+    margin: isMobile ? "0 auto" : undefined,
+  };
+
   return (
     <main style={{ minHeight: "100vh", position: "relative" }}>
       <div
@@ -468,34 +509,62 @@ function LoginPrimerIngresoInner() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 24,
+          padding: outerPadding,
         }}
       >
         <section
           style={{
             width: "min(1180px, 100%)",
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 96,
+            gridTemplateColumns: sectionColumns,
+            gap: sectionGap,
             alignItems: "stretch",
           }}
         >
           {/* IZQUIERDA */}
-          <div style={glassCard}>
-            <h1 style={{ fontSize: 42, margin: 0 }}>Mis Quiero en Acción</h1>
+          <div style={leftCardStyle}>
+            <h1
+              style={{
+                fontSize: isMobile ? 32 : 42,
+                lineHeight: 1.1,
+                margin: 0,
+              }}
+            >
+              Mis Quiero en Acción
+            </h1>
 
             {!passwordCreated ? (
-              <p style={{ fontSize: 20, marginTop: 10 }}>
+              <p
+                style={{
+                  fontSize: isMobile ? 18 : 20,
+                  lineHeight: 1.3,
+                  marginTop: 10,
+                }}
+              >
                 Bienvenido. Ingresá una clave para activar tu cuenta.
               </p>
             ) : (
-              <p style={{ fontSize: 22, marginTop: 12 }}>
+              <p
+                style={{
+                  fontSize: isMobile ? 20 : 22,
+                  lineHeight: 1.3,
+                  marginTop: 12,
+                }}
+              >
                 Cuenta CREADA, ahora por favor, da un click en ACCEDER
               </p>
             )}
 
             {msg && !passwordCreated && (
-              <div style={{ fontSize: 16, marginTop: 12 }}>{msg}</div>
+              <div
+                style={{
+                  fontSize: isMobile ? 15 : 16,
+                  lineHeight: 1.35,
+                  marginTop: 12,
+                }}
+              >
+                {msg}
+              </div>
             )}
 
             <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
@@ -585,25 +654,20 @@ function LoginPrimerIngresoInner() {
           </div>
 
           {/* DERECHA (Banner) */}
-          <div
-            style={{
-              ...glassCard,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              padding: 34,
-            }}
-          >
+          <div style={rightCardStyle}>
             {showBlocked ? (
               <>
-                <div style={{ fontSize: 28, lineHeight: 1.25 }}>
+                <div
+                  style={{
+                    fontSize: isMobile ? 24 : 28,
+                    lineHeight: 1.25,
+                  }}
+                >
                   Este link no es válido para crear la clave.
                 </div>
                 <div
                   style={{
-                    fontSize: 18,
+                    fontSize: isMobile ? 16 : 18,
                     marginTop: 14,
                     opacity: 0.95,
                     lineHeight: 1.35,
@@ -625,13 +689,23 @@ function LoginPrimerIngresoInner() {
                 </div>
               </>
             ) : !hasSession ? (
-              <div style={{ fontSize: 34, lineHeight: 1.25 }}>
+              <div
+                style={{
+                  fontSize: isMobile ? 24 : 34,
+                  lineHeight: 1.25,
+                }}
+              >
                 Vamos, estás a un paso de acceder a una nueva posibilidad de
                 cambio…!!!
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 30, lineHeight: 1.25 }}>
+                <div
+                  style={{
+                    fontSize: isMobile ? 24 : 30,
+                    lineHeight: 1.25,
+                  }}
+                >
                   Genial, un primer paso ya logrado… vamos por establecer esos
                   Quiero… empecemos con la acción…!!!!!!!
                 </div>
