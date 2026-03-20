@@ -6,7 +6,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    Estética glass (patrón LOGIN)
-   + Compactación vertical (para que entre en 1 pantalla)
 ========================= */
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
@@ -82,21 +81,18 @@ const row3: React.CSSProperties = {
   gap: 12,
 };
 
-// Línea 3: Calle | Nro | Piso | Dpto | CP
 const rowAddr5: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "2fr 0.8fr 0.8fr 0.9fr 1fr",
   gap: 12,
 };
 
-// Línea 4: Aclaración | Ciudad | País
 const rowAddr3: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "2fr 1fr 1fr",
   gap: 12,
 };
 
-// Línea 5: Tipo doc | Nro doc | CUIT/CUIL | Emite factura
 const rowDoc4: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "0.8fr 1.2fr 1.3fr 0.9fr",
@@ -143,6 +139,12 @@ const btnNuevoCliente: React.CSSProperties = {
   ...btnBase,
   background:
     "linear-gradient(135deg, rgba(120,190,235,0.92), rgba(80,150,215,0.92))",
+};
+
+const btnBaja: React.CSSProperties = {
+  ...btnBase,
+  background:
+    "linear-gradient(135deg, rgba(210,90,90,0.95), rgba(170,50,50,0.95))",
 };
 
 const btnDisabled: React.CSSProperties = {
@@ -464,7 +466,6 @@ export default function AccesoCoacheeCargaPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
 
-  const [editing, setEditing] = useState(true);
   const [savedOnce, setSavedOnce] = useState(false);
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -498,7 +499,8 @@ export default function AccesoCoacheeCargaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const disabled = !editing || loading;
+  const disabled = loading;
+  const isExistingRecord = Boolean(coacheeId);
 
   function validate(): Issue[] {
     const issues: Issue[] = [];
@@ -621,7 +623,6 @@ export default function AccesoCoacheeCargaPage() {
       setEmiteFactura(d.emiteFactura || "NO");
 
       setSavedOnce(hasIds);
-      setEditing(!hasIds);
     } catch {
       // silencio
     }
@@ -738,7 +739,6 @@ export default function AccesoCoacheeCargaPage() {
     setCuitCuil("");
     setEmiteFactura("NO");
 
-    setEditing(true);
     setSavedOnce(false);
     setSubmitAttempted(false);
     setInvalidKeys(new Set());
@@ -788,50 +788,26 @@ export default function AccesoCoacheeCargaPage() {
 
       const dniDigits = onlyDigits(draft.nroDocumento);
       const cuitDigits = onlyDigits(draft.cuitCuil);
-
       const normalizedEmail = clean(draft.email).toLowerCase();
-      const { data: idData, error: idFnErr } = await supabase.functions.invoke(
-        "create-coachee-auth-and-role",
-        { body: { email: normalizedEmail } }
-      );
-
-      if (idFnErr) {
-        const detail = await extractFunctionErrorDetail(idFnErr);
-        setError(`No fue posible crear la identidad del cliente (Auth/Rol).\n${detail}`);
-        return;
-      }
-
-      const ok = (idData as any)?.ok;
-      const auth_user_id = (idData as any)?.auth_user_id;
-
-      if (ok !== true || !auth_user_id || typeof auth_user_id !== "string") {
-        setError(
-          `No fue posible crear la identidad del cliente (respuesta inválida).\nbody: ${JSON.stringify(
-            idData || {}
-          )}`
-        );
-        return;
-      }
-
-      const payload: any = {
-        coach_id: resolvedCoachId,
-        full_name: fullName,
-        email: normalizedEmail,
-        dni: dniDigits,
-        cuit_cuil: cuitDigits || "",
-        address: buildAddressString(draft),
-        postal_code: draft.codigoPostal,
-        birth_date: birthIso,
-        status: "pending",
-        auth_user_id,
-      };
 
       let finalCoacheeId: string | null = null;
 
       if (coacheeId) {
+        const payloadUpdate: any = {
+          coach_id: resolvedCoachId,
+          full_name: fullName,
+          email: normalizedEmail,
+          dni: dniDigits,
+          cuit_cuil: cuitDigits || "",
+          address: buildAddressString(draft),
+          postal_code: draft.codigoPostal,
+          birth_date: birthIso,
+          is_active: true,
+        };
+
         const { data: upd, error: updErr } = await supabase
           .from("coachees")
-          .update(payload)
+          .update(payloadUpdate)
           .eq("id", coacheeId)
           .select("id")
           .single();
@@ -842,11 +818,49 @@ export default function AccesoCoacheeCargaPage() {
           );
           return;
         }
+
         finalCoacheeId = upd.id as string;
       } else {
+        const { data: idData, error: idFnErr } = await supabase.functions.invoke(
+          "create-coachee-auth-and-role",
+          { body: { email: normalizedEmail } }
+        );
+
+        if (idFnErr) {
+          const detail = await extractFunctionErrorDetail(idFnErr);
+          setError(`No fue posible crear la identidad del cliente (Auth/Rol).\n${detail}`);
+          return;
+        }
+
+        const ok = (idData as any)?.ok;
+        const auth_user_id = (idData as any)?.auth_user_id;
+
+        if (ok !== true || !auth_user_id || typeof auth_user_id !== "string") {
+          setError(
+            `No fue posible crear la identidad del cliente (respuesta inválida).\nbody: ${JSON.stringify(
+              idData || {}
+            )}`
+          );
+          return;
+        }
+
+        const payloadInsert: any = {
+          coach_id: resolvedCoachId,
+          full_name: fullName,
+          email: normalizedEmail,
+          dni: dniDigits,
+          cuit_cuil: cuitDigits || "",
+          address: buildAddressString(draft),
+          postal_code: draft.codigoPostal,
+          birth_date: birthIso,
+          status: "pending",
+          auth_user_id,
+          is_active: true,
+        };
+
         const { data: ins, error: insErr } = await supabase
           .from("coachees")
-          .insert(payload)
+          .insert(payloadInsert)
           .select("id")
           .single();
 
@@ -856,6 +870,7 @@ export default function AccesoCoacheeCargaPage() {
           );
           return;
         }
+
         finalCoacheeId = ins.id as string;
       }
 
@@ -869,7 +884,7 @@ export default function AccesoCoacheeCargaPage() {
       localStorage.setItem(LS_KEY, JSON.stringify(draftWithIds));
 
       setSavedOnce(true);
-      setEditing(false);
+      setError("✅ Datos guardados correctamente.");
     } catch {
       setError("No fue posible guardar. Intentá nuevamente.");
     } finally {
@@ -879,13 +894,13 @@ export default function AccesoCoacheeCargaPage() {
 
   async function handleEnviarMail() {
     setError(null);
-    if (!savedOnce || editing) return;
+    if (!savedOnce) return;
 
     setLoading(true);
     try {
       const toEmail = clean(email).toLowerCase();
       if (!isValidEmail(toEmail)) {
-        setError("Email inválido. Volvé a Modificar y corregilo.");
+        setError("Email inválido. Corregilo antes de enviar.");
         return;
       }
 
@@ -966,6 +981,45 @@ export default function AccesoCoacheeCargaPage() {
     }
   }
 
+  async function handleDarDeBaja() {
+    if (!coacheeId) {
+      setError("Primero seleccioná o guardá un cliente.");
+      return;
+    }
+
+    const confirmar = window.confirm(
+      "¿Confirmás dar de baja este cliente? No se elimina de la base, solo quedará inactivo."
+    );
+    if (!confirmar) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: updErr } = await supabase
+        .from("coachees")
+        .update({ is_active: false })
+        .eq("id", coacheeId);
+
+      if (updErr) {
+        setError(`No fue posible dar de baja el cliente: ${updErr.message || "sin detalle"}`);
+        return;
+      }
+
+      try {
+        localStorage.removeItem(LS_KEY);
+      } catch {
+        // silencio
+      }
+
+      router.replace("/coach");
+    } catch {
+      setError("No fue posible dar de baja el cliente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSalir() {
     try {
       await supabase.auth.signOut();
@@ -1002,9 +1056,11 @@ export default function AccesoCoacheeCargaPage() {
           <div style={headerRow}>
             <div style={titleStyle}>Datos del Cliente</div>
             <div style={helperStyle}>
-              {editing
-                ? "Completá los datos y guardá."
-                : "Datos guardados en BBDD. Podés enviar el mail o ingresar un nuevo cliente."}
+              {isExistingRecord
+                ? "Podés modificar los datos, guardar cambios, enviar el mail o dar de baja al cliente."
+                : savedOnce
+                ? "Datos guardados en BBDD. Podés enviar el mail o ingresar un nuevo cliente."
+                : "Completá los datos y guardá."}
             </div>
           </div>
 
@@ -1287,7 +1343,7 @@ export default function AccesoCoacheeCargaPage() {
               style={{
                 marginTop: 12,
                 fontSize: 15,
-                color: "#ffb4b4",
+                color: error.startsWith("✅") ? "#d6ffd6" : "#ffb4b4",
                 opacity: 0.98,
                 whiteSpace: "pre-line",
               }}
@@ -1307,8 +1363,8 @@ export default function AccesoCoacheeCargaPage() {
             <button
               style={{ ...btnGuardar, ...(loading ? btnDisabled : {}) }}
               onClick={handleGuardar}
-              disabled={loading || (!editing && savedOnce)}
-              title={!editing && savedOnce ? "El registro ya fue guardado" : ""}
+              disabled={loading}
+              title={isExistingRecord ? "Guardar cambios del cliente" : "Guardar nuevo cliente"}
             >
               Guardar
             </button>
@@ -1316,11 +1372,11 @@ export default function AccesoCoacheeCargaPage() {
             <button
               style={{
                 ...btnEnviar,
-                ...(loading || !savedOnce || editing ? btnDisabled : {}),
+                ...(loading || !savedOnce ? btnDisabled : {}),
               }}
               onClick={handleEnviarMail}
-              disabled={loading || !savedOnce || editing}
-              title={!savedOnce ? "Primero guardá los datos" : editing ? "Guardá antes de enviar" : ""}
+              disabled={loading || !savedOnce}
+              title={!savedOnce ? "Primero guardá los datos" : "Enviar mail al cliente"}
             >
               Enviar mail
             </button>
@@ -1330,7 +1386,7 @@ export default function AccesoCoacheeCargaPage() {
             style={{
               marginTop: 12,
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
+              gridTemplateColumns: isExistingRecord ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr",
               gap: 12,
             }}
           >
@@ -1341,6 +1397,16 @@ export default function AccesoCoacheeCargaPage() {
             >
               Ingresar nuevo Cliente
             </button>
+
+            {isExistingRecord && (
+              <button
+                style={{ ...btnBaja, ...(loading ? btnDisabled : {}) }}
+                onClick={handleDarDeBaja}
+                disabled={loading}
+              >
+                Dar de baja
+              </button>
+            )}
 
             <button
               style={{ ...btnVolver, ...(loading ? btnDisabled : {}) }}
