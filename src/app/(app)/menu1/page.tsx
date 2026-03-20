@@ -132,7 +132,10 @@ export default function Menu1Page() {
 
         const roles = (Array.isArray(r1) ? r1 : [])
           .map((x: any) => String(x.role || "").toLowerCase())
-          .filter((x: string) => x === "admin" || x === "coach" || x === "coachee");
+          .filter(
+            (x: string) =>
+              x === "admin" || x === "coach" || x === "coachee"
+          );
 
         const unique = Array.from(new Set(roles));
         const hasAdmin = unique.includes("admin");
@@ -182,6 +185,7 @@ export default function Menu1Page() {
     e.currentTarget.style.transform = "translateY(-1px)";
     e.currentTarget.style.filter = "brightness(1.03)";
   }
+
   function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
     e.currentTarget.style.transform = "translateY(0px)";
     e.currentTarget.style.filter = "none";
@@ -244,7 +248,7 @@ export default function Menu1Page() {
               alta de coaches · auditoría
             </div>
             <div>
-              <strong>Coach</strong>: alta de coachee · gestión de quieros ·
+              <strong>Coach</strong>: alta de cliente · gestión de quieros ·
               seguimiento
             </div>
           </div>
