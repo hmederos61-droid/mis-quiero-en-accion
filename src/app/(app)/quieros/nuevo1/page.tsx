@@ -166,11 +166,9 @@ function Nuevo1Inner() {
   const [quieroStatus, setQuieroStatus] = useState<string | null>(null);
   const bloqueado = (quieroStatus ?? "").toLowerCase() === "reformulado";
 
-  // Inputs
   const [inhInput, setInhInput] = useState("");
   const [habInput, setHabInput] = useState("");
 
-  // Ámbito + detalle
   const [inhAmbito, setInhAmbito] = useState<(typeof AMBITOS)[number]>("Salud");
   const [inhOtrosDetalle, setInhOtrosDetalle] = useState("");
 
@@ -200,7 +198,6 @@ function Nuevo1Inner() {
 
     setLoading(true);
 
-    // 1) status del quiero
     const qRes = await supabase.from("quieros").select("id,status").eq("id", id).maybeSingle();
     if (qRes.error) {
       setLoading(false);
@@ -211,7 +208,6 @@ function Nuevo1Inner() {
     const q = qRes.data as QuieroDB | null;
     setQuieroStatus(q?.status ?? null);
 
-    // 2) actions del quiero
     const aRes = await supabase
       .from("actions")
       .select("id,user_id,quiero_id,title,tipo,ambito,otros_detalle,estado_item,created_at")
@@ -388,9 +384,6 @@ function Nuevo1Inner() {
     addItem(tipo);
   }
 
-  /* =========================
-     Styles compactos
-  ========================= */
   const wrapText: React.CSSProperties = {
     whiteSpace: "pre-wrap",
     overflowWrap: "anywhere",
@@ -402,6 +395,7 @@ function Nuevo1Inner() {
     fontSize: 14,
     opacity: 0.95,
     marginBottom: 6,
+    lineHeight: 1.3,
   };
 
   const textareaStyle: React.CSSProperties = {
@@ -415,6 +409,8 @@ function Nuevo1Inner() {
     fontSize: 15,
     resize: "vertical",
     minHeight: 46,
+    minWidth: 0,
+    boxSizing: "border-box",
     ...wrapText,
   };
 
@@ -426,8 +422,12 @@ function Nuevo1Inner() {
     color: "rgba(255,255,255,0.96)",
     outline: "none",
     fontSize: 15,
-    width: 190,
+    width: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
     appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
     paddingRight: 44,
     backgroundImage:
       "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
@@ -496,9 +496,12 @@ function Nuevo1Inner() {
         }}
       >
         <section style={{ width: "min(980px, 100%)" }}>
-          <div style={glassCard}>
-            <h1 style={titleStyle}>Definí tus inhabilitantes y habilitantes</h1>
-            <p style={subtitleStyle}>
+          <div className="nuevo1Card" style={glassCard}>
+            <h1 className="nuevo1Title" style={titleStyle}>
+              Definí tus inhabilitantes y habilitantes
+            </h1>
+
+            <p className="nuevo1Subtitle" style={subtitleStyle}>
               Acá ordenamos lo que hoy te frena y lo que te puede ayudar a avanzar. Podés cargar tantos como necesites.
             </p>
 
@@ -538,20 +541,21 @@ function Nuevo1Inner() {
               </div>
             )}
 
-            {/* ========================= INHABILITANTES ========================= */}
             <div style={divider} />
-            <h2 style={sectionTitle}>¿Qué considerás que te impide cumplir con tu Quiero?</h2>
+            <h2 className="nuevo1SectionTitle" style={sectionTitle}>
+              ¿Qué considerás que te impide cumplir con tu Quiero?
+            </h2>
 
             <div
+              className="nuevo1FormGrid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 190px",
                 gap: 14,
                 alignItems: "end",
                 marginBottom: 12,
               }}
             >
-              <div>
+              <div className="nuevo1FormField">
                 <div style={labelStyle}>Nuevo inhabilitante</div>
                 <textarea
                   style={textareaStyle}
@@ -563,7 +567,7 @@ function Nuevo1Inner() {
                 />
               </div>
 
-              <div>
+              <div className="nuevo1AmbitoField">
                 <div style={labelStyle}>Ámbito</div>
                 <select
                   style={selectStyle}
@@ -603,7 +607,7 @@ function Nuevo1Inner() {
                   const isEditing = editingId === it.id;
                   const amb = normalizeAmbito(it.ambito);
                   return (
-                    <div key={it.id} style={itemBox}>
+                    <div key={it.id} className="nuevo1ItemBox" style={itemBox}>
                       <div style={{ flex: 1, minWidth: 220 }}>
                         {isEditing ? (
                           <textarea
@@ -623,7 +627,7 @@ function Nuevo1Inner() {
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <div className="nuevo1ItemActions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                         {isEditing ? (
                           <>
                             <button
@@ -685,20 +689,21 @@ function Nuevo1Inner() {
               Agregar inhabilitante
             </button>
 
-            {/* ========================= HABILITANTES ========================= */}
             <div style={divider} />
-            <h2 style={sectionTitle}>¿Qué necesitás para concretar ese Quiero?</h2>
+            <h2 className="nuevo1SectionTitle" style={sectionTitle}>
+              ¿Qué necesitás para concretar ese Quiero?
+            </h2>
 
             <div
+              className="nuevo1FormGrid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 190px",
                 gap: 14,
                 alignItems: "end",
                 marginBottom: 12,
               }}
             >
-              <div>
+              <div className="nuevo1FormField">
                 <div style={labelStyle}>Nuevo habilitante</div>
                 <textarea
                   style={textareaStyle}
@@ -710,7 +715,7 @@ function Nuevo1Inner() {
                 />
               </div>
 
-              <div>
+              <div className="nuevo1AmbitoField">
                 <div style={labelStyle}>Ámbito</div>
                 <select
                   style={selectStyle}
@@ -750,7 +755,7 @@ function Nuevo1Inner() {
                   const isEditing = editingId === it.id;
                   const amb = normalizeAmbito(it.ambito);
                   return (
-                    <div key={it.id} style={itemBox}>
+                    <div key={it.id} className="nuevo1ItemBox" style={itemBox}>
                       <div style={{ flex: 1, minWidth: 220 }}>
                         {isEditing ? (
                           <textarea
@@ -770,7 +775,7 @@ function Nuevo1Inner() {
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <div className="nuevo1ItemActions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                         {isEditing ? (
                           <>
                             <button
@@ -832,7 +837,6 @@ function Nuevo1Inner() {
               Agregar habilitante
             </button>
 
-            {/* CIERRE */}
             <div
               style={{
                 marginTop: 18,
@@ -866,15 +870,127 @@ function Nuevo1Inner() {
             </div>
 
             {quieroId ? (
-              <div style={{ marginTop: 12, fontSize: 12, opacity: 0.82 }}>
+              <div className="nuevo1QuieroActual" style={{ marginTop: 12, fontSize: 12, opacity: 0.82 }}>
                 Quiero actual: <span style={{ opacity: 0.95 }}>{quieroId}</span>
               </div>
             ) : null}
 
             <style jsx>{`
+              .nuevo1FormGrid {
+                grid-template-columns: minmax(0, 1fr) 190px;
+              }
+
+              .nuevo1FormField,
+              .nuevo1AmbitoField {
+                min-width: 0;
+              }
+
               @media (max-width: 980px) {
                 .cierreGrid {
                   grid-template-columns: 1fr;
+                }
+              }
+
+              @media (max-width: 820px) {
+                .nuevo1Card {
+                  padding: 24px !important;
+                }
+
+                .nuevo1Title {
+                  font-size: 24px !important;
+                  line-height: 1.14 !important;
+                }
+
+                .nuevo1Subtitle {
+                  font-size: 15px !important;
+                  line-height: 1.35 !important;
+                }
+
+                .nuevo1SectionTitle {
+                  font-size: 18px !important;
+                  line-height: 1.22 !important;
+                }
+
+                .nuevo1FormGrid {
+                  grid-template-columns: 1fr;
+                }
+
+                .nuevo1AmbitoField {
+                  max-width: none;
+                }
+
+                .nuevo1ItemBox {
+                  flex-direction: column;
+                }
+
+                .nuevo1ItemActions {
+                  width: 100%;
+                  justify-content: flex-start;
+                }
+
+                .nuevo1QuieroActual {
+                  word-break: break-word;
+                  overflow-wrap: anywhere;
+                }
+              }
+
+              @media (max-width: 640px) {
+                .nuevo1Card {
+                  padding: 20px !important;
+                }
+
+                .nuevo1Title {
+                  font-size: 22px !important;
+                }
+
+                .nuevo1Subtitle {
+                  font-size: 14px !important;
+                }
+
+                .nuevo1SectionTitle {
+                  font-size: 17px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .nuevo1Card {
+                  padding: 18px !important;
+                }
+
+                .nuevo1Title {
+                  font-size: 20px !important;
+                }
+
+                .nuevo1Subtitle {
+                  font-size: 13px !important;
+                  line-height: 1.32 !important;
+                }
+
+                .nuevo1SectionTitle {
+                  font-size: 16px !important;
+                }
+              }
+
+              @media (max-height: 430px) and (orientation: landscape) {
+                .nuevo1Card {
+                  padding: 22px !important;
+                }
+
+                .nuevo1Title {
+                  font-size: 22px !important;
+                  line-height: 1.1 !important;
+                }
+
+                .nuevo1Subtitle {
+                  font-size: 14px !important;
+                  line-height: 1.3 !important;
+                }
+
+                .nuevo1SectionTitle {
+                  font-size: 17px !important;
+                  line-height: 1.18 !important;
+                  margin-top: 14px !important;
+                  margin-bottom: 8px !important;
                 }
               }
             `}</style>
