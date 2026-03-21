@@ -308,6 +308,18 @@ function LoginPrimerIngresoInner() {
 
         if (status === "ok") {
           setGate("ok");
+
+          // ✅ NUEVO: marcar invited cuando el token es válido y el coachee entra a este flujo
+          try {
+            await supabase
+              .from("coachees")
+              .update({ status: "invited" })
+              .eq("email", emailFromLink)
+              .in("status", ["pending", "invited"]);
+          } catch {
+            // silencio
+          }
+
           return;
         }
 
@@ -352,7 +364,7 @@ function LoginPrimerIngresoInner() {
     return () => {
       cancel = true;
     };
-  }, [supabase, token]);
+  }, [supabase, token, emailFromLink]);
 
   async function onCrearCuenta() {
     setMsg(null);
