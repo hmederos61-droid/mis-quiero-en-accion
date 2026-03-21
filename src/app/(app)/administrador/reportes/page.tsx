@@ -1,4 +1,4 @@
-// src/app/(app)/admin/reportes/page.tsx
+// src/app/(app)/administrador/reportes/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -7,10 +7,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* =========================
    REPORTES DE GESTIÓN
-   - Menú de reportes
-   - Reporte 1: Detalle de clientes
-   - Visualización en pantalla
-   - Descarga para Excel
 ========================= */
 
 const glassCard: React.CSSProperties = {
@@ -138,7 +134,24 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
 };
 
-type ReportKey = "clientes";
+const selectWrap: React.CSSProperties = {
+  display: "grid",
+  gap: 6,
+};
+
+const selectStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.18)",
+  outline: "none",
+  background: "rgba(0,0,0,0.18)",
+  color: "rgba(255,255,255,0.95)",
+  fontSize: 15,
+};
+
+type ReportKey = "clientes" | "accesos";
+type SortAccessKey = "fecha" | "usuario";
 
 type CoacheeReportRow = {
   id: string;
@@ -152,6 +165,15 @@ type CoacheeReportRow = {
   cuit_cuil: string | null;
   is_active: boolean | null;
   status: string | null;
+};
+
+type LoginEventRow = {
+  id: string;
+  auth_user_id: string;
+  email: string | null;
+  role: string | null;
+  device_type: string | null;
+  created_at: string | null;
 };
 
 function clean(v: string | null | undefined) {
@@ -174,7 +196,9 @@ function normalizeEstado(row: CoacheeReportRow) {
 
   const status = clean(row.status).toUpperCase();
   if (status === "PENDING") return "PENDIENTE";
+  if (status === "INVITED") return "INVITED";
   if (status === "ACTIVE") return "ACTIVO";
+  if (status === "INACTIVE") return "INACTIVO";
   if (status) return status;
 
   return row.is_active ? "ACTIVO" : "SIN DEFINIR";
@@ -188,7 +212,7 @@ function escapeHtml(v: string) {
     .replaceAll('"', "&quot;");
 }
 
-function buildExcelHtml(rows: CoacheeReportRow[]) {
+function buildClientesExcelHtml(rows: CoacheeReportRow[]) {
   const headers = [
     "Fecha alta",
     "Cliente",
@@ -229,18 +253,6 @@ function buildExcelHtml(rows: CoacheeReportRow[]) {
           xmlns="http://www.w3.org/TR/REC-html40">
       <head>
         <meta charset="UTF-8" />
-        <!--[if gte mso 9]>
-        <xml>
-          <x:ExcelWorkbook>
-            <x:ExcelWorksheets>
-              <x:ExcelWorksheet>
-                <x:Name>Clientes</x:Name>
-                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-              </x:ExcelWorksheet>
-            </x:ExcelWorksheets>
-          </x:ExcelWorkbook>
-        </xml>
-        <![endif]-->
       </head>
       <body>
         <table border="1">
@@ -254,6 +266,65 @@ function buildExcelHtml(rows: CoacheeReportRow[]) {
   `;
 }
 
+function buildAccesosExcelHtml(rows: LoginEventRow[]) {
+  const headers = [
+    "Fecha y hora",
+    "Usuario",
+    "Rol",
+    "Dispositivo",
+    "Auth User ID",
+  ];
+
+  const body = rows
+    .map((row) => {
+      const values = [
+        fmtDateTime(row.created_at),
+        clean(row.email),
+        clean(row.role),
+        clean(row.device_type),
+        clean(row.auth_user_id),
+      ];
+
+      return `<tr>${values
+        .map((v) => `<td>${escapeHtml(v || "")}</td>`)
+        .join("")}</tr>`;
+    })
+    .join("");
+
+  return `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="UTF-8" />
+      </head>
+      <body>
+        <table border="1">
+          <thead>
+            <tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+function downloadExcel(filename: string, html: string) {
+  const blob = new Blob([html], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminReportesPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
@@ -262,8 +333,10 @@ export default function AdminReportesPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ReportKey>("clientes");
+  const [accessSortBy, setAccessSortBy] = useState<SortAccessKey>("fecha");
   const [error, setError] = useState<string | null>(null);
   const [rowsClientes, setRowsClientes] = useState<CoacheeReportRow[]>([]);
+  const [rowsAccesos, setRowsAccesos] = useState<LoginEventRow[]>([]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 768);
@@ -320,6 +393,30 @@ export default function AdminReportesPage() {
 
         setRowsClientes(Array.isArray(data) ? (data as CoacheeReportRow[]) : []);
       }
+
+      if (selectedReport === "accesos") {
+        let query = supabase
+          .from("login_events")
+          .select("id, auth_user_id, email, role, device_type, created_at");
+
+        if (accessSortBy === "fecha") {
+          query = query.order("created_at", { ascending: false });
+        } else {
+          query = query.order("email", { ascending: true });
+          query = query.order("created_at", { ascending: false });
+        }
+
+        const { data, error: qErr } = await query;
+
+        if (qErr) {
+          setError(
+            `No fue posible generar el reporte: ${qErr.message || "sin detalle"}`
+          );
+          return;
+        }
+
+        setRowsAccesos(Array.isArray(data) ? (data as LoginEventRow[]) : []);
+      }
     } catch {
       setError("No fue posible generar el reporte. Intentá nuevamente.");
     } finally {
@@ -330,31 +427,36 @@ export default function AdminReportesPage() {
   function handleDescargarExcel() {
     setError(null);
 
-    if (selectedReport !== "clientes") return;
-    if (!rowsClientes.length) {
-      setError("Primero generá el reporte para poder descargarlo.");
-      return;
-    }
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+    const dd = String(hoy.getDate()).padStart(2, "0");
 
     try {
-      const html = buildExcelHtml(rowsClientes);
-      const blob = new Blob([html], {
-        type: "application/vnd.ms-excel;charset=utf-8;",
-      });
+      if (selectedReport === "clientes") {
+        if (!rowsClientes.length) {
+          setError("Primero generá el reporte para poder descargarlo.");
+          return;
+        }
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const hoy = new Date();
-      const yyyy = hoy.getFullYear();
-      const mm = String(hoy.getMonth() + 1).padStart(2, "0");
-      const dd = String(hoy.getDate()).padStart(2, "0");
+        downloadExcel(
+          `reporte_clientes_${yyyy}-${mm}-${dd}.xls`,
+          buildClientesExcelHtml(rowsClientes)
+        );
+        return;
+      }
 
-      a.href = url;
-      a.download = `reporte_clientes_${yyyy}-${mm}-${dd}.xls`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (selectedReport === "accesos") {
+        if (!rowsAccesos.length) {
+          setError("Primero generá el reporte para poder descargarlo.");
+          return;
+        }
+
+        downloadExcel(
+          `reporte_accesos_${yyyy}-${mm}-${dd}.xls`,
+          buildAccesosExcelHtml(rowsAccesos)
+        );
+      }
     } catch {
       setError("No fue posible descargar el archivo Excel.");
     }
@@ -394,6 +496,13 @@ export default function AdminReportesPage() {
   const actionsGrid: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr",
+    gap: 12,
+    marginTop: 14,
+  };
+
+  const filterGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "280px",
     gap: 12,
     marginTop: 14,
   };
@@ -466,21 +575,53 @@ export default function AdminReportesPage() {
               </div>
             </button>
 
-            <div
+            <button
+              type="button"
+              onClick={() => setSelectedReport("accesos")}
+              disabled={loading || checkingSession}
               style={{
                 ...reportCardBase,
-                opacity: 0.72,
+                cursor: loading || checkingSession ? "default" : "pointer",
+                textAlign: "left",
+                border:
+                  selectedReport === "accesos"
+                    ? "1px solid rgba(120,160,255,0.70)"
+                    : reportCardBase.border,
+                boxShadow:
+                  selectedReport === "accesos"
+                    ? "0 10px 30px rgba(80,120,255,0.22)"
+                    : reportCardBase.boxShadow,
+                opacity: loading || checkingSession ? 0.7 : 1,
               }}
             >
               <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>
-                2. Ingresos a la aplicación
+                2. Detalle de ingresos a la aplicación
               </div>
               <div style={{ ...helperStyle, fontSize: 15 }}>
-                Próximamente. Este reporte requerirá registrar eventos de acceso
-                para poder informar fecha, hora y canal de ingreso.
+                Muestra los accesos registrados en la plataforma, incluyendo
+                usuario, rol, tipo de dispositivo y fecha/hora de ingreso.
+              </div>
+            </button>
+          </div>
+
+          {selectedReport === "accesos" && (
+            <div style={filterGrid}>
+              <div style={selectWrap}>
+                <div style={{ fontSize: 15, fontWeight: 700, opacity: 0.94 }}>
+                  Ordenar Reporte 2 por
+                </div>
+                <select
+                  value={accessSortBy}
+                  onChange={(e) => setAccessSortBy(e.target.value as SortAccessKey)}
+                  style={selectStyle}
+                  disabled={loading || checkingSession}
+                >
+                  <option value="fecha">Fecha</option>
+                  <option value="usuario">Usuario</option>
+                </select>
               </div>
             </div>
-          </div>
+          )}
 
           <div style={actionsGrid}>
             <button
@@ -510,7 +651,7 @@ export default function AdminReportesPage() {
                 ...btnVolver,
                 ...(loading || checkingSession ? btnDisabled : {}),
               }}
-              onClick={() => router.replace("/admin")}
+              onClick={() => router.replace("/administrador")}
               disabled={loading || checkingSession}
             >
               Volver
@@ -584,6 +725,39 @@ export default function AdminReportesPage() {
                       <td style={tdStyle}>{clean(row.cuit_cuil) || "-"}</td>
                       <td style={tdStyle}>{normalizeEstado(row)}</td>
                       <td style={tdStyle}>{clean(row.status) || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+
+          {selectedReport === "accesos" && rowsAccesos.length === 0 ? (
+            <div style={helperStyle}>
+              Todavía no generaste el reporte de accesos.
+            </div>
+          ) : null}
+
+          {selectedReport === "accesos" && rowsAccesos.length > 0 ? (
+            <div style={tableWrap}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Fecha y hora</th>
+                    <th style={thStyle}>Usuario</th>
+                    <th style={thStyle}>Rol</th>
+                    <th style={thStyle}>Dispositivo</th>
+                    <th style={thStyle}>Auth User ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rowsAccesos.map((row) => (
+                    <tr key={row.id}>
+                      <td style={tdStyle}>{fmtDateTime(row.created_at) || "-"}</td>
+                      <td style={tdStyle}>{clean(row.email) || "-"}</td>
+                      <td style={tdStyle}>{clean(row.role) || "-"}</td>
+                      <td style={tdStyle}>{clean(row.device_type) || "-"}</td>
+                      <td style={tdStyle}>{clean(row.auth_user_id) || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
