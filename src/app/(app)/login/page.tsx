@@ -297,15 +297,20 @@ function LoginInner() {
         ? "coach"
         : "coachee";
 
-      try {
-        await supabase.from("login_events").insert({
-          auth_user_id: user.id,
-          email: user.email || eMail,
-          role: resolvedRole,
-          device_type: deviceType,
-        });
-      } catch {
-        // no bloquea login si falla el registro
+      const loginEventPayload = {
+        auth_user_id: user.id,
+        email: user.email?.trim() || eMail,
+        role: resolvedRole,
+        device_type: deviceType,
+      };
+
+      const { error: loginEventError } = await supabase
+        .from("login_events")
+        .insert(loginEventPayload);
+
+      if (loginEventError) {
+        console.error("MQA login_events insert error:", loginEventError);
+        console.error("MQA login_events payload:", loginEventPayload);
       }
 
       if (hasAdmin || hasCoach) {
