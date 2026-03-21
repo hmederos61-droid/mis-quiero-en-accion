@@ -142,13 +142,29 @@ type Draft = {
 type CoacheeRow = {
   id: string;
   coach_id: string;
-  full_name: string | null;
-  email: string | null;
-  dni: string | null;
-  cuit_cuil: string | null;
-  address: string | null;
-  postal_code: string | null;
-  birth_date: string | null;
+  full_name?: string | null;
+  email?: string | null;
+  dni?: string | null;
+  cuit_cuil?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  birth_date?: string | null;
+
+  whatsapp?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  celular?: string | null;
+  telefono?: string | null;
+  whatsapp_number?: string | null;
+
+  ciudad?: string | null;
+  city?: string | null;
+
+  pais?: string | null;
+  country?: string | null;
+
+  direccion_aclaracion?: string | null;
+  address_extra?: string | null;
 };
 
 function clean(s: string | null | undefined) {
@@ -193,6 +209,14 @@ function splitFullName(fullName: string) {
   };
 }
 
+function pickFirst(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const v = clean(value);
+    if (v) return v;
+  }
+  return "";
+}
+
 function parseAddress(address: string) {
   const out = {
     calle: "",
@@ -212,6 +236,7 @@ function parseAddress(address: string) {
   const linea1 = parts[0] || "";
   const linea2 = parts[1] || "";
   const linea3 = parts[2] || "";
+  const linea4 = parts[3] || "";
 
   if (linea1) {
     const m = linea1.match(/^(.*?)(?:\s+(\d+))?$/);
@@ -234,8 +259,16 @@ function parseAddress(address: string) {
 
   if (linea3) {
     const chunks = linea3.split(" - ").map((x) => x.trim()).filter(Boolean);
-    out.ciudad = clean(chunks[0] || "");
-    out.pais = clean(chunks[1] || "");
+    if (chunks.length >= 2) {
+      out.ciudad = clean(chunks[0] || "");
+      out.pais = clean(chunks[1] || "");
+    } else {
+      out.ciudad = clean(chunks[0] || "");
+    }
+  }
+
+  if (linea4 && !out.pais) {
+    out.pais = clean(linea4);
   }
 
   return out;
@@ -251,7 +284,14 @@ function buildDraftFromRow(row: CoacheeRow): Draft {
     coachee_id: row.id,
     nombre: nameParts.nombre,
     apellido: nameParts.apellido,
-    whatsapp: "",
+    whatsapp: pickFirst(
+      row.whatsapp,
+      row.phone,
+      row.mobile,
+      row.celular,
+      row.telefono,
+      row.whatsapp_number
+    ),
     email: clean(row.email),
     fechaNacimiento: isoToDdmmyyyy(row.birth_date),
     calle: addr.calle,
@@ -259,9 +299,13 @@ function buildDraftFromRow(row: CoacheeRow): Draft {
     piso: addr.piso,
     dpto: addr.dpto,
     codigoPostal: clean(row.postal_code),
-    direccionAclaracion: addr.direccionAclaracion,
-    ciudad: addr.ciudad,
-    pais: addr.pais,
+    direccionAclaracion: pickFirst(
+      row.direccion_aclaracion,
+      row.address_extra,
+      addr.direccionAclaracion
+    ),
+    ciudad: pickFirst(row.ciudad, row.city, addr.ciudad),
+    pais: pickFirst(row.pais, row.country, addr.pais),
     tipoDocumento: "DNI",
     nroDocumento: dniDigits,
     cuitCuil: formatCuitMask(clean(row.cuit_cuil)),
@@ -353,7 +397,7 @@ export default function CoachCoacheeBuscarPage() {
     try {
       let query = supabase
         .from("coachees")
-        .select("id, coach_id, full_name, email, dni, cuit_cuil, address, postal_code, birth_date")
+        .select("*")
         .eq("coach_id", coachId)
         .order("full_name", { ascending: true });
 
