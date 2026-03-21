@@ -132,7 +132,6 @@ export default function NuevoQuieroPage() {
     e.preventDefault();
     setMsg(null);
 
-    // Validación mínima
     if (!title.trim() || !dueDate) {
       setMsg("Ingresá los datos de tu Quiero.");
       return;
@@ -180,7 +179,7 @@ export default function NuevoQuieroPage() {
           padding: 28,
         }}
       >
-        <section style={{ ...glassCard, width: "min(980px, 100%)" }}>
+        <section className="nuevoQuieroCard" style={{ ...glassCard, width: "min(980px, 100%)" }}>
           <h1 style={{ fontSize: 32, margin: 0 }}>Nuevo Quiero</h1>
 
           <form onSubmit={onGuardar} style={{ marginTop: 16 }}>
@@ -204,12 +203,10 @@ export default function NuevoQuieroPage() {
               />
             </div>
 
-            {/* DATOS DEL QUIERO */}
             <div
               className="datosQuieroGrid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
                 gap: 14,
                 marginTop: 18,
                 alignItems: "start",
@@ -299,6 +296,10 @@ export default function NuevoQuieroPage() {
           </form>
 
           <style jsx>{`
+            .datosQuieroGrid {
+              grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+
             .campoQuiero {
               min-width: 0;
             }
@@ -338,13 +339,13 @@ export default function NuevoQuieroPage() {
             }
 
             @media (max-width: 640px) {
-              section {
+              .nuevoQuieroCard {
                 padding: 22px !important;
               }
             }
 
             @media (max-width: 420px) {
-              section {
+              .nuevoQuieroCard {
                 padding: 18px !important;
               }
             }
