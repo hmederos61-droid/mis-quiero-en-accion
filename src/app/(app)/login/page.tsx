@@ -230,6 +230,43 @@ function LoginInner() {
         return;
       }
 
+      /* ==========================================
+         CONTROL COACHEE:
+         - bloquea baja lógica
+         - primer login real => active
+      ========================================== */
+      const { data: coacheeRow, error: coacheeErr } = await supabase
+        .from("coachees")
+        .select("id, is_active, status")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (coacheeErr) throw coacheeErr;
+
+      if (coacheeRow) {
+        const currentStatus = String(coacheeRow.status || "").toLowerCase();
+
+        if (coacheeRow.is_active === false || currentStatus === "inactive") {
+          await supabase.auth.signOut();
+          setMsg(
+            "Tu acceso ha sido deshabilitado.\nSi necesitás volver a ingresar, por favor contactate con tu coach a través del correo electrónico."
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (currentStatus === "pending" || currentStatus === "invited") {
+          await supabase
+            .from("coachees")
+            .update({
+              status: "active",
+              is_active: true,
+            })
+            .eq("id", coacheeRow.id)
+            .eq("auth_user_id", user.id);
+        }
+      }
+
       const { data: r1, error: e1 } = await supabase
         .from("user_roles")
         .select("role")
@@ -246,6 +283,30 @@ function LoginInner() {
       const unique = Array.from(new Set(rs));
       const hasAdmin = unique.includes("admin");
       const hasCoach = unique.includes("coach");
+
+      // =============================
+      // REGISTRO DE LOGIN (analytics)
+      // =============================
+      const deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+        ? "mobile"
+        : "web";
+
+      const resolvedRole = hasAdmin
+        ? "admin"
+        : hasCoach
+        ? "coach"
+        : "coachee";
+
+      try {
+        await supabase.from("login_events").insert({
+          auth_user_id: user.id,
+          email: user.email || eMail,
+          role: resolvedRole,
+          device_type: deviceType,
+        });
+      } catch {
+        // no bloquea login si falla el registro
+      }
 
       if (hasAdmin || hasCoach) {
         router.replace("/menu1");
@@ -416,6 +477,7 @@ function LoginInner() {
                     fontSize: isMobile ? 15 : 16,
                     marginTop: 12,
                     lineHeight: 1.4,
+                    whiteSpace: "pre-line",
                   }}
                 >
                   {msg}
