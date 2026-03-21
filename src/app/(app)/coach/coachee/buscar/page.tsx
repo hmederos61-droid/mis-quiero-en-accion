@@ -446,6 +446,21 @@ export default function CoachCoacheeBuscarPage() {
     }
   }
 
+  const cardStyle: React.CSSProperties = {
+    ...glassCard,
+    padding: isMobile ? 16 : 34,
+    width: isMobile ? "96vw" : "92vw",
+    borderRadius: isMobile ? 18 : 22,
+    marginTop: isMobile ? 8 : 0,
+  };
+
+  const headerGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1.2fr",
+    gap: isMobile ? 10 : 16,
+    alignItems: "start",
+  };
+
   const topGrid: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr",
@@ -476,22 +491,17 @@ export default function CoachCoacheeBuscarPage() {
           minHeight: "100vh",
           width: "100%",
           display: "flex",
-          alignItems: "center",
+          alignItems: isMobile ? "flex-start" : "center",
           justifyContent: "center",
-          padding: isMobile ? "18px 10px" : "26px 0",
+          padding: isMobile ? "14px 8px 22px" : "26px 0",
         }}
       >
-        <div style={{ ...glassCard, padding: isMobile ? 22 : 34 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1.2fr",
-              gap: 16,
-              alignItems: "start",
-            }}
-          >
-            <div style={titleStyle}>Consultar / Modificar Cliente</div>
-            <div style={helperStyle}>
+        <div style={cardStyle}>
+          <div style={headerGrid}>
+            <div style={{ ...titleStyle, fontSize: isMobile ? 24 : 30 }}>
+              Consultar / Modificar Cliente
+            </div>
+            <div style={{ ...helperStyle, fontSize: isMobile ? 15 : 16 }}>
               Ingresá uno o más criterios de búsqueda.
               <br />
               Luego seleccioná el cliente para abrir su ficha y modificar sus datos.
@@ -565,7 +575,13 @@ export default function CoachCoacheeBuscarPage() {
 
           <div style={divider} />
 
-          <div style={{ fontSize: 18, fontWeight: 700, opacity: 0.95 }}>
+          <div
+            style={{
+              fontSize: isMobile ? 17 : 18,
+              fontWeight: 700,
+              opacity: 0.95,
+            }}
+          >
             Resultados
           </div>
 
@@ -589,6 +605,7 @@ export default function CoachCoacheeBuscarPage() {
                     key={row.id}
                     style={{
                       ...resultCard,
+                      padding: isMobile ? 16 : 18,
                       display: "grid",
                       gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 0.8fr 180px",
                       gap: 12,
@@ -596,10 +613,25 @@ export default function CoachCoacheeBuscarPage() {
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 800 }}>{fullName}</div>
+                      <div
+                        style={{
+                          fontSize: isMobile ? 17 : 18,
+                          fontWeight: 800,
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {fullName}
+                      </div>
+
                       {isMobile && (
-                        <div style={{ marginTop: 6, ...helperStyle }}>
-                          <div>Email: {emailTxt}</div>
+                        <div
+                          style={{
+                            marginTop: 8,
+                            ...helperStyle,
+                            fontSize: 15,
+                          }}
+                        >
+                          <div style={{ wordBreak: "break-word" }}>Email: {emailTxt}</div>
                           <div>DNI: {dniTxt}</div>
                         </div>
                       )}
@@ -608,9 +640,12 @@ export default function CoachCoacheeBuscarPage() {
                     {!isMobile && <div style={helperStyle}>Email: {emailTxt}</div>}
                     {!isMobile && <div style={helperStyle}>DNI: {dniTxt}</div>}
 
-                    <div>
+                    <div style={{ width: "100%" }}>
                       <button
-                        style={btnSeleccionar}
+                        style={{
+                          ...btnSeleccionar,
+                          width: "100%",
+                        }}
                         onClick={() => handleSeleccionar(row)}
                         disabled={loading || checkingSession}
                       >
