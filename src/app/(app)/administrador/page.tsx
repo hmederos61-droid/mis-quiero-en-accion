@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 
 /* =========================
    Estética glass — MENÚ ADMINISTRADOR
-   (idéntica al menú existente)
 ========================= */
+
 const glassCard: React.CSSProperties = {
   borderRadius: 22,
   padding: 36,
@@ -23,7 +24,7 @@ const btnBase: React.CSSProperties = {
   padding: "16px 18px",
   borderRadius: 18,
   border: "1px solid rgba(255,255,255,0.22)",
-  cursor: "default",
+  cursor: "pointer", // 🔧 habilitamos click
   fontWeight: 600,
   fontSize: 18,
   color: "rgba(255,255,255,0.96)",
@@ -51,6 +52,8 @@ const btnReportes = {
 };
 
 export default function MenuAdministradorPage() {
+  const router = useRouter();
+
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <section style={{ width: "min(980px, 100%)" }}>
@@ -63,13 +66,13 @@ export default function MenuAdministradorPage() {
           </p>
 
           <div style={{ display: "grid", gap: 18, marginTop: 28 }}>
+            
             {/* 1. Alta de nuevo Coach */}
             <button style={btnAltaCoach}>
               Alta de nuevo Coach
               <div style={{ fontSize: 14, marginTop: 6, opacity: 0.85 }}>
                 Permite dar de alta un nuevo Coach con los mismos datos que un Coachee,
                 incluyendo el envío de mail de acceso.
-                (Definición del layout del mail pendiente)
               </div>
             </button>
 
@@ -92,7 +95,10 @@ export default function MenuAdministradorPage() {
             </button>
 
             {/* 4. Reportes */}
-            <button style={btnReportes}>
+            <button
+              style={btnReportes}
+              onClick={() => router.push("/administrador/reportes")}
+            >
               Reportes de gestión
               <div style={{ fontSize: 14, marginTop: 6, opacity: 0.85 }}>
                 Reportes operativos y de gestión,
@@ -100,6 +106,7 @@ export default function MenuAdministradorPage() {
                 según el criterio de cobro acordado.
               </div>
             </button>
+
           </div>
         </div>
       </section>
