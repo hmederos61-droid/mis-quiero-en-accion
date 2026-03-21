@@ -802,6 +802,9 @@ export default function AccesoCoacheeCargaPage() {
           address: buildAddressString(draft),
           postal_code: draft.codigoPostal,
           birth_date: birthIso,
+          whatsapp: draft.whatsapp,
+          ciudad: draft.ciudad,
+          pais: draft.pais,
           is_active: true,
         };
 
@@ -853,6 +856,9 @@ export default function AccesoCoacheeCargaPage() {
           address: buildAddressString(draft),
           postal_code: draft.codigoPostal,
           birth_date: birthIso,
+          whatsapp: draft.whatsapp,
+          ciudad: draft.ciudad,
+          pais: draft.pais,
           status: "pending",
           auth_user_id,
           is_active: true,
