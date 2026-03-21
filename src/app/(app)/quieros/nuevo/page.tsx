@@ -25,6 +25,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: 14,
   opacity: 0.95,
   marginBottom: 6,
+  lineHeight: 1.25,
 };
 
 const inputStyle: React.CSSProperties = {
@@ -36,11 +37,15 @@ const inputStyle: React.CSSProperties = {
   color: "rgba(255,255,255,0.96)",
   outline: "none",
   fontSize: 15,
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
   appearance: "none",
+  WebkitAppearance: "none",
+  MozAppearance: "none",
   paddingRight: 44,
   backgroundImage:
     "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 10l5 5 5-5z'/></svg>\")",
@@ -193,23 +198,24 @@ export default function NuevoQuieroPage() {
             <div style={{ marginTop: 14 }}>
               <div style={labelStyle}>Propósito</div>
               <textarea
-                style={{ ...inputStyle, minHeight: 90 }}
+                style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
               />
             </div>
 
-            {/* DATOS DEL QUIERO — UNA SOLA FILA */}
+            {/* DATOS DEL QUIERO */}
             <div
               className="datosQuieroGrid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
+                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
                 gap: 14,
                 marginTop: 18,
+                alignItems: "start",
               }}
             >
-              <div>
+              <div className="campoQuiero">
                 <div style={labelStyle}>Ámbito</div>
                 <select
                   style={selectStyle}
@@ -223,7 +229,7 @@ export default function NuevoQuieroPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="campoQuiero">
                 <div style={labelStyle}>Estado</div>
                 <select
                   style={selectStyle}
@@ -237,7 +243,7 @@ export default function NuevoQuieroPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="campoQuiero">
                 <div style={labelStyle}>Prioridad</div>
                 <select
                   style={selectStyle}
@@ -253,7 +259,7 @@ export default function NuevoQuieroPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="campoQuiero">
                 <div style={labelStyle}>Plazo</div>
                 <select
                   style={selectStyle}
@@ -266,7 +272,7 @@ export default function NuevoQuieroPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="campoQuiero campoFecha">
                 <div style={labelStyle}>Fecha de realización</div>
                 <input
                   type="date"
@@ -292,16 +298,54 @@ export default function NuevoQuieroPage() {
             </div>
           </form>
 
-          {/* Responsive */}
           <style jsx>{`
+            .campoQuiero {
+              min-width: 0;
+            }
+
+            .campoFecha {
+              min-width: 0;
+            }
+
             @media (max-width: 1200px) {
               .datosQuieroGrid {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+              }
+
+              .campoFecha {
+                grid-column: span 2;
               }
             }
-            @media (max-width: 980px) {
+
+            @media (max-width: 820px) {
+              .datosQuieroGrid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+              }
+
+              .campoFecha {
+                grid-column: span 2;
+              }
+            }
+
+            @media (max-width: 640px) {
               .datosQuieroGrid {
                 grid-template-columns: 1fr;
+              }
+
+              .campoFecha {
+                grid-column: auto;
+              }
+            }
+
+            @media (max-width: 640px) {
+              section {
+                padding: 22px !important;
+              }
+            }
+
+            @media (max-width: 420px) {
+              section {
+                padding: 18px !important;
               }
             }
           `}</style>
