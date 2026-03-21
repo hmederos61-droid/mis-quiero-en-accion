@@ -32,14 +32,6 @@ const helperStyle: React.CSSProperties = {
   lineHeight: 1.35,
 };
 
-const headerRow: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1.2fr",
-  gap: 16,
-  alignItems: "start",
-  marginBottom: 14,
-};
-
 const labelStyle: React.CSSProperties = {
   fontSize: 17,
   opacity: 0.9,
@@ -67,36 +59,6 @@ const inputInvalidStyle: React.CSSProperties = {
 const disabledFieldWrap: React.CSSProperties = {
   opacity: 0.6,
   filter: "grayscale(60%)",
-};
-
-const row2: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 12,
-};
-
-const row3: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
-  gap: 12,
-};
-
-const rowAddr5: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "2fr 0.8fr 0.8fr 0.9fr 1fr",
-  gap: 12,
-};
-
-const rowAddr3: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "2fr 1fr 1fr",
-  gap: 12,
-};
-
-const rowDoc4: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "0.8fr 1.2fr 1.3fr 0.9fr",
-  gap: 12,
 };
 
 const btnBase: React.CSSProperties = {
@@ -466,6 +428,8 @@ export default function AccesoCoacheeCargaPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
 
+  const [isMobile, setIsMobile] = useState(false);
+
   const [savedOnce, setSavedOnce] = useState(false);
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -499,8 +463,73 @@ export default function AccesoCoacheeCargaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const disabled = loading;
   const isExistingRecord = Boolean(coacheeId);
+
+  const headerRowStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1.2fr",
+    gap: isMobile ? 10 : 16,
+    alignItems: "start",
+    marginBottom: 14,
+  };
+
+  const row2Style: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gap: 12,
+  };
+
+  const row3Style: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr",
+    gap: 12,
+  };
+
+  const rowAddr5Style: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "2fr 0.8fr 0.8fr 0.9fr 1fr",
+    gap: 12,
+  };
+
+  const rowAddr3Style: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr",
+    gap: 12,
+  };
+
+  const rowDoc4Style: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "0.8fr 1.2fr 1.3fr 0.9fr",
+    gap: 12,
+  };
+
+  const primaryButtonsStyle: React.CSSProperties = {
+    marginTop: 14,
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gap: 12,
+  };
+
+  const secondaryButtonsStyle: React.CSSProperties = {
+    marginTop: 12,
+    display: "grid",
+    gridTemplateColumns: isExistingRecord
+      ? isMobile
+        ? "1fr"
+        : "1fr 1fr 1fr 1fr"
+      : isMobile
+      ? "1fr"
+      : "1fr 1fr 1fr",
+    gap: 12,
+  };
 
   function validate(): Issue[] {
     const issues: Issue[] = [];
@@ -1053,15 +1082,23 @@ export default function AccesoCoacheeCargaPage() {
           minHeight: "100vh",
           width: "100%",
           display: "flex",
-          alignItems: "center",
+          alignItems: isMobile ? "flex-start" : "center",
           justifyContent: "center",
-          padding: "22px 0",
+          padding: isMobile ? "14px 8px 22px" : "22px 0",
         }}
       >
-        <div style={glassCard}>
-          <div style={headerRow}>
-            <div style={titleStyle}>Datos del Cliente</div>
-            <div style={helperStyle}>
+        <div
+          style={{
+            ...glassCard,
+            width: isMobile ? "96vw" : glassCard.width,
+            padding: isMobile ? 16 : 34,
+            borderRadius: isMobile ? 18 : glassCard.borderRadius,
+            marginTop: isMobile ? 8 : 0,
+          }}
+        >
+          <div style={headerRowStyle}>
+            <div style={{ ...titleStyle, fontSize: isMobile ? 22 : 25 }}>Datos del Cliente</div>
+            <div style={{ ...helperStyle, fontSize: isMobile ? 15 : 16 }}>
               {isExistingRecord
                 ? "Podés modificar los datos, guardar cambios, enviar el mail o dar de baja al cliente."
                 : savedOnce
@@ -1070,7 +1107,7 @@ export default function AccesoCoacheeCargaPage() {
             </div>
           </div>
 
-          <div style={row2}>
+          <div style={row2Style}>
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Nombre</div>
               <input
@@ -1104,7 +1141,7 @@ export default function AccesoCoacheeCargaPage() {
 
           <div style={{ height: 12 }} />
 
-          <div style={row3}>
+          <div style={row3Style}>
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>WhatsApp</div>
               <input
@@ -1155,7 +1192,7 @@ export default function AccesoCoacheeCargaPage() {
 
           <div style={{ height: 12 }} />
 
-          <div style={rowAddr5}>
+          <div style={rowAddr5Style}>
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Calle</div>
               <input
@@ -1227,7 +1264,7 @@ export default function AccesoCoacheeCargaPage() {
 
           <div style={{ height: 12 }} />
 
-          <div style={rowAddr3}>
+          <div style={rowAddr3Style}>
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Aclaración de dirección (opcional)</div>
               <input
@@ -1270,7 +1307,7 @@ export default function AccesoCoacheeCargaPage() {
 
           <div style={{ height: 12 }} />
 
-          <div style={rowDoc4}>
+          <div style={rowDoc4Style}>
             <div style={disabled ? disabledFieldWrap : undefined}>
               <div style={labelStyle}>Tipo doc</div>
               <div style={selectWrap}>
@@ -1358,14 +1395,7 @@ export default function AccesoCoacheeCargaPage() {
             </div>
           )}
 
-          <div
-            style={{
-              marginTop: 14,
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            }}
-          >
+          <div style={primaryButtonsStyle}>
             <button
               style={{ ...btnGuardar, ...(loading ? btnDisabled : {}) }}
               onClick={handleGuardar}
@@ -1388,14 +1418,7 @@ export default function AccesoCoacheeCargaPage() {
             </button>
           </div>
 
-          <div
-            style={{
-              marginTop: 12,
-              display: "grid",
-              gridTemplateColumns: isExistingRecord ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr",
-              gap: 12,
-            }}
-          >
+          <div style={secondaryButtonsStyle}>
             <button
               style={{ ...btnNuevoCliente, ...(loading ? btnDisabled : {}) }}
               onClick={resetFormForNewCliente}
