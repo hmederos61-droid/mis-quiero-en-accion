@@ -465,10 +465,61 @@ export default function AdminReportesPage() {
   const [rowsAccesos, setRowsAccesos] = useState<LoginEventRow[]>([]);
 
   const accessSummaryRows = useMemo(() => {
-    return sortAccessSummaryRows(
-      summarizeAccessRows(rowsAccesos),
-      accessSortBy
-    );
+    return sortAccessSummaryRows(summarizeAccessRows(rowsAccesos), accessSortBy);
+  }, [rowsAccesos, accessSortBy]);
+
+  const accessDetailRows = useMemo(() => {
+    const clone = [...rowsAccesos];
+
+    if (accessSortBy === "fecha") {
+      clone.sort((a, b) => {
+        const da = clean(a.created_at);
+        const db = clean(b.created_at);
+        return db.localeCompare(da);
+      });
+      return clone;
+    }
+
+    if (accessSortBy === "cantidad") {
+      const counts = new Map<string, number>();
+      for (const row of rowsAccesos) {
+        const key = clean(row.auth_user_id);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+
+      clone.sort((a, b) => {
+        const countA = counts.get(clean(a.auth_user_id)) || 0;
+        const countB = counts.get(clean(b.auth_user_id)) || 0;
+
+        if (countB !== countA) return countB - countA;
+
+        const nameA = clean(a.full_name_snapshot).toLowerCase();
+        const nameB = clean(b.full_name_snapshot).toLowerCase();
+        if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+        const dateA = clean(a.created_at);
+        const dateB = clean(b.created_at);
+        return dateB.localeCompare(dateA);
+      });
+
+      return clone;
+    }
+
+    clone.sort((a, b) => {
+      const nameA = clean(a.full_name_snapshot).toLowerCase();
+      const nameB = clean(b.full_name_snapshot).toLowerCase();
+      if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+      const mailA = clean(a.email_snapshot).toLowerCase();
+      const mailB = clean(b.email_snapshot).toLowerCase();
+      if (mailA !== mailB) return mailA.localeCompare(mailB);
+
+      const dateA = clean(a.created_at);
+      const dateB = clean(b.created_at);
+      return dateB.localeCompare(dateA);
+    });
+
+    return clone;
   }, [rowsAccesos, accessSortBy]);
 
   useEffect(() => {
@@ -727,7 +778,8 @@ export default function AdminReportesPage() {
               </div>
               <div style={{ ...helperStyle, fontSize: 15 }}>
                 Muestra un resumen por usuario con cantidad de accesos, último
-                ingreso, rol y origen registrado.
+                ingreso, rol y origen registrado, y debajo el detalle completo de
+                todos los accesos.
               </div>
             </button>
           </div>
@@ -868,44 +920,91 @@ export default function AdminReportesPage() {
           ) : null}
 
           {selectedReport === "accesos" && accessSummaryRows.length > 0 ? (
-            <div style={tableWrap}>
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Usuario</th>
-                    <th style={thStyle}>Email</th>
-                    <th style={thStyle}>Rol</th>
-                    <th style={thStyle}>Origen</th>
-                    <th style={thStyle}>Cantidad de accesos</th>
-                    <th style={thStyle}>Último acceso</th>
-                    <th style={thStyle}>Auth User ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accessSummaryRows.map((row) => (
-                    <tr key={row.auth_user_id}>
-                      <td style={tdStyle}>
-                        {clean(row.full_name_snapshot) || "-"}
-                      </td>
-                      <td style={tdStyle}>
-                        {clean(row.email_snapshot) || "-"}
-                      </td>
-                      <td style={tdStyle}>
-                        {clean(row.role_snapshot) || "-"}
-                      </td>
-                      <td style={tdStyle}>
-                        {normalizeSource(row.source) || "-"}
-                      </td>
-                      <td style={tdStyle}>{row.access_count}</td>
-                      <td style={tdStyle}>
-                        {fmtDateTime(row.last_access_at) || "-"}
-                      </td>
-                      <td style={tdStyle}>{clean(row.auth_user_id) || "-"}</td>
+            <>
+              <div style={{ ...sectionTitle, fontSize: 18, marginBottom: 10 }}>
+                Resumen por usuario
+              </div>
+
+              <div style={tableWrap}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Usuario</th>
+                      <th style={thStyle}>Email</th>
+                      <th style={thStyle}>Rol</th>
+                      <th style={thStyle}>Origen</th>
+                      <th style={thStyle}>Cantidad de accesos</th>
+                      <th style={thStyle}>Último acceso</th>
+                      <th style={thStyle}>Auth User ID</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {accessSummaryRows.map((row) => (
+                      <tr key={row.auth_user_id}>
+                        <td style={tdStyle}>
+                          {clean(row.full_name_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {clean(row.email_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {clean(row.role_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {normalizeSource(row.source) || "-"}
+                        </td>
+                        <td style={tdStyle}>{row.access_count}</td>
+                        <td style={tdStyle}>
+                          {fmtDateTime(row.last_access_at) || "-"}
+                        </td>
+                        <td style={tdStyle}>{clean(row.auth_user_id) || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ height: 22 }} />
+
+              <div style={{ ...sectionTitle, fontSize: 18, marginBottom: 10 }}>
+                Detalle completo de accesos
+              </div>
+
+              <div style={tableWrap}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Fecha y hora</th>
+                      <th style={thStyle}>Usuario</th>
+                      <th style={thStyle}>Email</th>
+                      <th style={thStyle}>Rol</th>
+                      <th style={thStyle}>Origen</th>
+                      <th style={thStyle}>Auth User ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accessDetailRows.map((row) => (
+                      <tr key={row.id}>
+                        <td style={tdStyle}>{fmtDateTime(row.created_at) || "-"}</td>
+                        <td style={tdStyle}>
+                          {clean(row.full_name_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {clean(row.email_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {clean(row.role_snapshot) || "-"}
+                        </td>
+                        <td style={tdStyle}>
+                          {normalizeSource(row.source) || "-"}
+                        </td>
+                        <td style={tdStyle}>{clean(row.auth_user_id) || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : null}
         </div>
       </div>
