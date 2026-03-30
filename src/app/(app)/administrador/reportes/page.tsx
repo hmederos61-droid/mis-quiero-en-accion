@@ -19,7 +19,7 @@ const glassCard: React.CSSProperties = {
   color: "rgba(255,255,255,0.94)",
   textShadow: "0 1px 2px rgba(0,0,0,0.38)",
   width: "92vw",
-  maxWidth: 1320,
+  maxWidth: 1380,
 };
 
 const titleStyle: React.CSSProperties = {
@@ -150,7 +150,28 @@ const selectStyle: React.CSSProperties = {
 };
 
 type ReportKey = "clientes" | "accesos";
-type SortAccessKey = "fecha" | "usuario" | "cantidad";
+type SortDir = "asc" | "desc";
+
+type SortClienteKey =
+  | "created_at"
+  | "full_name"
+  | "email"
+  | "whatsapp"
+  | "ciudad"
+  | "pais"
+  | "dni"
+  | "cuit_cuil"
+  | "estado"
+  | "status";
+
+type SortAccessKey =
+  | "fecha"
+  | "usuario"
+  | "email"
+  | "rol"
+  | "origen"
+  | "cantidad"
+  | "auth_user_id";
 
 type CoacheeReportRow = {
   id: string;
@@ -285,50 +306,174 @@ function summarizeAccessRows(rows: LoginEventRow[]): LoginAccessSummaryRow[] {
   return Array.from(map.values());
 }
 
+function compareText(a: string, b: string, dir: SortDir) {
+  return dir === "asc" ? a.localeCompare(b) : b.localeCompare(a);
+}
+
+function compareNumber(a: number, b: number, dir: SortDir) {
+  return dir === "asc" ? a - b : b - a;
+}
+
+function compareDateText(a: string, b: string, dir: SortDir) {
+  return dir === "asc" ? a.localeCompare(b) : b.localeCompare(a);
+}
+
+function sortClientesRows(
+  rows: CoacheeReportRow[],
+  sortBy: SortClienteKey,
+  sortDir: SortDir
+): CoacheeReportRow[] {
+  const clone = [...rows];
+
+  clone.sort((a, b) => {
+    if (sortBy === "created_at") {
+      return compareDateText(clean(a.created_at), clean(b.created_at), sortDir);
+    }
+
+    if (sortBy === "estado") {
+      return compareText(
+        normalizeEstado(a).toLowerCase(),
+        normalizeEstado(b).toLowerCase(),
+        sortDir
+      );
+    }
+
+    const valueA = clean((a as Record<string, unknown>)[sortBy] as string | null)
+      .toLowerCase();
+    const valueB = clean((b as Record<string, unknown>)[sortBy] as string | null)
+      .toLowerCase();
+
+    return compareText(valueA, valueB, sortDir);
+  });
+
+  return clone;
+}
+
 function sortAccessSummaryRows(
   rows: LoginAccessSummaryRow[],
-  sortBy: SortAccessKey
+  sortBy: SortAccessKey,
+  sortDir: SortDir
 ): LoginAccessSummaryRow[] {
   const clone = [...rows];
 
-  if (sortBy === "fecha") {
-    clone.sort((a, b) => {
-      const da = clean(a.last_access_at);
-      const db = clean(b.last_access_at);
-      return db.localeCompare(da);
-    });
-    return clone;
-  }
+  clone.sort((a, b) => {
+    if (sortBy === "cantidad") {
+      return compareNumber(a.access_count, b.access_count, sortDir);
+    }
 
-  if (sortBy === "cantidad") {
-    clone.sort((a, b) => {
-      if (b.access_count !== a.access_count) {
-        return b.access_count - a.access_count;
-      }
+    if (sortBy === "fecha") {
+      return compareDateText(
+        clean(a.last_access_at),
+        clean(b.last_access_at),
+        sortDir
+      );
+    }
 
-      const nameA = clean(a.full_name_snapshot).toLowerCase();
-      const nameB = clean(b.full_name_snapshot).toLowerCase();
-      if (nameA !== nameB) return nameA.localeCompare(nameB);
+    if (sortBy === "usuario") {
+      return compareText(
+        clean(a.full_name_snapshot).toLowerCase(),
+        clean(b.full_name_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
 
-      const mailA = clean(a.email_snapshot).toLowerCase();
-      const mailB = clean(b.email_snapshot).toLowerCase();
-      return mailA.localeCompare(mailB);
-    });
-    return clone;
+    if (sortBy === "email") {
+      return compareText(
+        clean(a.email_snapshot).toLowerCase(),
+        clean(b.email_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
+
+    if (sortBy === "rol") {
+      return compareText(
+        clean(a.role_snapshot).toLowerCase(),
+        clean(b.role_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
+
+    if (sortBy === "origen") {
+      return compareText(
+        normalizeSource(a.source).toLowerCase(),
+        normalizeSource(b.source).toLowerCase(),
+        sortDir
+      );
+    }
+
+    return compareText(
+      clean(a.auth_user_id).toLowerCase(),
+      clean(b.auth_user_id).toLowerCase(),
+      sortDir
+    );
+  });
+
+  return clone;
+}
+
+function sortAccessDetailRows(
+  rows: LoginEventRow[],
+  sortBy: SortAccessKey,
+  sortDir: SortDir
+): LoginEventRow[] {
+  const clone = [...rows];
+
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const key = clean(row.auth_user_id);
+    counts.set(key, (counts.get(key) || 0) + 1);
   }
 
   clone.sort((a, b) => {
-    const nameA = clean(a.full_name_snapshot).toLowerCase();
-    const nameB = clean(b.full_name_snapshot).toLowerCase();
-    if (nameA !== nameB) return nameA.localeCompare(nameB);
+    if (sortBy === "cantidad") {
+      return compareNumber(
+        counts.get(clean(a.auth_user_id)) || 0,
+        counts.get(clean(b.auth_user_id)) || 0,
+        sortDir
+      );
+    }
 
-    const mailA = clean(a.email_snapshot).toLowerCase();
-    const mailB = clean(b.email_snapshot).toLowerCase();
-    if (mailA !== mailB) return mailA.localeCompare(mailB);
+    if (sortBy === "fecha") {
+      return compareDateText(clean(a.created_at), clean(b.created_at), sortDir);
+    }
 
-    const dateA = clean(a.last_access_at);
-    const dateB = clean(b.last_access_at);
-    return dateB.localeCompare(dateA);
+    if (sortBy === "usuario") {
+      return compareText(
+        clean(a.full_name_snapshot).toLowerCase(),
+        clean(b.full_name_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
+
+    if (sortBy === "email") {
+      return compareText(
+        clean(a.email_snapshot).toLowerCase(),
+        clean(b.email_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
+
+    if (sortBy === "rol") {
+      return compareText(
+        clean(a.role_snapshot).toLowerCase(),
+        clean(b.role_snapshot).toLowerCase(),
+        sortDir
+      );
+    }
+
+    if (sortBy === "origen") {
+      return compareText(
+        normalizeSource(a.source).toLowerCase(),
+        normalizeSource(b.source).toLowerCase(),
+        sortDir
+      );
+    }
+
+    return compareText(
+      clean(a.auth_user_id).toLowerCase(),
+      clean(b.auth_user_id).toLowerCase(),
+      sortDir
+    );
   });
 
   return clone;
@@ -388,8 +533,11 @@ function buildClientesExcelHtml(rows: CoacheeReportRow[]) {
   `;
 }
 
-function buildAccesosExcelHtml(rows: LoginAccessSummaryRow[]) {
-  const headers = [
+function buildAccesosExcelHtml(
+  summaryRows: LoginAccessSummaryRow[],
+  detailRows: LoginEventRow[]
+) {
+  const summaryHeaders = [
     "Usuario",
     "Email",
     "Rol",
@@ -399,7 +547,7 @@ function buildAccesosExcelHtml(rows: LoginAccessSummaryRow[]) {
     "Auth User ID",
   ];
 
-  const body = rows
+  const summaryBody = summaryRows
     .map((row) => {
       const values = [
         clean(row.full_name_snapshot),
@@ -408,6 +556,32 @@ function buildAccesosExcelHtml(rows: LoginAccessSummaryRow[]) {
         normalizeSource(row.source),
         String(row.access_count || 0),
         fmtDateTime(row.last_access_at),
+        clean(row.auth_user_id),
+      ];
+
+      return `<tr>${values
+        .map((v) => `<td>${escapeHtml(v || "")}</td>`)
+        .join("")}</tr>`;
+    })
+    .join("");
+
+  const detailHeaders = [
+    "Fecha y hora",
+    "Usuario",
+    "Email",
+    "Rol",
+    "Origen",
+    "Auth User ID",
+  ];
+
+  const detailBody = detailRows
+    .map((row) => {
+      const values = [
+        fmtDateTime(row.created_at),
+        clean(row.full_name_snapshot),
+        clean(row.email_snapshot),
+        clean(row.role_snapshot),
+        normalizeSource(row.source),
         clean(row.auth_user_id),
       ];
 
@@ -427,9 +601,20 @@ function buildAccesosExcelHtml(rows: LoginAccessSummaryRow[]) {
       <body>
         <table border="1">
           <thead>
-            <tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>
+            <tr><th colspan="${summaryHeaders.length}">Resumen por usuario</th></tr>
+            <tr>${summaryHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>
           </thead>
-          <tbody>${body}</tbody>
+          <tbody>${summaryBody}</tbody>
+        </table>
+
+        <br /><br />
+
+        <table border="1">
+          <thead>
+            <tr><th colspan="${detailHeaders.length}">Detalle completo de accesos</th></tr>
+            <tr>${detailHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>
+          </thead>
+          <tbody>${detailBody}</tbody>
         </table>
       </body>
     </html>
@@ -459,68 +644,33 @@ export default function AdminReportesPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ReportKey>("clientes");
+
+  const [clienteSortBy, setClienteSortBy] =
+    useState<SortClienteKey>("created_at");
+  const [clienteSortDir, setClienteSortDir] = useState<SortDir>("desc");
+
   const [accessSortBy, setAccessSortBy] = useState<SortAccessKey>("fecha");
+  const [accessSortDir, setAccessSortDir] = useState<SortDir>("desc");
+
   const [error, setError] = useState<string | null>(null);
   const [rowsClientes, setRowsClientes] = useState<CoacheeReportRow[]>([]);
   const [rowsAccesos, setRowsAccesos] = useState<LoginEventRow[]>([]);
 
+  const sortedClientesRows = useMemo(() => {
+    return sortClientesRows(rowsClientes, clienteSortBy, clienteSortDir);
+  }, [rowsClientes, clienteSortBy, clienteSortDir]);
+
   const accessSummaryRows = useMemo(() => {
-    return sortAccessSummaryRows(summarizeAccessRows(rowsAccesos), accessSortBy);
-  }, [rowsAccesos, accessSortBy]);
+    return sortAccessSummaryRows(
+      summarizeAccessRows(rowsAccesos),
+      accessSortBy,
+      accessSortDir
+    );
+  }, [rowsAccesos, accessSortBy, accessSortDir]);
 
   const accessDetailRows = useMemo(() => {
-    const clone = [...rowsAccesos];
-
-    if (accessSortBy === "fecha") {
-      clone.sort((a, b) => {
-        const da = clean(a.created_at);
-        const db = clean(b.created_at);
-        return db.localeCompare(da);
-      });
-      return clone;
-    }
-
-    if (accessSortBy === "cantidad") {
-      const counts = new Map<string, number>();
-      for (const row of rowsAccesos) {
-        const key = clean(row.auth_user_id);
-        counts.set(key, (counts.get(key) || 0) + 1);
-      }
-
-      clone.sort((a, b) => {
-        const countA = counts.get(clean(a.auth_user_id)) || 0;
-        const countB = counts.get(clean(b.auth_user_id)) || 0;
-
-        if (countB !== countA) return countB - countA;
-
-        const nameA = clean(a.full_name_snapshot).toLowerCase();
-        const nameB = clean(b.full_name_snapshot).toLowerCase();
-        if (nameA !== nameB) return nameA.localeCompare(nameB);
-
-        const dateA = clean(a.created_at);
-        const dateB = clean(b.created_at);
-        return dateB.localeCompare(dateA);
-      });
-
-      return clone;
-    }
-
-    clone.sort((a, b) => {
-      const nameA = clean(a.full_name_snapshot).toLowerCase();
-      const nameB = clean(b.full_name_snapshot).toLowerCase();
-      if (nameA !== nameB) return nameA.localeCompare(nameB);
-
-      const mailA = clean(a.email_snapshot).toLowerCase();
-      const mailB = clean(b.email_snapshot).toLowerCase();
-      if (mailA !== mailB) return mailA.localeCompare(mailB);
-
-      const dateA = clean(a.created_at);
-      const dateB = clean(b.created_at);
-      return dateB.localeCompare(dateA);
-    });
-
-    return clone;
-  }, [rowsAccesos, accessSortBy]);
+    return sortAccessDetailRows(rowsAccesos, accessSortBy, accessSortDir);
+  }, [rowsAccesos, accessSortBy, accessSortDir]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 768);
@@ -576,6 +726,7 @@ export default function AdminReportesPage() {
         }
 
         setRowsClientes(Array.isArray(data) ? (data as CoacheeReportRow[]) : []);
+        return;
       }
 
       if (selectedReport === "accesos") {
@@ -613,14 +764,14 @@ export default function AdminReportesPage() {
 
     try {
       if (selectedReport === "clientes") {
-        if (!rowsClientes.length) {
+        if (!sortedClientesRows.length) {
           setError("Primero generá el reporte para poder descargarlo.");
           return;
         }
 
         downloadExcel(
           `reporte_clientes_${yyyy}-${mm}-${dd}.xls`,
-          buildClientesExcelHtml(rowsClientes)
+          buildClientesExcelHtml(sortedClientesRows)
         );
         return;
       }
@@ -633,7 +784,7 @@ export default function AdminReportesPage() {
 
         downloadExcel(
           `reporte_accesos_${yyyy}-${mm}-${dd}.xls`,
-          buildAccesosExcelHtml(accessSummaryRows)
+          buildAccesosExcelHtml(accessSummaryRows, accessDetailRows)
         );
       }
     } catch {
@@ -674,16 +825,30 @@ export default function AdminReportesPage() {
 
   const actionsGrid: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr",
+    gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr",
     gap: 12,
-    marginTop: 14,
   };
 
   const filterGrid: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: isMobile ? "1fr" : "280px",
+    gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(220px, 280px))",
     gap: 12,
     marginTop: 14,
+  };
+
+  const stickyActionsWrap: React.CSSProperties = {
+    position: "sticky",
+    top: 10,
+    zIndex: 30,
+    marginTop: 16,
+    marginBottom: 16,
+    padding: isMobile ? 10 : 12,
+    borderRadius: 18,
+    background: "rgba(0,0,0,0.20)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    boxShadow: "0 10px 28px rgba(0,0,0,0.24)",
   };
 
   return (
@@ -749,8 +914,9 @@ export default function AdminReportesPage() {
                 1. Detalle de clientes
               </div>
               <div style={{ ...helperStyle, fontSize: 15 }}>
-                Trae todos los clientes existentes en la base, ordenados por fecha
-                de alta, con sus datos principales y estado correspondiente.
+                Trae todos los clientes existentes en la base, ordenados y
+                filtrables por distintas columnas, con sus datos principales y
+                estado correspondiente.
               </div>
             </button>
 
@@ -777,12 +943,55 @@ export default function AdminReportesPage() {
                 2. Detalle de ingresos a la aplicación
               </div>
               <div style={{ ...helperStyle, fontSize: 15 }}>
-                Muestra un resumen por usuario con cantidad de accesos, último
-                ingreso, rol y origen registrado, y debajo el detalle completo de
-                todos los accesos.
+                Muestra un resumen por usuario y el detalle completo de todos los
+                accesos, con orden configurable por distintas columnas.
               </div>
             </button>
           </div>
+
+          {selectedReport === "clientes" && (
+            <div style={filterGrid}>
+              <div style={selectWrap}>
+                <div style={{ fontSize: 15, fontWeight: 700, opacity: 0.94 }}>
+                  Ordenar Reporte 1 por
+                </div>
+                <select
+                  value={clienteSortBy}
+                  onChange={(e) =>
+                    setClienteSortBy(e.target.value as SortClienteKey)
+                  }
+                  style={selectStyle}
+                  disabled={loading || checkingSession}
+                >
+                  <option value="created_at">Fecha alta</option>
+                  <option value="full_name">Cliente</option>
+                  <option value="email">Email</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="ciudad">Ciudad</option>
+                  <option value="pais">País</option>
+                  <option value="dni">DNI</option>
+                  <option value="cuit_cuil">CUIT/CUIL</option>
+                  <option value="estado">Estado</option>
+                  <option value="status">Status BD</option>
+                </select>
+              </div>
+
+              <div style={selectWrap}>
+                <div style={{ fontSize: 15, fontWeight: 700, opacity: 0.94 }}>
+                  Dirección
+                </div>
+                <select
+                  value={clienteSortDir}
+                  onChange={(e) => setClienteSortDir(e.target.value as SortDir)}
+                  style={selectStyle}
+                  disabled={loading || checkingSession}
+                >
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {selectedReport === "accesos" && (
             <div style={filterGrid}>
@@ -796,58 +1005,79 @@ export default function AdminReportesPage() {
                   style={selectStyle}
                   disabled={loading || checkingSession}
                 >
-                  <option value="fecha">Fecha</option>
+                  <option value="fecha">Fecha / Último acceso</option>
                   <option value="usuario">Usuario</option>
+                  <option value="email">Email</option>
+                  <option value="rol">Rol</option>
+                  <option value="origen">Origen</option>
                   <option value="cantidad">Cantidad de accesos</option>
+                  <option value="auth_user_id">Auth User ID</option>
+                </select>
+              </div>
+
+              <div style={selectWrap}>
+                <div style={{ fontSize: 15, fontWeight: 700, opacity: 0.94 }}>
+                  Dirección
+                </div>
+                <select
+                  value={accessSortDir}
+                  onChange={(e) => setAccessSortDir(e.target.value as SortDir)}
+                  style={selectStyle}
+                  disabled={loading || checkingSession}
+                >
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
                 </select>
               </div>
             </div>
           )}
 
-          <div style={actionsGrid}>
-            <button
-              style={{
-                ...btnGenerar,
-                ...(loading || checkingSession ? btnDisabled : {}),
-              }}
-              onClick={handleGenerarReporte}
-              disabled={loading || checkingSession}
-            >
-              {loading ? "Generando..." : "Generar reporte"}
-            </button>
+          <div style={stickyActionsWrap}>
+            <div style={actionsGrid}>
+              <button
+                style={{
+                  ...btnGenerar,
+                  ...(loading || checkingSession ? btnDisabled : {}),
+                }}
+                onClick={handleGenerarReporte}
+                disabled={loading || checkingSession}
+              >
+                {loading ? "Generando..." : "Generar reporte"}
+              </button>
 
-            <button
-              style={{
-                ...btnExcel,
-                ...(loading || checkingSession ? btnDisabled : {}),
-              }}
-              onClick={handleDescargarExcel}
-              disabled={loading || checkingSession}
-            >
-              Descargar Excel
-            </button>
+              <button
+                style={{
+                  ...btnExcel,
+                  ...(loading || checkingSession ? btnDisabled : {}),
+                }}
+                onClick={handleDescargarExcel}
+                disabled={loading || checkingSession}
+              >
+                Descargar Excel
+              </button>
 
-            <button
-              style={{
-                ...btnVolver,
-                ...(loading || checkingSession ? btnDisabled : {}),
-              }}
-              onClick={() => router.replace("/administrador")}
-              disabled={loading || checkingSession}
-            >
-              Volver
-            </button>
+              <button
+                style={{
+                  ...btnVolver,
+                  ...(loading || checkingSession ? btnDisabled : {}),
+                }}
+                onClick={() => router.replace("/administrador")}
+                disabled={loading || checkingSession}
+              >
+                Volver al menú
+              </button>
 
-            <button
-              style={{
-                ...btnSalir,
-                ...(loading || checkingSession ? btnDisabled : {}),
-              }}
-              onClick={handleSalir}
-              disabled={loading || checkingSession}
-            >
-              Salir
-            </button>
+              <button
+                style={{
+                  ...btnSalir,
+                  ...(loading || checkingSession ? btnDisabled : {}),
+                }}
+                onClick={handleSalir}
+                disabled={loading || checkingSession}
+              >
+                Salir
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -870,13 +1100,13 @@ export default function AdminReportesPage() {
 
           <div style={{ height: 12 }} />
 
-          {selectedReport === "clientes" && rowsClientes.length === 0 ? (
+          {selectedReport === "clientes" && sortedClientesRows.length === 0 ? (
             <div style={helperStyle}>
               Todavía no generaste el reporte de clientes.
             </div>
           ) : null}
 
-          {selectedReport === "clientes" && rowsClientes.length > 0 ? (
+          {selectedReport === "clientes" && sortedClientesRows.length > 0 ? (
             <div style={tableWrap}>
               <table style={tableStyle}>
                 <thead>
@@ -894,7 +1124,7 @@ export default function AdminReportesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rowsClientes.map((row) => (
+                  {sortedClientesRows.map((row) => (
                     <tr key={row.id}>
                       <td style={tdStyle}>{fmtDateTime(row.created_at) || "-"}</td>
                       <td style={tdStyle}>{clean(row.full_name) || "-"}</td>
