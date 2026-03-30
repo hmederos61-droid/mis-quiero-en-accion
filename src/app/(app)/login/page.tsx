@@ -308,6 +308,21 @@ function LoginInner() {
         return;
       }
 
+      // =============================
+      // REGISTRO DE LOGIN (RPC)
+      // MOVIDO AL INICIO DEL FLUJO
+      // =============================
+      const rpcResult = await registerLoginEventOnce({
+        source: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+          ? "mobile-login-page"
+          : "web-login-page",
+        pathname: window.location.pathname,
+      });
+
+      if (!rpcResult.ok && !rpcResult.skipped) {
+        console.error("MQA register login RPC failed:", rpcResult);
+      }
+
       /* ==========================================
          CONTROL COACHEE:
          - bloquea baja lógica
@@ -361,20 +376,6 @@ function LoginInner() {
       const unique = Array.from(new Set(rs));
       const hasAdmin = unique.includes("admin");
       const hasCoach = unique.includes("coach");
-
-      // =============================
-      // REGISTRO DE LOGIN (RPC)
-      // =============================
-      const rpcResult = await registerLoginEventOnce({
-        source: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
-          ? "mobile-login-page"
-          : "web-login-page",
-        pathname: window.location.pathname,
-      });
-
-      if (!rpcResult.ok && !rpcResult.skipped) {
-        console.error("MQA register login RPC failed:", rpcResult);
-      }
 
       if (hasAdmin || hasCoach) {
         router.replace("/menu1");
