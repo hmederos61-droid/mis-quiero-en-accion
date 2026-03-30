@@ -1,4 +1,3 @@
-// src/app/(app)/administrador/reportes/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -108,7 +107,7 @@ const tableWrap: React.CSSProperties = {
 
 const tableStyle: React.CSSProperties = {
   width: "100%",
-  minWidth: 1080,
+  minWidth: 1180,
   borderCollapse: "collapse",
 };
 
@@ -151,7 +150,7 @@ const selectStyle: React.CSSProperties = {
 };
 
 type ReportKey = "clientes" | "accesos";
-type SortAccessKey = "fecha" | "usuario";
+type SortAccessKey = "fecha" | "usuario" | "cantidad";
 
 type CoacheeReportRow = {
   id: string;
@@ -170,10 +169,21 @@ type CoacheeReportRow = {
 type LoginEventRow = {
   id: string;
   auth_user_id: string;
-  email: string | null;
-  role: string | null;
-  device_type: string | null;
+  email_snapshot: string | null;
+  full_name_snapshot: string | null;
+  role_snapshot: string | null;
+  source: string | null;
   created_at: string | null;
+};
+
+type LoginAccessSummaryRow = {
+  auth_user_id: string;
+  email_snapshot: string | null;
+  full_name_snapshot: string | null;
+  role_snapshot: string | null;
+  source: string | null;
+  access_count: number;
+  last_access_at: string | null;
 };
 
 function clean(v: string | null | undefined) {
@@ -210,6 +220,118 @@ function escapeHtml(v: string) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function normalizeSource(v: string | null | undefined) {
+  const source = clean(v).toLowerCase();
+
+  if (!source) return "";
+  if (source.includes("mobile")) return "Mobile";
+  if (source.includes("web")) return "Web";
+
+  return source;
+}
+
+function summarizeAccessRows(rows: LoginEventRow[]): LoginAccessSummaryRow[] {
+  const map = new Map<string, LoginAccessSummaryRow>();
+
+  for (const row of rows) {
+    const key = clean(row.auth_user_id);
+    if (!key) continue;
+
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, {
+        auth_user_id: row.auth_user_id,
+        email_snapshot: row.email_snapshot,
+        full_name_snapshot: row.full_name_snapshot,
+        role_snapshot: row.role_snapshot,
+        source: row.source,
+        access_count: 1,
+        last_access_at: row.created_at,
+      });
+      continue;
+    }
+
+    existing.access_count += 1;
+
+    if (!clean(existing.full_name_snapshot) && clean(row.full_name_snapshot)) {
+      existing.full_name_snapshot = row.full_name_snapshot;
+    }
+
+    if (!clean(existing.email_snapshot) && clean(row.email_snapshot)) {
+      existing.email_snapshot = row.email_snapshot;
+    }
+
+    if (!clean(existing.role_snapshot) && clean(row.role_snapshot)) {
+      existing.role_snapshot = row.role_snapshot;
+    }
+
+    if (!clean(existing.source) && clean(row.source)) {
+      existing.source = row.source;
+    }
+
+    const existingTs = clean(existing.last_access_at);
+    const currentTs = clean(row.created_at);
+
+    if (currentTs && (!existingTs || new Date(currentTs) > new Date(existingTs))) {
+      existing.last_access_at = row.created_at;
+      if (clean(row.source)) existing.source = row.source;
+      if (clean(row.role_snapshot)) existing.role_snapshot = row.role_snapshot;
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+function sortAccessSummaryRows(
+  rows: LoginAccessSummaryRow[],
+  sortBy: SortAccessKey
+): LoginAccessSummaryRow[] {
+  const clone = [...rows];
+
+  if (sortBy === "fecha") {
+    clone.sort((a, b) => {
+      const da = clean(a.last_access_at);
+      const db = clean(b.last_access_at);
+      return db.localeCompare(da);
+    });
+    return clone;
+  }
+
+  if (sortBy === "cantidad") {
+    clone.sort((a, b) => {
+      if (b.access_count !== a.access_count) {
+        return b.access_count - a.access_count;
+      }
+
+      const nameA = clean(a.full_name_snapshot).toLowerCase();
+      const nameB = clean(b.full_name_snapshot).toLowerCase();
+      if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+      const mailA = clean(a.email_snapshot).toLowerCase();
+      const mailB = clean(b.email_snapshot).toLowerCase();
+      return mailA.localeCompare(mailB);
+    });
+    return clone;
+  }
+
+  clone.sort((a, b) => {
+    const nameA = clean(a.full_name_snapshot).toLowerCase();
+    const nameB = clean(b.full_name_snapshot).toLowerCase();
+    if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+    const mailA = clean(a.email_snapshot).toLowerCase();
+    const mailB = clean(b.email_snapshot).toLowerCase();
+    if (mailA !== mailB) return mailA.localeCompare(mailB);
+
+    const dateA = clean(a.last_access_at);
+    const dateB = clean(b.last_access_at);
+    return dateB.localeCompare(dateA);
+  });
+
+  return clone;
 }
 
 function buildClientesExcelHtml(rows: CoacheeReportRow[]) {
@@ -266,22 +388,26 @@ function buildClientesExcelHtml(rows: CoacheeReportRow[]) {
   `;
 }
 
-function buildAccesosExcelHtml(rows: LoginEventRow[]) {
+function buildAccesosExcelHtml(rows: LoginAccessSummaryRow[]) {
   const headers = [
-    "Fecha y hora",
     "Usuario",
+    "Email",
     "Rol",
-    "Dispositivo",
+    "Origen",
+    "Cantidad de accesos",
+    "Último acceso",
     "Auth User ID",
   ];
 
   const body = rows
     .map((row) => {
       const values = [
-        fmtDateTime(row.created_at),
-        clean(row.email),
-        clean(row.role),
-        clean(row.device_type),
+        clean(row.full_name_snapshot),
+        clean(row.email_snapshot),
+        clean(row.role_snapshot),
+        normalizeSource(row.source),
+        String(row.access_count || 0),
+        fmtDateTime(row.last_access_at),
         clean(row.auth_user_id),
       ];
 
@@ -337,6 +463,13 @@ export default function AdminReportesPage() {
   const [error, setError] = useState<string | null>(null);
   const [rowsClientes, setRowsClientes] = useState<CoacheeReportRow[]>([]);
   const [rowsAccesos, setRowsAccesos] = useState<LoginEventRow[]>([]);
+
+  const accessSummaryRows = useMemo(() => {
+    return sortAccessSummaryRows(
+      summarizeAccessRows(rowsAccesos),
+      accessSortBy
+    );
+  }, [rowsAccesos, accessSortBy]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 768);
@@ -395,18 +528,13 @@ export default function AdminReportesPage() {
       }
 
       if (selectedReport === "accesos") {
-        let query = supabase
+        const { data, error: qErr } = await supabase
           .from("login_events")
-          .select("id, auth_user_id, email, role, device_type, created_at");
-
-        if (accessSortBy === "fecha") {
-          query = query.order("created_at", { ascending: false });
-        } else {
-          query = query.order("email", { ascending: true });
-          query = query.order("created_at", { ascending: false });
-        }
-
-        const { data, error: qErr } = await query;
+          .select(
+            "id, auth_user_id, email_snapshot, full_name_snapshot, role_snapshot, source, created_at"
+          )
+          .eq("event_type", "login")
+          .order("created_at", { ascending: false });
 
         if (qErr) {
           setError(
@@ -447,14 +575,14 @@ export default function AdminReportesPage() {
       }
 
       if (selectedReport === "accesos") {
-        if (!rowsAccesos.length) {
+        if (!accessSummaryRows.length) {
           setError("Primero generá el reporte para poder descargarlo.");
           return;
         }
 
         downloadExcel(
           `reporte_accesos_${yyyy}-${mm}-${dd}.xls`,
-          buildAccesosExcelHtml(rowsAccesos)
+          buildAccesosExcelHtml(accessSummaryRows)
         );
       }
     } catch {
@@ -598,8 +726,8 @@ export default function AdminReportesPage() {
                 2. Detalle de ingresos a la aplicación
               </div>
               <div style={{ ...helperStyle, fontSize: 15 }}>
-                Muestra los accesos registrados en la plataforma, incluyendo
-                usuario, rol, tipo de dispositivo y fecha/hora de ingreso.
+                Muestra un resumen por usuario con cantidad de accesos, último
+                ingreso, rol y origen registrado.
               </div>
             </button>
           </div>
@@ -618,6 +746,7 @@ export default function AdminReportesPage() {
                 >
                   <option value="fecha">Fecha</option>
                   <option value="usuario">Usuario</option>
+                  <option value="cantidad">Cantidad de accesos</option>
                 </select>
               </div>
             </div>
@@ -732,31 +861,45 @@ export default function AdminReportesPage() {
             </div>
           ) : null}
 
-          {selectedReport === "accesos" && rowsAccesos.length === 0 ? (
+          {selectedReport === "accesos" && accessSummaryRows.length === 0 ? (
             <div style={helperStyle}>
               Todavía no generaste el reporte de accesos.
             </div>
           ) : null}
 
-          {selectedReport === "accesos" && rowsAccesos.length > 0 ? (
+          {selectedReport === "accesos" && accessSummaryRows.length > 0 ? (
             <div style={tableWrap}>
               <table style={tableStyle}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Fecha y hora</th>
                     <th style={thStyle}>Usuario</th>
+                    <th style={thStyle}>Email</th>
                     <th style={thStyle}>Rol</th>
-                    <th style={thStyle}>Dispositivo</th>
+                    <th style={thStyle}>Origen</th>
+                    <th style={thStyle}>Cantidad de accesos</th>
+                    <th style={thStyle}>Último acceso</th>
                     <th style={thStyle}>Auth User ID</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rowsAccesos.map((row) => (
-                    <tr key={row.id}>
-                      <td style={tdStyle}>{fmtDateTime(row.created_at) || "-"}</td>
-                      <td style={tdStyle}>{clean(row.email) || "-"}</td>
-                      <td style={tdStyle}>{clean(row.role) || "-"}</td>
-                      <td style={tdStyle}>{clean(row.device_type) || "-"}</td>
+                  {accessSummaryRows.map((row) => (
+                    <tr key={row.auth_user_id}>
+                      <td style={tdStyle}>
+                        {clean(row.full_name_snapshot) || "-"}
+                      </td>
+                      <td style={tdStyle}>
+                        {clean(row.email_snapshot) || "-"}
+                      </td>
+                      <td style={tdStyle}>
+                        {clean(row.role_snapshot) || "-"}
+                      </td>
+                      <td style={tdStyle}>
+                        {normalizeSource(row.source) || "-"}
+                      </td>
+                      <td style={tdStyle}>{row.access_count}</td>
+                      <td style={tdStyle}>
+                        {fmtDateTime(row.last_access_at) || "-"}
+                      </td>
                       <td style={tdStyle}>{clean(row.auth_user_id) || "-"}</td>
                     </tr>
                   ))}
